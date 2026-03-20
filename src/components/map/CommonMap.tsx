@@ -6,6 +6,8 @@ type CommonMapProps = {
   center?: [number, number];
   zoom?: number;
   styleUrl?: string;
+  className?: string;
+  onMapReady?: (map: maplibregl.Map) => void;
 };
 
 export default function CommonMap({
