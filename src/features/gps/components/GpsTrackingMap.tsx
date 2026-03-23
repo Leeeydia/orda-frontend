@@ -12,14 +12,12 @@ export default function GpsTrackingMap() {
         className="h-full w-full"
       />
 
-      {/* GPS 상태 표시 */}
       {error && (
         <div className="absolute bottom-20 left-4 rounded-lg bg-red-500 px-3 py-2 text-sm text-white">
           {error}
         </div>
       )}
 
-      {/* 시작/종료 버튼 */}
       <button
         onClick={isTracking ? stop : start}
         className="absolute bottom-8 left-1/2 -translate-x-1/2 rounded-full px-6 py-3 font-medium text-white"
