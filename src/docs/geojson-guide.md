@@ -10,6 +10,7 @@
 - 공통 맵 컴포넌트 구성 완료
 - GeoJSON props 기반 렌더링 가능
 - Point / LineString 표시 가능
+- geoJsonData 실시간 업데이트 지원
 
 즉, GeoJSON 형식만 맞추면 지도에 바로 표시할 수 있다.
 
@@ -26,6 +27,9 @@
       zoom={11}
       geoJsonData={geoJsonData}
     />
+
+geoJsonData는 state로 관리하면 값이 바뀔 때 자동으로 지도에 반영된다.
+지도를 다시 생성하지 않고 소스 데이터만 교체하는 방식이라 성능에 영향이 없다.
 
 ## 3. geoJsonData 타입
 
@@ -50,8 +54,8 @@
 
 `import type`은 실행 코드가 아니라 타입 정보만 가져오는 것이다.
 
-즉, TypeScript에게  
-"이 데이터는 GeoJSON FeatureCollection 구조여야 한다"  
+즉, TypeScript에게
+"이 데이터는 GeoJSON FeatureCollection 구조여야 한다"
 라고 알려주는 역할이다.
 
 ## 5. GeoJSON 기본 구조
@@ -85,6 +89,16 @@
     [36.3504, 127.3845]
 
 이 순서를 반대로 넣으면 지도에 정상적으로 표시되지 않는다.
+
+브라우저 GPS(navigator.geolocation)는 위도, 경도 순서로 반환하므로
+GeoJSON에 넣을 때 반드시 순서를 바꿔야 한다.
+
+    // GPS에서 받은 값
+    pos.coords.latitude   // 위도
+    pos.coords.longitude  // 경도
+
+    // GeoJSON에 넣을 때
+    coordinates: [pos.coords.longitude, pos.coords.latitude]
 
 ## 8. Feature 예시
 
@@ -125,9 +139,7 @@
       features: [
         {
           type: "Feature",
-          properties: {
-            name: "정상"
-          },
+          properties: { name: "정상" },
           geometry: {
             type: "Point",
             coordinates: [127.3845, 36.3504]
@@ -135,9 +147,7 @@
         },
         {
           type: "Feature",
-          properties: {
-            name: "등산로"
-          },
+          properties: { name: "등산로" },
           geometry: {
             type: "LineString",
             coordinates: [
@@ -154,11 +164,13 @@
 
 현재 `CommonMap`은 아래 흐름으로 동작한다.
 
-- GeoJSON 데이터를 source로 등록
+- 지도 초기화 시 소스/레이어를 빈 데이터로 먼저 등록
+- `geoJsonData` prop이 바뀌면 소스 데이터만 교체 (지도 재생성 없음)
 - `LineString`은 line layer로 렌더링
 - `Point`는 circle layer로 렌더링
 
 즉, GeoJSON 형식만 맞게 넘기면 공통 맵 컴포넌트가 지도에 표시해주는 구조다.
+state로 관리되는 geoJsonData를 실시간으로 업데이트하면 지도에 즉시 반영된다.
 
 ## 11. 백엔드 연동 기준
 
@@ -180,9 +192,12 @@
 - 좌표 순서가 `[경도, 위도]`인지 확인
 - `LineString`의 `coordinates`가 배열의 배열인지 확인
 - `Point`의 `coordinates`가 단일 좌표 배열인지 확인
+- GPS 연동 시 경도/위도 순서가 바뀌어 있는지 확인
 
 ## 13. 정리
 
 - `CommonMap`은 GeoJSON을 받으면 지도에 그린다
 - 팀원은 GeoJSON 형식만 맞추면 된다
+- geoJsonData가 바뀌면 지도 재생성 없이 소스만 교체된다
+- GPS 연동 시 좌표 순서(경도, 위도)에 주의한다
 - 현재 상태에서 API 또는 목데이터를 연결해 바로 테스트할 수 있다
