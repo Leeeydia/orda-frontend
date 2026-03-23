@@ -19,7 +19,7 @@ const GEOJSON_POINT_LAYER_ID = "geojson-point-layer";
 export default function CommonMap({
   center = [127.3845, 36.3504],
   zoom = 12,
-  styleUrl = "https://demotiles.maplibre.org/style.json",
+  styleUrl = "https://tiles.openfreemap.org/styles/bright",
   className,
   geoJsonData = null,
   onMapReady
