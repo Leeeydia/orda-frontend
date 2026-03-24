@@ -1,10 +1,28 @@
 import CommonMap from "@/components/map/CommonMap";
-import { useGPS } from "../hooks/useGPS";
+import type { FeatureCollection } from "geojson";
+import type { GpsPoint } from "../types/gps.types";
 
-export default function GpsTrackingMap() {
-  const { geoJson, currentPos, isTracking, error, start, stop, trail } =
-    useGPS();
+interface Props {
+  geoJson: FeatureCollection;
+  currentPos: GpsPoint | null;
+  trail: GpsPoint[];
+  isTracking: boolean;
+  isLoading: boolean;
+  error: string | null;
+  onStart: () => void;
+  onStop: () => void;
+}
 
+export default function GpsTrackingMap({
+  geoJson,
+  currentPos,
+  trail,
+  isTracking,
+  isLoading,
+  error,
+  onStart,
+  onStop,
+}: Props) {
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
       <CommonMap
@@ -41,10 +59,12 @@ export default function GpsTrackingMap() {
 
       {/* 시작/종료 버튼 */}
       <button
-        onClick={isTracking ? stop : start}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 rounded-full px-6 py-3 font-medium text-white"
-        style={{ background: isTracking ? "#dc2626" : "#2563eb" }}>
-        {isTracking ? "⏹ 등산 종료" : "▶ 등산 시작"}
+        onClick={isTracking ? onStop : onStart}
+        disabled={isLoading}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 rounded-full px-6 py-3 font-medium text-white disabled:opacity-50"
+        style={{ background: isTracking ? "#dc2626" : "#2563eb" }}
+      >
+        {isLoading ? "처리 중..." : isTracking ? "⏹ 등산 종료" : "▶ 등산 시작"}
       </button>
     </div>
   );
