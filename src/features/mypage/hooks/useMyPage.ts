@@ -62,7 +62,7 @@ const useMyPage = () => {
     const res = await uploadProfileImage(file);
     if (res.success) {
       setProfile((prev) =>
-        prev ? { ...prev, profileImageUrl: res.data.profileImageUrl } : prev
+        prev ? { ...prev, profileImageUrl: res.data } : prev
       );
     }
     return res;

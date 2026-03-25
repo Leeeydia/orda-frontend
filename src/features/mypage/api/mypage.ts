@@ -1,15 +1,12 @@
 const BASE_URL = "http://localhost:8080";
 
-// JWT 토큰 가져오기
 const getToken = () => localStorage.getItem("accessToken");
 
-// 공통 헤더
 const authHeaders = () => ({
   "Content-Type": "application/json",
   Authorization: `Bearer ${getToken()}`
 });
 
-// 프로필 조회
 export const fetchProfile = async () => {
   const res = await fetch(`${BASE_URL}/api/mypage/profile`, {
     headers: authHeaders()
@@ -17,7 +14,6 @@ export const fetchProfile = async () => {
   return res.json();
 };
 
-// 통계 조회
 export const fetchStats = async () => {
   const res = await fetch(`${BASE_URL}/api/mypage/stats`, {
     headers: authHeaders()
@@ -25,7 +21,6 @@ export const fetchStats = async () => {
   return res.json();
 };
 
-// 등산 기록 조회
 export const fetchRecords = async () => {
   const res = await fetch(`${BASE_URL}/api/mypage/records`, {
     headers: authHeaders()
@@ -33,7 +28,6 @@ export const fetchRecords = async () => {
   return res.json();
 };
 
-// 닉네임 수정
 export const updateProfile = async (nickname: string) => {
   const res = await fetch(`${BASE_URL}/api/mypage/profile`, {
     method: "PATCH",
@@ -43,7 +37,6 @@ export const updateProfile = async (nickname: string) => {
   return res.json();
 };
 
-// 비밀번호 변경
 export const changePassword = async (
   currentPassword: string,
   newPassword: string
@@ -56,10 +49,9 @@ export const changePassword = async (
   return res.json();
 };
 
-// 프로필 이미지 업로드
 export const uploadProfileImage = async (file: File) => {
   const formData = new FormData();
-  formData.append("image", file);
+  formData.append("file", file); // [윤종민] "image" → "file" 수정 (백엔드 key명 맞춤)
   const res = await fetch(`${BASE_URL}/api/mypage/profile-image`, {
     method: "POST",
     headers: {
@@ -70,7 +62,6 @@ export const uploadProfileImage = async (file: File) => {
   return res.json();
 };
 
-// 프로필 이미지 삭제
 export const deleteProfileImage = async () => {
   const res = await fetch(`${BASE_URL}/api/mypage/profile-image`, {
     method: "DELETE",
