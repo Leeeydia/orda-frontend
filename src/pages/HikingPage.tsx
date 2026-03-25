@@ -5,10 +5,10 @@ export default function HikingPage() {
   const {
     geoJson,
     currentPos,
-    trail,
     isTracking,
     isLoading,
     error,
+    savedPointCount,
     start,
     stop
   } = useHiking();
@@ -18,10 +18,10 @@ export default function HikingPage() {
       <GpsTrackingMap
         geoJson={geoJson}
         currentPos={currentPos}
-        trail={trail}
         isTracking={isTracking}
         isLoading={isLoading}
         error={error}
+        savedPointCount={savedPointCount}
         onStart={start}
         onStop={stop}
       />

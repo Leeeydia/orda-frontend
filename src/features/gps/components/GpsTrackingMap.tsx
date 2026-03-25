@@ -5,10 +5,10 @@ import type { GpsPoint } from "../types/gps.types";
 interface Props {
   geoJson: FeatureCollection;
   currentPos: GpsPoint | null;
-  trail: GpsPoint[];
   isTracking: boolean;
   isLoading: boolean;
   error: string | null;
+  savedPointCount: number;
   onStart: () => void;
   onStop: () => void;
 }
@@ -16,16 +16,15 @@ interface Props {
 export default function GpsTrackingMap({
   geoJson,
   currentPos,
-  trail,
   isTracking,
   isLoading,
   error,
+  savedPointCount,
   onStart,
   onStop
 }: Props) {
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
-      {/* 지도는 z-index 0으로 맨 아래 */}
       <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
         <CommonMap
           geoJsonData={geoJson}
@@ -49,7 +48,7 @@ export default function GpsTrackingMap({
               ? currentPos.altitude.toFixed(1) + "m"
               : "미지원"}
           </p>
-          <p className="text-gray-600">누적 포인트: {trail.length}개</p>
+          <p className="text-gray-600">누적 포인트: {savedPointCount}개</p>
         </div>
       )}
 

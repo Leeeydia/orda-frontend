@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useGPS } from "@/features/gps/hooks/useGPS";
 import {
   startHiking,
@@ -7,30 +7,41 @@ import {
   saveGpsTrack
 } from "../api/hikingApi";
 
+const SAVE_INTERVAL_MS = 5000; // 5초마다 저장
+
 export function useHiking() {
   const gps = useGPS();
   const [sessionId, setSessionId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [savedPointCount, setSavedPointCount] = useState(0);
+
+  const lastSavedAt = useRef<number>(0);
 
   const start = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const res = await startHiking({ userId: 1 }); // TODO: auth 후 교체
+      const res = await startHiking({ userId: 1 }); // TODO: auth 연동 후 교체
       const newSessionId = res.sessionId;
       setSessionId(newSessionId);
 
+      lastSavedAt.current = 0;
+      setSavedPointCount(0);
+
       gps.start((point) => {
-        // GPS 포인트 수신마다 백엔드에 저장
+        const now = Date.now();
+        if (now - lastSavedAt.current < SAVE_INTERVAL_MS) return;
+        lastSavedAt.current = now;
+
         saveGpsTrack(newSessionId, {
           latitude: point.lat,
           longitude: point.lng,
-          elevationM: point.altitude,
+          elevationM: point.altitude ?? null,
           accuracyM: point.accuracy
-        }).catch((e) => {
-          console.error("GPS 저장 실패:", e);
-        });
+        })
+          .then(() => setSavedPointCount((prev) => prev + 1))
+          .catch((e) => console.error("GPS 저장 실패:", e));
       });
     } catch {
       setError("등산 시작에 실패했습니다.");
@@ -47,6 +58,8 @@ export function useHiking() {
       await endHiking(sessionId);
       gps.stop();
       setSessionId(null);
+      lastSavedAt.current = 0;
+      setSavedPointCount(0);
     } catch {
       setError("등산 종료에 실패했습니다.");
     } finally {
@@ -72,11 +85,11 @@ export function useHiking() {
   return {
     geoJson: gps.geoJson,
     currentPos: gps.currentPos,
-    trail: gps.trail,
     isTracking: gps.isTracking,
     sessionId,
     isLoading,
     error: error ?? gps.error,
+    savedPointCount,
     start,
     stop,
     verify
