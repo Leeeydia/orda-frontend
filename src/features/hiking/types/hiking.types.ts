@@ -24,3 +24,9 @@ export interface SummitVerifyResponse {
   summitName: string;
   distanceM: number;
 }
+export interface GpsTrackRequest {
+  latitude: number;
+  longitude: number;
+  elevationM: number | null;
+  accuracyM: number | null;
+}

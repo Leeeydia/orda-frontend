@@ -4,7 +4,8 @@ import type {
   HikingStartResponse,
   HikingEndResponse,
   SummitVerifyRequest,
-  SummitVerifyResponse
+  SummitVerifyResponse,
+  GpsTrackRequest
 } from "../types/hiking.types";
 
 interface ApiResponse<T> {
@@ -40,4 +41,10 @@ export const verifySummit = async (
     body
   );
   return res.data.data;
+};
+export const saveGpsTrack = async (
+  sessionId: number,
+  body: GpsTrackRequest
+): Promise<void> => {
+  await axios.post<ApiResponse<null>>(`/api/hiking/${sessionId}/tracks`, body);
 };
