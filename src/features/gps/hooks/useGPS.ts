@@ -9,16 +9,16 @@ const EMPTY_GEOJSON: FeatureCollection = {
 
 export function useGPS(): GpsState & {
   geoJson: FeatureCollection;
-  start: () => void;
+  start: (onPoint?: (point: GpsPoint) => void) => void;
   stop: () => void;
 } {
   const [currentPos, setCurrentPos] = useState<GpsPoint | null>(null);
-  const [trail, setTrail] = useState<GpsPoint[]>([]); // ✅ useState로 변경
+  const [trail, setTrail] = useState<GpsPoint[]>([]);
   const [isTracking, setIsTracking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [geoJson, setGeoJson] = useState<FeatureCollection>(EMPTY_GEOJSON);
 
-  const trailRef = useRef<GpsPoint[]>([]); // 내부 누적용 (성능)
+  const trailRef = useRef<GpsPoint[]>([]);
   const watchIdRef = useRef<number | null>(null);
 
   const updateGeoJson = useCallback((trail: GpsPoint[], current: GpsPoint) => {
@@ -49,41 +49,45 @@ export function useGPS(): GpsState & {
     });
   }, []);
 
-  const start = useCallback(() => {
-    if (!navigator.geolocation) {
-      setError("GPS를 지원하지 않는 브라우저입니다.");
-      return;
-    }
-
-    trailRef.current = [];
-    setTrail([]); // ✅ state도 같이 초기화
-
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      (pos) => {
-        const point: GpsPoint = {
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-          altitude: pos.coords.altitude,
-          accuracy: pos.coords.accuracy,
-          timestamp: pos.timestamp
-        };
-        console.log("📍 GPS 수신:", point);
-        trailRef.current.push(point);
-        setTrail([...trailRef.current]); // ✅ 외부에 노출할 trail state 업데이트
-        setCurrentPos(point);
-        updateGeoJson(trailRef.current, point);
-      },
-      (err) => setError(err.message),
-      {
-        enableHighAccuracy: true,
-        maximumAge: 0,
-        timeout: 10000
+  const start = useCallback(
+    (onPoint?: (point: GpsPoint) => void) => {
+      if (!navigator.geolocation) {
+        setError("GPS를 지원하지 않는 브라우저입니다.");
+        return;
       }
-    );
 
-    setIsTracking(true);
-    setError(null);
-  }, [updateGeoJson]);
+      trailRef.current = [];
+      setTrail([]);
+
+      watchIdRef.current = navigator.geolocation.watchPosition(
+        (pos) => {
+          const point: GpsPoint = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            altitude: pos.coords.altitude,
+            accuracy: pos.coords.accuracy,
+            timestamp: pos.timestamp
+          };
+          console.log("📍 GPS 수신:", point);
+          trailRef.current.push(point);
+          setTrail([...trailRef.current]);
+          setCurrentPos(point);
+          updateGeoJson(trailRef.current, point);
+          onPoint?.(point);
+        },
+        (err) => setError(err.message),
+        {
+          enableHighAccuracy: true,
+          maximumAge: 0,
+          timeout: 10000
+        }
+      );
+
+      setIsTracking(true);
+      setError(null);
+    },
+    [updateGeoJson]
+  );
 
   const stop = useCallback(() => {
     if (watchIdRef.current !== null) {
@@ -95,7 +99,7 @@ export function useGPS(): GpsState & {
 
   return {
     currentPos,
-    trail, // ✅ useState 값 반환
+    trail,
     isTracking,
     error,
     geoJson,

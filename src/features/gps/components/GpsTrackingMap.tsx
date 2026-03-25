@@ -21,19 +21,22 @@ export default function GpsTrackingMap({
   isLoading,
   error,
   onStart,
-  onStop,
+  onStop
 }: Props) {
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
-      <CommonMap
-        geoJsonData={geoJson}
-        center={currentPos ? [currentPos.lng, currentPos.lat] : undefined}
-        className="h-full w-full"
-      />
+      {/* 지도는 z-index 0으로 맨 아래 */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
+        <CommonMap
+          geoJsonData={geoJson}
+          center={currentPos ? [currentPos.lng, currentPos.lat] : undefined}
+          className="h-full w-full"
+        />
+      </div>
 
       {/* GPS 정보 패널 */}
       {currentPos && (
-        <div className="absolute top-4 left-4 space-y-1 rounded-xl bg-white/90 px-4 py-3 text-sm shadow-md">
+        <div className="absolute top-4 left-4 z-10 space-y-1 rounded-xl bg-white/90 px-4 py-3 text-sm shadow-md">
           <p className="font-medium text-gray-700">📍 GPS 정보</p>
           <p className="text-gray-600">위도: {currentPos.lat.toFixed(6)}</p>
           <p className="text-gray-600">경도: {currentPos.lng.toFixed(6)}</p>
@@ -52,7 +55,7 @@ export default function GpsTrackingMap({
 
       {/* 에러 */}
       {error && (
-        <div className="absolute bottom-20 left-4 rounded-lg bg-red-500 px-3 py-2 text-sm text-white">
+        <div className="absolute bottom-20 left-4 z-10 rounded-lg bg-red-500 px-3 py-2 text-sm text-white">
           {error}
         </div>
       )}
@@ -61,9 +64,8 @@ export default function GpsTrackingMap({
       <button
         onClick={isTracking ? onStop : onStart}
         disabled={isLoading}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 rounded-full px-6 py-3 font-medium text-white disabled:opacity-50"
-        style={{ background: isTracking ? "#dc2626" : "#2563eb" }}
-      >
+        className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2 rounded-full px-6 py-3 font-medium text-white disabled:opacity-50"
+        style={{ background: isTracking ? "#dc2626" : "#2563eb" }}>
         {isLoading ? "처리 중..." : isTracking ? "⏹ 등산 종료" : "▶ 등산 시작"}
       </button>
     </div>
