@@ -35,6 +35,26 @@
 - 페이지는 화면 조합과 레이아웃 구성에 집중한다.
 - 데이터 조회, 상태 처리, API 호출 등은 직접 구현하지 않고 `features`의 hook과 component를 사용한다.
 - 파일명은 `{기능}Page.tsx` 형식을 사용한다.
+- 페이지가 여러 개인 경우 도메인별 하위 폴더로 구분한다.
+
+기본 구조는 아래를 따른다.
+
+    ```
+    pages/
+    ├── auth/
+    │   ├── SignupPage.tsx
+    │   └── LoginPage.tsx
+    ├── hiking/
+    │   ├── HikingPage.tsx
+    │   └── HikingResultPage.tsx
+    ├── summit/
+    │   └── SummitPage.tsx
+    ├── trail/
+    │   └── TrailPage.tsx
+    ├── stats/
+    │   └── StatsPage.tsx
+    └── MainPage.tsx        # 특정 도메인에 속하지 않는 페이지는 pages/ 바로 아래에 둔다
+    ```
 
 ### `features/`
 
@@ -52,6 +72,28 @@
         ├── types/
         ├── components/
         └── mappers/
+
+현재 도메인 기준 예시는 아래를 따른다.
+
+    ```
+    features/
+    ├── auth/
+    │   ├── api/
+    │   │   └── authApi.ts
+    │   ├── hooks/
+    │   │   └── useAuth.ts
+    │   └── types/
+    │       └── auth.types.ts
+    ├── hiking/
+    │   ├── api/
+    │   ├── hooks/
+    │   ├── types/
+    │   ├── components/
+    │   └── mappers/
+    ├── summit/
+    ├── trail/
+    └── stats/
+    ```
 
 #### `api/`
 
@@ -172,4 +214,4 @@
 - [ ] `hooks/use{도메인}.ts` hook 작성
 - [ ] 필요 시 `components/` 추가
 - [ ] 필요 시 `mappers/` 추가
-- [ ] 페이지 필요 시 `pages/{기능}Page.tsx` 추가
+- [ ] 페이지 필요 시 `pages/{도메인}/{기능}Page.tsx` 추가
