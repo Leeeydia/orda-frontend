@@ -1,10 +1,14 @@
 import { useState, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useGPS } from "@/features/gps/hooks/useGPS";
 import {
   startHiking,
   endHiking,
   verifySummit,
-  saveGpsTrack
+  saveGpsTrack,
+  getHikingSession,
+  getHikingTracks,
+  getElevationProfile
 } from "../api/hikingApi";
 
 const SAVE_INTERVAL_MS = 5000; // 5초마다 저장
@@ -93,5 +97,50 @@ export function useHiking() {
     start,
     stop,
     verify
+  };
+}
+
+export function useHikingSessionDetail(sessionId: number | null) {
+  const sessionQuery = useQuery({
+    queryKey: ["hiking", "session", sessionId],
+    queryFn: () => getHikingSession(sessionId as number),
+    enabled: sessionId != null
+  });
+
+  const tracksQuery = useQuery({
+    queryKey: ["hiking", "tracks", sessionId],
+    queryFn: () => getHikingTracks(sessionId as number),
+    enabled: sessionId != null
+  });
+
+  const elevationProfileQuery = useQuery({
+    queryKey: ["hiking", "elevation-profile", sessionId],
+    queryFn: () => getElevationProfile(sessionId as number),
+    enabled: sessionId != null
+  });
+
+  return {
+    session: sessionQuery.data ?? null,
+    tracks: tracksQuery.data ?? null,
+    elevationProfile: elevationProfileQuery.data ?? null,
+
+    sessionQuery,
+    tracksQuery,
+    elevationProfileQuery,
+
+    isLoading:
+      sessionQuery.isLoading ||
+      tracksQuery.isLoading ||
+      elevationProfileQuery.isLoading,
+
+    isFetching:
+      sessionQuery.isFetching ||
+      tracksQuery.isFetching ||
+      elevationProfileQuery.isFetching,
+
+    isError:
+      sessionQuery.isError ||
+      tracksQuery.isError ||
+      elevationProfileQuery.isError
   };
 }
