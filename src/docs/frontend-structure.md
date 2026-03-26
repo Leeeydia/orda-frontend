@@ -3,7 +3,7 @@
 ## 1. 기본 원칙
 
 - 기능별 구조를 기본으로 사용한다.
-- 화면은 `pages`, 도메인별 기능은 `features`, 여러 기능에서 공통으로 사용하는 요소는 `components`, `utils`에 위치한다.
+- 화면은 `pages`, 도메인별 기능은 `features`, 여러 기능에서 공통으로 사용하는 요소는 `components`, `utils`, `types`에 위치한다.
 - 페이지 컴포넌트는 화면 조합에 집중하고, 비즈니스 로직과 데이터 조회는 `features` 내부에서 처리한다.
 - 공통으로 쓰이지 않는 로직은 전역 폴더로 빼지 않는다.
 - 구조 변경이 필요하면 먼저 공유 후 반영한다.
@@ -12,7 +12,6 @@
 
 ## 2. 기본 폴더 구조
 
-    ```
     src/
     ├── assets/          # 정적 리소스
     ├── components/      # 공통 컴포넌트
@@ -20,11 +19,11 @@
     ├── features/        # 도메인별 기능 모듈
     ├── mock/            # 개발용 목 데이터
     ├── pages/           # 라우터에 연결되는 페이지
+    ├── types/           # 여러 도메인에서 공통으로 사용하는 타입
     ├── utils/           # 여러 도메인에서 공통으로 사용하는 유틸
     ├── App.tsx
     ├── index.css
     └── main.tsx
-    ```
 
 ---
 
@@ -46,7 +45,6 @@
 
 기본 구조는 아래를 따른다.
 
-    ```
     features/
     └── {도메인}/
         ├── api/
@@ -54,7 +52,6 @@
         ├── types/
         ├── components/
         └── mappers/
-    ```
 
 #### `api/`
 
@@ -94,6 +91,14 @@
 - 하위 폴더는 컴포넌트 성격에 따라 구분할 수 있다.
 - 예: `map/`, `ui/`, `layout/`
 
+### `types/`
+
+- 여러 도메인에서 공통으로 사용하는 타입을 둔다.
+- 특정 도메인에 종속되지 않는 공통 응답 타입, 공용 인터페이스 등을 관리한다.
+- 예:
+  - `ApiResponse<T>`
+  - 여러 도메인에서 함께 사용하는 공통 타입
+
 ### `utils/`
 
 - 여러 도메인에서 공통으로 사용하는 순수 유틸 함수를 둔다.
@@ -124,7 +129,7 @@
 
 ## 4. 공통 구조와 도메인 구조 구분 기준
 
-- 여러 도메인에서 함께 사용하는 것은 `components/`, `utils/`에 둔다.
+- 여러 도메인에서 함께 사용하는 것은 `components/`, `utils/`, `types/`에 둔다.
 - 특정 도메인에서만 사용하는 것은 `features/{도메인}/` 내부에 둔다.
 - 공통으로 보이더라도 실제로 한 도메인에서만 쓰인다면 먼저 해당 도메인 내부에 둔다.
 - 재사용이 확인되면 그때 공통 폴더로 이동한다.
@@ -133,16 +138,17 @@
 
 ## 5. 파일 네이밍 규칙
 
-| 종류      | 규칙                     | 예시               |
-| --------- | ------------------------ | ------------------ |
-| 컴포넌트  | PascalCase               | `CommonMap.tsx`    |
-| 훅        | camelCase, use 접두사    | `useHiking.ts`     |
-| API       | camelCase, Api 접미사    | `hikingApi.ts`     |
-| 타입      | camelCase, .types 접미사 | `hiking.types.ts`  |
-| Mapper    | camelCase                | `hikingMappers.ts` |
-| Utils     | camelCase                | `format.ts`        |
-| 페이지    | PascalCase, Page 접미사  | `HikingPage.tsx`   |
-| 목 데이터 | camelCase                | `sampleGeoJson.ts` |
+| 종류 | 규칙 | 예시 |
+|------|------|------|
+| 컴포넌트 | PascalCase | `CommonMap.tsx` |
+| 훅 | camelCase, use 접두사 | `useHiking.ts` |
+| API | camelCase, Api 접미사 | `hikingApi.ts` |
+| 타입 | camelCase, .types 접미사 | `hiking.types.ts` |
+| 공통 타입 | camelCase, .types 접미사 | `common.types.ts` |
+| Mapper | camelCase | `hikingMappers.ts` |
+| Utils | camelCase | `format.ts` |
+| 페이지 | PascalCase, Page 접미사 | `HikingPage.tsx` |
+| 목 데이터 | camelCase | `sampleGeoJson.ts` |
 
 ---
 
@@ -152,6 +158,7 @@
 - 공용 폴더는 실제로 여러 도메인에서 함께 사용할 때만 사용한다.
 - 도메인 내부 전용 변환 로직은 `mappers/`에 둔다.
 - 여러 도메인에서 재사용되는 순수 함수만 `utils/`에 둔다.
+- 여러 도메인에서 재사용되는 공통 타입은 `types/`에 둔다.
 - 구조상 애매한 폴더는 임의로 만들지 않는다.
 - 구조 변경이 필요하면 먼저 공유 후 반영한다.
 
