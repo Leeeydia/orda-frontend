@@ -1,6 +1,6 @@
 import axios from "axios";
+import type { ApiResponse } from "@/types/common.types";
 import type {
-  ApiResponse,
   HikingStartRequest,
   HikingStartResponse,
   HikingEndResponse,
