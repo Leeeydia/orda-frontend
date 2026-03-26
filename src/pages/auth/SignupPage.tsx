@@ -3,7 +3,6 @@ import { useNavigate, Link } from "react-router-dom";
 import { useSignup, validate } from "../../features/auth/hooks/useAuth";
 import type { SignupRequest } from "../../features/auth/types/auth.types";
 import Toast from "../../components/ui/Toast";
-import styles from "./SignupPage.module.css";
 
 // ─── 초기값 & 타입 ────────────────────────────────────────────────────────────
 
@@ -27,8 +26,6 @@ const INITIAL_ERRORS: Record<keyof FormFields, string> = {
   birthDate: ""
 };
 
-// ─── 컴포넌트 ─────────────────────────────────────────────────────────────────
-
 export default function SignupPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState<FormFields>(INITIAL_FORM);
@@ -50,19 +47,15 @@ export default function SignupPage() {
     (msg) => showToast(msg, "error")
   );
 
-  // 필드 변경
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-
-    // 실시간 유효성 검증
     const key = name as keyof FormFields;
     if (validate[key]) {
       setErrors((prev) => ({ ...prev, [key]: validate[key](value) }));
     }
   }, []);
 
-  // 전화번호 자동 하이픈
   const handlePhoneChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const raw = e.target.value.replace(/\D/g, "").slice(0, 11);
@@ -76,7 +69,6 @@ export default function SignupPage() {
     []
   );
 
-  // 생년월일 자동 하이픈
   const handleBirthDateChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const raw = e.target.value.replace(/\D/g, "").slice(0, 8);
@@ -93,10 +85,8 @@ export default function SignupPage() {
     []
   );
 
-  // 제출
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     const newErrors = {
       email: validate.email(form.email),
       password: validate.password(form.password),
@@ -106,134 +96,116 @@ export default function SignupPage() {
       birthDate: validate.birthDate(form.birthDate)
     };
     setErrors(newErrors);
-
     if (Object.values(newErrors).some((e) => e !== "")) return;
-
     const payload: SignupRequest = { ...form };
     if (!form.birthDate) delete payload.birthDate;
-
     await signup(payload);
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.bgOrbs} aria-hidden="true">
-        <span className={styles.orb1} />
-        <span className={styles.orb2} />
-        <span className={styles.orb3} />
-      </div>
-
-      <div className={styles.card}>
-        <header className={styles.header}>
-          <div className={styles.logo}>
-            <svg
-              width="36"
-              height="36"
-              viewBox="0 0 36 36"
-              fill="none"
-              aria-hidden="true">
-              <path d="M18 3L33 30H3L18 3Z" fill="url(#logoGrad)" />
-              <defs>
-                <linearGradient
-                  id="logoGrad"
-                  x1="3"
-                  y1="30"
-                  x2="33"
-                  y2="3"
-                  gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#4ADE80" />
-                  <stop offset="1" stopColor="#22D3EE" />
-                </linearGradient>
-              </defs>
-            </svg>
-            <span className={styles.logoText}>ORDA</span>
+    <div className="min-h-screen bg-[#f7f7f6] text-slate-900">
+      <div className="mx-auto min-h-screen w-full max-w-md bg-[#f7f7f6]">
+        <header className="sticky top-0 z-30 border-b border-[#89943d]/10 bg-white/90 backdrop-blur">
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="h-10 w-10" />
+            <div className="flex flex-1 flex-col items-center px-2">
+              <p className="text-[11px] font-semibold tracking-[0.18em] text-[#89943d] uppercase">
+                ORDA
+              </p>
+              <h1 className="text-base font-bold tracking-tight text-[#2f3415]">
+                회원가입
+              </h1>
+            </div>
+            <div className="h-10 w-10" />
           </div>
-          <h1 className={styles.title}>회원가입</h1>
-          <p className={styles.subtitle}>산을 오르듯, 한 걸음씩 시작해요</p>
         </header>
 
-        <form className={styles.form} onSubmit={handleSubmit} noValidate>
-          <Field
-            label="이메일"
-            name="email"
-            type="email"
-            placeholder="example@orda.com"
-            value={form.email}
-            error={errors.email}
-            onChange={handleChange}
-            required
-          />
-          <Field
-            label="비밀번호"
-            name="password"
-            type="password"
-            placeholder="8자 이상, 영문+숫자+특수문자"
-            value={form.password}
-            error={errors.password}
-            onChange={handleChange}
-            required
-          />
-          <div className={styles.row}>
+        <main className="px-4 pt-6 pb-10">
+          <form onSubmit={handleSubmit} noValidate className="space-y-4">
             <Field
-              label="닉네임"
-              name="nickname"
-              type="text"
-              placeholder="2~10자"
-              value={form.nickname}
-              error={errors.nickname}
+              label="이메일"
+              name="email"
+              type="email"
+              placeholder="example@orda.com"
+              value={form.email}
+              error={errors.email}
               onChange={handleChange}
               required
             />
             <Field
-              label="이름"
-              name="name"
-              type="text"
-              placeholder="홍길동"
-              value={form.name}
-              error={errors.name}
+              label="비밀번호"
+              name="password"
+              type="password"
+              placeholder="8자 이상, 영문+숫자+특수문자"
+              value={form.password}
+              error={errors.password}
               onChange={handleChange}
               required
             />
-          </div>
-          <Field
-            label="전화번호"
-            name="phone"
-            type="tel"
-            placeholder="010-0000-0000"
-            value={form.phone}
-            error={errors.phone}
-            onChange={handlePhoneChange}
-            required
-          />
-          <Field
-            label="생년월일 (선택)"
-            name="birthDate"
-            type="text"
-            placeholder="YYYY-MM-DD"
-            value={form.birthDate}
-            error={errors.birthDate}
-            onChange={handleBirthDateChange}
-          />
+            <div className="grid grid-cols-2 gap-3">
+              <Field
+                label="닉네임"
+                name="nickname"
+                type="text"
+                placeholder="2~10자"
+                value={form.nickname}
+                error={errors.nickname}
+                onChange={handleChange}
+                required
+              />
+              <Field
+                label="이름"
+                name="name"
+                type="text"
+                placeholder="홍길동"
+                value={form.name}
+                error={errors.name}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <Field
+              label="전화번호"
+              name="phone"
+              type="tel"
+              placeholder="010-0000-0000"
+              value={form.phone}
+              error={errors.phone}
+              onChange={handlePhoneChange}
+              required
+            />
+            <Field
+              label="생년월일"
+              name="birthDate"
+              type="text"
+              placeholder="YYYY-MM-DD (선택)"
+              value={form.birthDate}
+              error={errors.birthDate}
+              onChange={handleBirthDateChange}
+            />
 
-          <button
-            type="submit"
-            className={styles.submitBtn}
-            disabled={loading}
-            aria-busy={loading}>
-            {loading ? (
-              <span className={styles.spinner} aria-hidden="true" />
-            ) : (
-              "가입하기"
-            )}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={loading}
+              aria-busy={loading}
+              className="mt-2 flex h-14 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#4a521e] to-[#89943d] text-[17px] font-bold tracking-wide text-white shadow-md transition active:scale-[0.98] active:opacity-90 disabled:opacity-55">
+              {loading ? (
+                <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              ) : (
+                "가입하기"
+              )}
+            </button>
+          </form>
 
-        <p className={styles.loginLink}>
-          이미 계정이 있으신가요?{" "}
-          <Link to="/login" className={styles.link}>
-            로그인
-          </Link>
-        </p>
+          <p className="mt-6 text-center text-sm text-slate-400">
+            이미 계정이 있으신가요?{" "}
+            <Link
+              to="/login"
+              className="font-semibold text-[#4a521e] active:opacity-70">
+              로그인
+            </Link>
+          </p>
+        </main>
       </div>
 
       {toast && (
@@ -271,11 +243,13 @@ function Field({
   required
 }: FieldProps) {
   return (
-    <div className={styles.field}>
-      <label htmlFor={name} className={styles.label}>
+    <div className="flex flex-col gap-1.5">
+      <label
+        htmlFor={name}
+        className="text-[11px] font-semibold tracking-[0.08em] text-[#89943d] uppercase">
         {label}
         {required && (
-          <span className={styles.required} aria-hidden="true">
+          <span className="ml-0.5 text-[#4a521e]" aria-hidden="true">
             *
           </span>
         )}
@@ -287,13 +261,20 @@ function Field({
         placeholder={placeholder}
         value={value}
         onChange={onChange}
-        className={`${styles.input} ${error ? styles.inputError : ""}`}
         aria-invalid={!!error}
         aria-describedby={error ? `${name}-error` : undefined}
         required={required}
+        className={`h-[52px] w-full rounded-2xl border bg-white px-4 text-[16px] text-slate-800 transition outline-none placeholder:text-slate-300 ${
+          error
+            ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+            : "border-[#89943d]/20 focus:border-[#89943d]/60 focus:ring-2 focus:ring-[#89943d]/10"
+        }`}
       />
       {error && (
-        <p id={`${name}-error`} className={styles.errorMsg} role="alert">
+        <p
+          id={`${name}-error`}
+          className="pl-1 text-[12px] text-red-500"
+          role="alert">
           {error}
         </p>
       )}
