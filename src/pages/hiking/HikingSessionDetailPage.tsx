@@ -1,0 +1,240 @@
+import { useMemo } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useHikingSessionDetail } from "@/features/hiking/hooks/useHiking";
+
+export default function HikingSessionDetailPage() {
+  const navigate = useNavigate();
+  const { sessionId } = useParams();
+
+  const numericSessionId = useMemo(() => {
+    if (!sessionId) return null;
+    const parsed = Number(sessionId);
+    return Number.isNaN(parsed) ? null : parsed;
+  }, [sessionId]);
+
+  const { isLoading, isError } = useHikingSessionDetail(numericSessionId);
+
+  return (
+    <div className="min-h-screen bg-[#f7f7f6] text-slate-900">
+      <div className="mx-auto min-h-screen w-full max-w-md bg-[#f7f7f6]">
+        <header className="sticky top-0 z-30 border-b border-[#89943d]/10 bg-white/90 backdrop-blur">
+          <div className="flex items-center justify-between px-4 py-3">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[#4a521e] transition hover:bg-[#89943d]/10"
+              aria-label="뒤로가기">
+              <span className="text-xl">←</span>
+            </button>
+
+            <div className="flex flex-1 flex-col items-center px-2">
+              <p className="text-[11px] font-semibold tracking-[0.18em] text-[#89943d] uppercase">
+                ORDA
+              </p>
+              <h1 className="text-base font-bold tracking-tight text-[#2f3415]">
+                등산 세션
+              </h1>
+            </div>
+
+            <button
+              type="button"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[#4a521e] transition hover:bg-[#89943d]/10"
+              aria-label="더보기">
+              <span className="text-xl">⋯</span>
+            </button>
+          </div>
+        </header>
+
+        <main className="pb-6">
+          {numericSessionId == null ? (
+            <div className="px-4 pt-4">
+              <section className="rounded-3xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700 shadow-sm">
+                잘못된 세션 ID입니다.
+              </section>
+            </div>
+          ) : null}
+
+          {isLoading ? (
+            <div className="px-4 pt-4">
+              <section className="rounded-3xl border border-[#89943d]/10 bg-white px-4 py-4 text-sm text-slate-500 shadow-sm">
+                세션 정보를 불러오는 중...
+              </section>
+            </div>
+          ) : null}
+
+          {isError ? (
+            <div className="px-4 pt-4">
+              <section className="rounded-3xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700 shadow-sm">
+                세션 상세 정보를 불러오지 못했습니다.
+              </section>
+            </div>
+          ) : null}
+
+          <section className="relative">
+            <div className="relative h-[calc(100dvh-65px)] min-h-[520px] overflow-hidden bg-gradient-to-br from-[#dfe6ba] via-[#eef1dc] to-[#f7f7f6]">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(137,148,61,0.16),_transparent_55%)]" />
+              <div className="absolute inset-0 bg-[linear-gradient(to_bottom,_rgba(255,255,255,0.18),_rgba(255,255,255,0)_28%,_rgba(0,0,0,0.1)_100%)]" />
+
+              <div className="absolute top-4 right-4 left-4 z-10">
+                <div className="rounded-full border border-white/35 bg-white/78 px-3 py-2 text-[11px] font-medium text-[#4a521e] shadow-md backdrop-blur-md">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span>2026.03.26</span>
+                    <span className="text-[#89943d]/70">•</span>
+                    <span>09:10 ~ 12:55</span>
+                    <span className="text-[#89943d]/70">•</span>
+                    <span className="font-semibold text-[#4a521e]">완료</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
+                <div>
+                  <p className="text-base font-semibold text-[#4a521e]">
+                    트랙 지도가 기본으로 깔리는 영역
+                  </p>
+                  <p className="mt-2 text-sm text-slate-600">
+                    다음 단계에서 CommonMap과 GPS 트랙을 연결
+                  </p>
+                </div>
+              </div>
+
+              <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#f7f7f6] via-[#f7f7f6]/70 to-transparent" />
+            </div>
+
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-4 pb-4">
+              <section className="pointer-events-auto overflow-hidden rounded-3xl border border-[#89943d]/10 bg-white shadow-xl shadow-[#4a521e]/10">
+                <div className="border-b border-[#89943d]/8 bg-gradient-to-r from-[#89943d]/12 via-[#89943d]/6 to-transparent px-4 py-3">
+                  <p className="text-[11px] font-semibold tracking-[0.04em] text-[#89943d]">
+                    핵심 요약
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 px-4 py-4">
+                  <div className="rounded-2xl bg-[#f7f7f6] px-3 py-3">
+                    <p className="text-[11px] font-semibold text-[#89943d]">
+                      거리
+                    </p>
+                    <div className="mt-2 h-5 w-16 rounded-full bg-slate-200" />
+                  </div>
+
+                  <div className="rounded-2xl bg-[#f7f7f6] px-3 py-3">
+                    <p className="text-[11px] font-semibold text-[#89943d]">
+                      시간
+                    </p>
+                    <div className="mt-2 h-5 w-16 rounded-full bg-slate-200" />
+                  </div>
+
+                  <div className="rounded-2xl bg-[#f7f7f6] px-3 py-3">
+                    <p className="text-[11px] font-semibold text-[#89943d]">
+                      상승
+                    </p>
+                    <div className="mt-2 h-5 w-16 rounded-full bg-slate-200" />
+                  </div>
+
+                  <div className="rounded-2xl bg-[#f7f7f6] px-3 py-3">
+                    <p className="text-[11px] font-semibold text-[#89943d]">
+                      하강
+                    </p>
+                    <div className="mt-2 h-5 w-16 rounded-full bg-slate-200" />
+                  </div>
+                </div>
+              </section>
+            </div>
+          </section>
+
+          <div className="space-y-4 px-4 pt-4">
+            <section className="overflow-hidden rounded-3xl border border-[#89943d]/10 bg-white shadow-sm">
+              <div className="flex items-center justify-between px-5 py-4">
+                <div>
+                  <p className="text-[11px] font-semibold tracking-[0.04em] text-[#89943d]">
+                    고도 프로파일
+                  </p>
+                  <h2 className="mt-1 text-lg font-bold tracking-tight text-[#2f3415]">
+                    고도 변화
+                  </h2>
+                </div>
+                <span className="rounded-full bg-[#89943d]/10 px-3 py-1 text-[11px] font-semibold text-[#4a521e]">
+                  최고점
+                </span>
+              </div>
+
+              <div className="px-5 pb-5">
+                <div className="rounded-3xl border border-[#89943d]/10 bg-[#f7f7f6] px-4 py-4">
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-[#4a521e]">
+                        프로파일 영역 자리
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        다음 단계에서 SVG 기반 그래프 연결
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 h-28 rounded-2xl bg-white px-3 py-3">
+                    <svg
+                      viewBox="0 0 320 120"
+                      className="h-full w-full"
+                      preserveAspectRatio="none">
+                      <defs>
+                        <linearGradient
+                          id="elevationSkeleton"
+                          x1="0%"
+                          y1="0%"
+                          x2="0%"
+                          y2="100%">
+                          <stop
+                            offset="0%"
+                            stopColor="#89943d"
+                            stopOpacity="0.28"
+                          />
+                          <stop
+                            offset="100%"
+                            stopColor="#89943d"
+                            stopOpacity="0"
+                          />
+                        </linearGradient>
+                      </defs>
+                      <path
+                        d="M0,92 L0,70 L40,62 L80,38 L120,58 L160,34 L200,50 L240,24 L280,46 L320,30 L320,120 L0,120 Z"
+                        fill="url(#elevationSkeleton)"
+                      />
+                      <path
+                        d="M0,70 L40,62 L80,38 L120,58 L160,34 L200,50 L240,24 L280,46 L320,30"
+                        fill="none"
+                        stroke="#89943d"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section className="overflow-hidden rounded-3xl border border-[#89943d]/10 bg-white shadow-sm">
+              <div className="bg-gradient-to-r from-[#4a521e] to-[#89943d] px-5 py-5 text-white">
+                <p className="text-[11px] font-semibold tracking-[0.04em] text-white/80">
+                  3D 리플레이
+                </p>
+                <h2 className="mt-1 text-lg font-bold tracking-tight">
+                  경로 다시 보기
+                </h2>
+                <p className="mt-2 text-sm text-white/80">
+                  다음 단계에서 저장된 GPS 트랙 기반 재생 화면으로 연결할 예정
+                </p>
+
+                <button
+                  type="button"
+                  className="mt-4 w-full rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-[#4a521e] transition hover:bg-white/90">
+                  3D 리플레이 보기
+                </button>
+              </div>
+            </section>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
