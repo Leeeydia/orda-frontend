@@ -1,3 +1,9 @@
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
+
 export interface HikingStartRequest {
   userId: number;
 }
@@ -24,9 +30,90 @@ export interface SummitVerifyResponse {
   summitName: string;
   distanceM: number;
 }
+
 export interface GpsTrackRequest {
   latitude: number;
   longitude: number;
   elevationM: number | null;
   accuracyM: number | null;
+}
+
+export interface HikingSessionResponse {
+  sessionId: number;
+  userId: number;
+  startedAt: string;
+  endedAt: string | null;
+  totalDistanceM: number | null;
+  totalElevationGainM: number | null;
+  totalElevationLossM: number | null;
+  totalDurationSec: number | null;
+}
+
+export interface HikingTrackFeatureProperties {
+  trackId: number;
+  sequenceNum: number;
+  elevationM: number | null;
+  accuracyM: number | null;
+  recordedAt: string;
+}
+
+export interface HikingTrackFeature {
+  type: "Feature";
+  geometry: {
+    type: "Point";
+    coordinates: [number, number];
+  };
+  properties: HikingTrackFeatureProperties;
+}
+
+export interface HikingTrackFeatureCollection {
+  type: "FeatureCollection";
+  features: HikingTrackFeature[];
+}
+
+export interface ElevationProfileSummaryResponse {
+  totalDistanceMeters: number;
+  minElevationMeters: number | null;
+  maxElevationMeters: number | null;
+  totalElevationGainMeters: number;
+  totalElevationLossMeters: number;
+  pointCount: number;
+}
+
+export interface ElevationProfilePointResponse {
+  sequenceNum: number;
+  latitude: number;
+  longitude: number;
+  elevationMeters: number;
+  segmentDistanceMeters: number;
+  cumulativeDistanceMeters: number;
+  elevationDiffMeters: number;
+}
+
+export interface ElevationProfileResponse {
+  sessionId: number;
+  summary: ElevationProfileSummaryResponse;
+  points: ElevationProfilePointResponse[];
+}
+
+export interface ReplaySummaryResponse {
+  totalDistanceMeters: number;
+  totalElevationGainMeters: number;
+  totalElevationLossMeters: number;
+  totalElapsedSeconds: number;
+}
+
+export interface ReplayPointResponse {
+  latitude: number;
+  longitude: number;
+  elevationM: number;
+  distanceFromStartM: number;
+  actualElapsedSeconds: number;
+  replayElapsedSeconds: number;
+}
+
+export interface ReplayResponse {
+  sessionId: number;
+  summary: ReplaySummaryResponse;
+  points: ReplayPointResponse[];
 }
