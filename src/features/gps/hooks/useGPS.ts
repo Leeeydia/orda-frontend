@@ -2,7 +2,8 @@
  * 📄 src/features/gps/hooks/useGPS.ts
  *
  * 변경 사항:
- *  - distanceKm, elevGain, currentAltitude 계산 및 반환 추가
+ *  - calcElevGain: 최고-최저 범위 → 상승 구간만 누적으로 수정
+ *  - console.log 제거
  */
 
 import { useState, useRef, useCallback } from "react";
@@ -14,7 +15,7 @@ const EMPTY_GEOJSON: FeatureCollection = {
   features: []
 };
 
-function calcDistanceKm(trail: GpsPoint[]): number {
+const calcDistanceKm = (trail: GpsPoint[]): number => {
   if (trail.length < 2) return 0;
   const total = trail.reduce((acc, p, i) => {
     if (i === 0) return 0;
@@ -30,24 +31,30 @@ function calcDistanceKm(trail: GpsPoint[]): number {
     return acc + R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }, 0);
   return +total.toFixed(2);
-}
+};
 
-function calcElevGain(trail: GpsPoint[]): number {
+// 상승 구간만 누적 (내려갔다 올라간 구간도 정확히 반영)
+const calcElevGain = (trail: GpsPoint[]): number => {
   const elevations = trail
     .map((p) => p.altitude)
     .filter((a): a is number => a != null);
   if (elevations.length < 2) return 0;
-  return Math.round(Math.max(...elevations) - Math.min(...elevations));
-}
+  let gain = 0;
+  for (let i = 1; i < elevations.length; i++) {
+    const diff = elevations[i] - elevations[i - 1];
+    if (diff > 0) gain += diff;
+  }
+  return Math.round(gain);
+};
 
-export function useGPS(): GpsState & {
+export const useGPS = (): GpsState & {
   geoJson: FeatureCollection;
   distanceKm: number;
   elevGain: number;
   currentAltitude: number | null;
   start: (onPoint?: (point: GpsPoint) => void) => void;
   stop: () => void;
-} {
+} => {
   const [currentPos, setCurrentPos] = useState<GpsPoint | null>(null);
   const [trail, setTrail] = useState<GpsPoint[]>([]);
   const [isTracking, setIsTracking] = useState(false);
@@ -108,7 +115,6 @@ export function useGPS(): GpsState & {
             accuracy: pos.coords.accuracy,
             timestamp: pos.timestamp
           };
-          console.log("📍 GPS 수신:", point);
           trailRef.current.push(point);
           const newTrail = [...trailRef.current];
 
@@ -152,4 +158,4 @@ export function useGPS(): GpsState & {
     start,
     stop
   };
-}
+};
