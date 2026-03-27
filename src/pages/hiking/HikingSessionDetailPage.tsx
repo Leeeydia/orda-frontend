@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import HikingSessionHeader from "@/features/hiking/components/HikingSessionHeader";
 import HikingSummaryCards from "@/features/hiking/components/HikingSummaryCards";
+import HikingTrackSection from "@/features/hiking/components/HikingTrackSection";
 import { useHikingSessionDetail } from "@/features/hiking/hooks/useHiking";
 
 export default function HikingSessionDetailPage() {
@@ -14,7 +15,7 @@ export default function HikingSessionDetailPage() {
     return Number.isNaN(parsed) ? null : parsed;
   }, [sessionId]);
 
-  const { session, elevationProfile, isLoading, isError } =
+  const { session, tracks, elevationProfile, isLoading, isError } =
     useHikingSessionDetail(numericSessionId);
 
   return (
@@ -78,19 +79,10 @@ export default function HikingSessionDetailPage() {
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(137,148,61,0.16),_transparent_55%)]" />
               <div className="absolute inset-0 bg-[linear-gradient(to_bottom,_rgba(255,255,255,0.18),_rgba(255,255,255,0)_28%,_rgba(0,0,0,0.1)_100%)]" />
 
-              <div className="absolute top-4 right-4 left-4 z-10">
-                <HikingSessionHeader session={session} />
-              </div>
+              <HikingTrackSection tracks={tracks} />
 
-              <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
-                <div>
-                  <p className="text-base font-semibold text-[#4a521e]">
-                    트랙 지도가 기본으로 깔리는 영역
-                  </p>
-                  <p className="mt-2 text-sm text-slate-600">
-                    다음 단계에서 CommonMap과 GPS 트랙을 연결
-                  </p>
-                </div>
+              <div className="absolute top-4 right-4 left-4 z-30">
+                <HikingSessionHeader session={session} />
               </div>
 
               <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#f7f7f6] via-[#f7f7f6]/70 to-transparent" />
