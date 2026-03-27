@@ -1,18 +1,9 @@
 /**
  * 📄 src/pages/hiking/HikingRecordPage.tsx
  *
- * useHiking()에서 가져오는 값:
- *  - geoJson         → GPS 경로 GeoJSON (지도 렌더링)
- *  - currentPos      → 현재 위치 (위도/경도/고도/정확도)
- *  - isLoading       → API 호출 중 여부 (버튼 disabled)
- *  - error           → 에러 메시지
- *  - trail           → GPS 포인트 배열 (고도 차트용)
- *  - distanceKm      → 누적 이동 거리
- *  - elevGain        → 고도 획득 (최고 - 최저)
- *  - currentAltitude → 현재 해발 고도
- *  - start()         → 등산 시작 (API + GPS 수신 시작)
- *  - end()           → 등산 종료 (API + GPS 중단)
- *  - verify()        → 정상 인증 (현재 위치로 API 호출)
+ * 변경 사항:
+ *  - handleStart: start() 반환값(boolean)으로 상태 전환 판단
+ *  - handleEnd: end() 실패 시 finished 전환 안 되도록 try/catch 처리
  */
 
 import { useState, useEffect, useRef } from "react";
@@ -20,7 +11,6 @@ import GpsTrackingMap from "@/features/gps/components/GpsTrackingMap";
 import { useHiking } from "@/features/hiking/hooks/useHiking";
 import type { GpsPoint } from "@/features/gps/types/gps.types";
 
-// ── 경과 시간 훅 ─────────────────────────────────
 const useElapsedTime = (isRunning: boolean) => {
   const [seconds, setSeconds] = useState(0);
   const startTimeRef = useRef<number | null>(null);
@@ -53,7 +43,6 @@ const formatTime = (totalSeconds: number): string => {
   return `${h}:${m}:${s}`;
 };
 
-// ── 고도 프로파일 차트 ────────────────────────────
 const ElevationChart = ({ trail }: { trail: GpsPoint[] }) => {
   const elevations = trail
     .map((p) => p.altitude)
@@ -103,7 +92,6 @@ const ElevationChart = ({ trail }: { trail: GpsPoint[] }) => {
   );
 };
 
-// ── 통계 아이템 ──────────────────────────────────
 const StatItem = ({
   label,
   value,
@@ -131,7 +119,6 @@ const StatItem = ({
 
 type PageState = "idle" | "hiking" | "finished";
 
-// ── 메인 페이지 ──────────────────────────────────
 const HikingRecordPage = () => {
   const {
     geoJson,
@@ -158,9 +145,10 @@ const HikingRecordPage = () => {
 
   const elapsedSeconds = useElapsedTime(pageState === "hiking");
 
+  // start() 반환값(boolean)으로 성공 여부 판단
   const handleStart = async () => {
-    await start();
-    if (!error) setPageState("hiking");
+    const success = await start();
+    if (success) setPageState("hiking");
   };
 
   const handleVerify = async () => {
@@ -179,10 +167,16 @@ const HikingRecordPage = () => {
     }
   };
 
+  // end() 실패 시 finished 전환 안 되도록 try/catch 처리
   const handleEnd = async () => {
-    await end();
-    setPageState("finished");
-    setShowFinishConfirm(false);
+    try {
+      await end();
+      setPageState("finished");
+      setShowFinishConfirm(false);
+    } catch {
+      // error는 useHiking 내부에서 setError로 처리됨
+      setShowFinishConfirm(false);
+    }
   };
 
   return (
@@ -241,7 +235,6 @@ const HikingRecordPage = () => {
 
           {(pageState === "hiking" || pageState === "finished") && (
             <>
-              {/* 타이머 */}
               <div className="flex flex-col items-center">
                 <span className="mb-1 text-xs font-bold tracking-[0.2em] text-slate-400 uppercase">
                   Time
@@ -251,7 +244,6 @@ const HikingRecordPage = () => {
                 </span>
               </div>
 
-              {/* 통계 그리드 */}
               <div className="grid grid-cols-3 gap-4 border-y border-slate-50 py-6 dark:border-slate-800">
                 <StatItem
                   label="이동 거리"
@@ -259,7 +251,7 @@ const HikingRecordPage = () => {
                   unit="km"
                 />
                 <StatItem
-                  label="상승 고도"
+                  label="누적 상승"
                   value={elevGain}
                   unit="m"
                   bordered="both"
@@ -275,10 +267,9 @@ const HikingRecordPage = () => {
                 />
               </div>
 
-              {/* 고도 프로파일 */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between px-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
-                  <span>고도 그래프</span>
+                  <span>고도 변화</span>
                   {pageState === "hiking" && (
                     <span className="text-[#89943d]">Live</span>
                   )}
@@ -286,7 +277,6 @@ const HikingRecordPage = () => {
                 <ElevationChart trail={trail} />
               </div>
 
-              {/* 정상 인증 결과 */}
               {summitResult && (
                 <div
                   className={`rounded-xl px-4 py-3 text-sm font-medium ${
@@ -302,14 +292,12 @@ const HikingRecordPage = () => {
             </>
           )}
 
-          {/* 에러 */}
           {error && (
             <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
               {error}
             </div>
           )}
 
-          {/* ── 액션 버튼 ──────────────────────────── */}
           {pageState === "idle" && (
             <button
               onClick={handleStart}
