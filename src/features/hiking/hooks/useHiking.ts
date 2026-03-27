@@ -105,13 +105,18 @@ export const useHiking = () => {
 
   const end = async (): Promise<boolean> => {
     if (!sessionId) return false;
+
+    // beforeunload 중복 호출 방지를 위해 ref를 먼저 초기화
+    const currentSessionId = sessionId;
+    sessionIdRef.current = null;
+
     try {
       setIsLoading(true);
       setError(null);
 
       // 마지막 포인트 무조건 저장
       if (gps.currentPos) {
-        await saveGpsTrack(sessionId, {
+        await saveGpsTrack(currentSessionId, {
           latitude: gps.currentPos.lat,
           longitude: gps.currentPos.lng,
           elevationM: gps.currentPos.altitude ?? null,
@@ -120,10 +125,9 @@ export const useHiking = () => {
         setSavedPointCount((prev) => prev + 1);
       }
 
-      await endHiking(sessionId);
+      await endHiking(currentSessionId);
       gps.stop();
       setSessionId(null);
-      sessionIdRef.current = null; // ref도 초기화
       lastSavedAt.current = 0;
       isFirstPoint.current = true;
       setSavedPointCount(0);
