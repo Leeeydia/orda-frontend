@@ -2,11 +2,12 @@
  * 📄 src/features/hiking/hooks/useHiking.ts
  *
  * 변경 사항:
- *  - 첫 번째 GPS 포인트 무조건 저장 (start_point)
- *  - 등산 종료 시 마지막 GPS 포인트 무조건 저장 (end_point)
+ *  - start(): 성공 시 true, 실패 시 false 반환
+ *  - end(): 성공 시 true, 실패 시 throw
+ *  - beforeunload/visibilitychange → sendBeacon으로 페이지 닫힐 때 자동 종료
  */
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useGPS } from "@/features/gps/hooks/useGPS";
 import {
@@ -30,14 +31,32 @@ export const useHiking = () => {
 
   const lastSavedAt = useRef<number>(0);
   const isFirstPoint = useRef<boolean>(true);
+  const sessionIdRef = useRef<number | null>(null); // 이벤트 핸들러에서 최신 sessionId 참조용
 
-  const start = async () => {
+  // 페이지 닫기 / 모바일 백그라운드 전환 시 자동 종료
+  useEffect(() => {
+    const sendEndBeacon = () => {
+      if (sessionIdRef.current) {
+        navigator.sendBeacon(`/api/hiking/${sessionIdRef.current}/end`);
+      }
+    };
+
+    // 탭 닫기, 새로고침 시에만 자동 종료
+    window.addEventListener("beforeunload", sendEndBeacon);
+
+    return () => {
+      window.removeEventListener("beforeunload", sendEndBeacon);
+    };
+  }, []);
+
+  const start = async (): Promise<boolean> => {
     try {
       setIsLoading(true);
       setError(null);
       const res = await startHiking({ userId: 1 }); // TODO: auth 연동 후 교체
       const newSessionId = res.sessionId;
       setSessionId(newSessionId);
+      sessionIdRef.current = newSessionId; // ref에도 저장
 
       lastSavedAt.current = 0;
       isFirstPoint.current = true;
@@ -46,7 +65,7 @@ export const useHiking = () => {
       gps.start((point) => {
         const now = Date.now();
 
-        // 첫 번째 포인트는 무조건 저장 (start_point)
+        // 첫 번째 포인트 무조건 저장
         if (isFirstPoint.current) {
           isFirstPoint.current = false;
           lastSavedAt.current = now;
@@ -61,7 +80,7 @@ export const useHiking = () => {
           return;
         }
 
-        // 이후 5초 간격으로 저장
+        // 이후 5초 간격 저장
         if (now - lastSavedAt.current < SAVE_INTERVAL_MS) return;
         lastSavedAt.current = now;
 
@@ -74,20 +93,23 @@ export const useHiking = () => {
           .then(() => setSavedPointCount((prev) => prev + 1))
           .catch((e) => console.error("GPS 저장 실패:", e));
       });
+
+      return true;
     } catch {
       setError("등산 시작에 실패했습니다.");
+      return false;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const end = async () => {
-    if (!sessionId) return;
+  const end = async (): Promise<boolean> => {
+    if (!sessionId) return false;
     try {
       setIsLoading(true);
       setError(null);
 
-      // 마지막 포인트 무조건 저장 (end_point)
+      // 마지막 포인트 무조건 저장
       if (gps.currentPos) {
         await saveGpsTrack(sessionId, {
           latitude: gps.currentPos.lat,
@@ -101,11 +123,15 @@ export const useHiking = () => {
       await endHiking(sessionId);
       gps.stop();
       setSessionId(null);
+      sessionIdRef.current = null; // ref도 초기화
       lastSavedAt.current = 0;
       isFirstPoint.current = true;
       setSavedPointCount(0);
+
+      return true;
     } catch {
       setError("등산 종료에 실패했습니다.");
+      throw new Error("등산 종료에 실패했습니다.");
     } finally {
       setIsLoading(false);
     }
@@ -127,7 +153,6 @@ export const useHiking = () => {
   };
 
   return {
-    // GPS 상태
     geoJson: gps.geoJson,
     currentPos: gps.currentPos,
     isTracking: gps.isTracking,
@@ -135,12 +160,10 @@ export const useHiking = () => {
     distanceKm: gps.distanceKm,
     elevGain: gps.elevGain,
     currentAltitude: gps.currentAltitude,
-    // 등산 상태
     sessionId,
     isLoading,
     error: error ?? gps.error,
     savedPointCount,
-    // 액션
     start,
     end,
     verify
