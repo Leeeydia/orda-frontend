@@ -2,9 +2,9 @@
  * 📄 src/features/hiking/hooks/useHiking.ts
  *
  * 변경 사항:
- *  - start(): 성공 시 true, 실패 시 false 반환
- *  - end(): 성공 시 true, 실패 시 throw
- *  - beforeunload/visibilitychange → sendBeacon으로 페이지 닫힐 때 자동 종료
+ *  - start(): GPS 첫 fix 확보 후에만 startHiking API 호출 + true 반환
+ *    → GPS 못 잡혔는데 hiking 상태로 전환되는 문제 방지
+ *  - end(): 실패 시 sessionIdRef 복구로 beforeunload fallback 보장
  */
 
 import { useState, useRef, useEffect } from "react";
@@ -31,9 +31,9 @@ export const useHiking = () => {
 
   const lastSavedAt = useRef<number>(0);
   const isFirstPoint = useRef<boolean>(true);
-  const sessionIdRef = useRef<number | null>(null); // 이벤트 핸들러에서 최신 sessionId 참조용
+  const sessionIdRef = useRef<number | null>(null);
 
-  // 페이지 닫기 / 모바일 백그라운드 전환 시 자동 종료
+  // 페이지 닫기 시 자동 종료 (beforeunload만 적용, 앱 전환은 등산 유지)
   useEffect(() => {
     const sendEndBeacon = () => {
       if (sessionIdRef.current) {
@@ -41,42 +41,36 @@ export const useHiking = () => {
       }
     };
 
-    // 탭 닫기, 새로고침 시에만 자동 종료
     window.addEventListener("beforeunload", sendEndBeacon);
-
     return () => {
       window.removeEventListener("beforeunload", sendEndBeacon);
     };
   }, []);
 
+  // GPS 첫 fix 확보 후에만 세션 생성 + hiking 전환
   const start = async (): Promise<boolean> => {
     try {
       setIsLoading(true);
       setError(null);
-      const res = await startHiking({ userId: 1 }); // TODO: auth 연동 후 교체
-      const newSessionId = res.sessionId;
-      setSessionId(newSessionId);
-      sessionIdRef.current = newSessionId; // ref에도 저장
 
-      lastSavedAt.current = 0;
-      isFirstPoint.current = true;
-      setSavedPointCount(0);
-
-      gps.start((point) => {
+      // 1. GPS 첫 fix 확보 대기 (실패 시 reject → catch로 이동)
+      await gps.start((point) => {
         const now = Date.now();
 
         // 첫 번째 포인트 무조건 저장
         if (isFirstPoint.current) {
           isFirstPoint.current = false;
           lastSavedAt.current = now;
-          saveGpsTrack(newSessionId, {
-            latitude: point.lat,
-            longitude: point.lng,
-            elevationM: point.altitude ?? null,
-            accuracyM: point.accuracy
-          })
-            .then(() => setSavedPointCount((prev) => prev + 1))
-            .catch((e) => console.error("GPS 저장 실패 (첫 포인트):", e));
+          if (sessionIdRef.current) {
+            saveGpsTrack(sessionIdRef.current, {
+              latitude: point.lat,
+              longitude: point.lng,
+              elevationM: point.altitude ?? null,
+              accuracyM: point.accuracy
+            })
+              .then(() => setSavedPointCount((prev) => prev + 1))
+              .catch((e) => console.error("GPS 저장 실패 (첫 포인트):", e));
+          }
           return;
         }
 
@@ -84,19 +78,32 @@ export const useHiking = () => {
         if (now - lastSavedAt.current < SAVE_INTERVAL_MS) return;
         lastSavedAt.current = now;
 
-        saveGpsTrack(newSessionId, {
-          latitude: point.lat,
-          longitude: point.lng,
-          elevationM: point.altitude ?? null,
-          accuracyM: point.accuracy
-        })
-          .then(() => setSavedPointCount((prev) => prev + 1))
-          .catch((e) => console.error("GPS 저장 실패:", e));
+        if (sessionIdRef.current) {
+          saveGpsTrack(sessionIdRef.current, {
+            latitude: point.lat,
+            longitude: point.lng,
+            elevationM: point.altitude ?? null,
+            accuracyM: point.accuracy
+          })
+            .then(() => setSavedPointCount((prev) => prev + 1))
+            .catch((e) => console.error("GPS 저장 실패:", e));
+        }
       });
+
+      // 2. GPS fix 확보 후 세션 생성
+      const res = await startHiking({ userId: 1 }); // TODO: auth 연동 후 교체
+      const newSessionId = res.sessionId;
+      setSessionId(newSessionId);
+      sessionIdRef.current = newSessionId;
+
+      lastSavedAt.current = 0;
+      isFirstPoint.current = true;
+      setSavedPointCount(0);
 
       return true;
     } catch {
-      setError("등산 시작에 실패했습니다.");
+      setError("등산 시작에 실패했습니다. GPS 권한을 확인해주세요.");
+      gps.stop();
       return false;
     } finally {
       setIsLoading(false);
@@ -134,6 +141,8 @@ export const useHiking = () => {
 
       return true;
     } catch {
+      // 실패 시 ref 복구 → beforeunload fallback 및 재시도 가능하도록
+      sessionIdRef.current = currentSessionId;
       setError("등산 종료에 실패했습니다.");
       throw new Error("등산 종료에 실패했습니다.");
     } finally {
