@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import HikingSessionHeader from "@/features/hiking/components/HikingSessionHeader";
+import HikingSummaryCards from "@/features/hiking/components/HikingSummaryCards";
 import { useHikingSessionDetail } from "@/features/hiking/hooks/useHiking";
 
 export default function HikingSessionDetailPage() {
@@ -12,7 +14,8 @@ export default function HikingSessionDetailPage() {
     return Number.isNaN(parsed) ? null : parsed;
   }, [sessionId]);
 
-  const { isLoading, isError } = useHikingSessionDetail(numericSessionId);
+  const { session, elevationProfile, isLoading, isError } =
+    useHikingSessionDetail(numericSessionId);
 
   return (
     <div className="min-h-screen bg-[#f7f7f6] text-slate-900">
@@ -76,15 +79,7 @@ export default function HikingSessionDetailPage() {
               <div className="absolute inset-0 bg-[linear-gradient(to_bottom,_rgba(255,255,255,0.18),_rgba(255,255,255,0)_28%,_rgba(0,0,0,0.1)_100%)]" />
 
               <div className="absolute top-4 right-4 left-4 z-10">
-                <div className="rounded-full border border-white/35 bg-white/78 px-3 py-2 text-[11px] font-medium text-[#4a521e] shadow-md backdrop-blur-md">
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <span>2026.03.26</span>
-                    <span className="text-[#89943d]/70">•</span>
-                    <span>09:10 ~ 12:55</span>
-                    <span className="text-[#89943d]/70">•</span>
-                    <span className="font-semibold text-[#4a521e]">완료</span>
-                  </div>
-                </div>
+                <HikingSessionHeader session={session} />
               </div>
 
               <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
@@ -102,43 +97,12 @@ export default function HikingSessionDetailPage() {
             </div>
 
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-4 pb-4">
-              <section className="pointer-events-auto overflow-hidden rounded-3xl border border-[#89943d]/10 bg-white shadow-xl shadow-[#4a521e]/10">
-                <div className="border-b border-[#89943d]/8 bg-gradient-to-r from-[#89943d]/12 via-[#89943d]/6 to-transparent px-4 py-3">
-                  <p className="text-[11px] font-semibold tracking-[0.04em] text-[#89943d]">
-                    핵심 요약
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 px-4 py-4">
-                  <div className="rounded-2xl bg-[#f7f7f6] px-3 py-3">
-                    <p className="text-[11px] font-semibold text-[#89943d]">
-                      거리
-                    </p>
-                    <div className="mt-2 h-5 w-16 rounded-full bg-slate-200" />
-                  </div>
-
-                  <div className="rounded-2xl bg-[#f7f7f6] px-3 py-3">
-                    <p className="text-[11px] font-semibold text-[#89943d]">
-                      시간
-                    </p>
-                    <div className="mt-2 h-5 w-16 rounded-full bg-slate-200" />
-                  </div>
-
-                  <div className="rounded-2xl bg-[#f7f7f6] px-3 py-3">
-                    <p className="text-[11px] font-semibold text-[#89943d]">
-                      상승
-                    </p>
-                    <div className="mt-2 h-5 w-16 rounded-full bg-slate-200" />
-                  </div>
-
-                  <div className="rounded-2xl bg-[#f7f7f6] px-3 py-3">
-                    <p className="text-[11px] font-semibold text-[#89943d]">
-                      하강
-                    </p>
-                    <div className="mt-2 h-5 w-16 rounded-full bg-slate-200" />
-                  </div>
-                </div>
-              </section>
+              <div className="pointer-events-auto">
+                <HikingSummaryCards
+                  session={session}
+                  elevationProfile={elevationProfile}
+                />
+              </div>
             </div>
           </section>
 
