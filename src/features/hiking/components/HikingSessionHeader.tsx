@@ -10,7 +10,7 @@ export default function HikingSessionHeader({
 }: HikingSessionHeaderProps) {
   if (!session) {
     return (
-      <div className="rounded-full border border-white/35 bg-white/78 px-3 py-2 text-[11px] font-medium text-[#4a521e] shadow-md backdrop-blur-md">
+      <div className="rounded-full border border-white/35 bg-white/90 px-3 py-2 text-[11px] font-medium text-[#4a521e] shadow-md">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="inline-block h-3 w-20 rounded-full bg-slate-200" />
           <span className="text-[#89943d]/70">•</span>
