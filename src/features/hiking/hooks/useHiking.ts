@@ -11,7 +11,7 @@ import {
   getElevationProfile
 } from "../api/hikingApi";
 
-const SAVE_INTERVAL_MS = 5000; // 5초마다 저장
+const SAVE_INTERVAL_MS = 5000;
 
 export function useHiking() {
   const gps = useGPS();
@@ -26,7 +26,7 @@ export function useHiking() {
     try {
       setIsLoading(true);
       setError(null);
-      const res = await startHiking({ userId: 1 }); // TODO: auth 연동 후 교체
+      const res = await startHiking({ userId: 1 });
       const newSessionId = res.sessionId;
       setSessionId(newSessionId);
 
@@ -75,12 +75,11 @@ export function useHiking() {
     if (!sessionId || !gps.currentPos) return;
     try {
       setError(null);
-      const res = await verifySummit({
+      return await verifySummit({
         sessionId,
         latitude: gps.currentPos.lat,
         longitude: gps.currentPos.lng
       });
-      return res;
     } catch {
       setError("정상 인증에 실패했습니다.");
     }
@@ -104,19 +103,25 @@ export function useHikingSessionDetail(sessionId: number | null) {
   const sessionQuery = useQuery({
     queryKey: ["hiking", "session", sessionId],
     queryFn: () => getHikingSession(sessionId as number),
-    enabled: sessionId != null
+    enabled: sessionId != null,
+    staleTime: 1000 * 60,
+    placeholderData: (prev) => prev
   });
 
   const tracksQuery = useQuery({
     queryKey: ["hiking", "tracks", sessionId],
     queryFn: () => getHikingTracks(sessionId as number),
-    enabled: sessionId != null
+    enabled: sessionId != null,
+    staleTime: 1000 * 60,
+    placeholderData: (prev) => prev
   });
 
   const elevationProfileQuery = useQuery({
     queryKey: ["hiking", "elevation-profile", sessionId],
     queryFn: () => getElevationProfile(sessionId as number),
-    enabled: sessionId != null
+    enabled: sessionId != null,
+    staleTime: 1000 * 60,
+    placeholderData: (prev) => prev
   });
 
   return {
