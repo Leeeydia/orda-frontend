@@ -2,17 +2,17 @@
  * 📄 src/features/gps/hooks/useGPS.ts
  *
  * 변경 사항:
- *  - calcElevGain: 최고-최저 범위 → 상승 구간만 누적으로 수정
- *  - console.log 제거
+ *  - start(): 첫 GPS fix 확보 시 resolve, 권한 거부/타임아웃 시 reject하는 Promise 반환
+ *  - unmount 시 clearWatch cleanup 보장 (useEffect return)
  */
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import type { FeatureCollection } from "geojson";
 import type { GpsPoint, GpsState } from "../types/gps.types";
 
 const EMPTY_GEOJSON: FeatureCollection = {
   type: "FeatureCollection",
-  features: []
+  features: [],
 };
 
 const calcDistanceKm = (trail: GpsPoint[]): number => {
@@ -33,7 +33,6 @@ const calcDistanceKm = (trail: GpsPoint[]): number => {
   return +total.toFixed(2);
 };
 
-// 상승 구간만 누적 (내려갔다 올라간 구간도 정확히 반영)
 const calcElevGain = (trail: GpsPoint[]): number => {
   const elevations = trail
     .map((p) => p.altitude)
@@ -52,7 +51,7 @@ export const useGPS = (): GpsState & {
   distanceKm: number;
   elevGain: number;
   currentAltitude: number | null;
-  start: (onPoint?: (point: GpsPoint) => void) => void;
+  start: (onPoint?: (point: GpsPoint) => void) => Promise<void>;
   stop: () => void;
 } => {
   const [currentPos, setCurrentPos] = useState<GpsPoint | null>(null);
@@ -66,6 +65,16 @@ export const useGPS = (): GpsState & {
   const trailRef = useRef<GpsPoint[]>([]);
   const watchIdRef = useRef<number | null>(null);
 
+  // unmount 시 GPS watch cleanup 보장
+  useEffect(() => {
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+    };
+  }, []);
+
   const updateGeoJson = useCallback((trail: GpsPoint[], current: GpsPoint) => {
     setGeoJson({
       type: "FeatureCollection",
@@ -76,61 +85,81 @@ export const useGPS = (): GpsState & {
                 type: "Feature" as const,
                 geometry: {
                   type: "LineString" as const,
-                  coordinates: trail.map((p) => [p.lng, p.lat])
+                  coordinates: trail.map((p) => [p.lng, p.lat]),
                 },
-                properties: {}
-              }
+                properties: {},
+              },
             ]
           : []),
         {
           type: "Feature" as const,
           geometry: {
             type: "Point" as const,
-            coordinates: [current.lng, current.lat]
+            coordinates: [current.lng, current.lat],
           },
-          properties: {}
-        }
-      ]
+          properties: {},
+        },
+      ],
     });
   }, []);
 
+  // 첫 GPS fix 확보 시 resolve, 실패 시 reject
   const start = useCallback(
-    (onPoint?: (point: GpsPoint) => void) => {
-      if (!navigator.geolocation) {
-        setError("GPS를 지원하지 않는 브라우저입니다.");
-        return;
-      }
+    (onPoint?: (point: GpsPoint) => void): Promise<void> => {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          const msg = "GPS를 지원하지 않는 브라우저입니다.";
+          setError(msg);
+          reject(new Error(msg));
+          return;
+        }
 
-      trailRef.current = [];
-      setTrail([]);
-      setDistanceKm(0);
-      setElevGain(0);
+        trailRef.current = [];
+        setTrail([]);
+        setDistanceKm(0);
+        setElevGain(0);
 
-      watchIdRef.current = navigator.geolocation.watchPosition(
-        (pos) => {
-          const point: GpsPoint = {
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-            altitude: pos.coords.altitude,
-            accuracy: pos.coords.accuracy,
-            timestamp: pos.timestamp
-          };
-          trailRef.current.push(point);
-          const newTrail = [...trailRef.current];
+        let isFirstFix = true;
 
-          setTrail(newTrail);
-          setCurrentPos(point);
-          setDistanceKm(calcDistanceKm(newTrail));
-          setElevGain(calcElevGain(newTrail));
-          updateGeoJson(newTrail, point);
-          onPoint?.(point);
-        },
-        (err) => setError(err.message),
-        { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
-      );
+        watchIdRef.current = navigator.geolocation.watchPosition(
+          (pos) => {
+            const point: GpsPoint = {
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude,
+              altitude: pos.coords.altitude,
+              accuracy: pos.coords.accuracy,
+              timestamp: pos.timestamp,
+            };
 
-      setIsTracking(true);
-      setError(null);
+            trailRef.current.push(point);
+            const newTrail = [...trailRef.current];
+
+            setTrail(newTrail);
+            setCurrentPos(point);
+            setDistanceKm(calcDistanceKm(newTrail));
+            setElevGain(calcElevGain(newTrail));
+            updateGeoJson(newTrail, point);
+            onPoint?.(point);
+
+            // 첫 번째 fix에서 resolve
+            if (isFirstFix) {
+              isFirstFix = false;
+              setIsTracking(true);
+              setError(null);
+              resolve();
+            }
+          },
+          (err) => {
+            setError(err.message);
+            // 첫 fix 전 에러면 reject
+            if (isFirstFix) {
+              isFirstFix = false;
+              reject(new Error(err.message));
+            }
+          },
+          { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
+        );
+      });
     },
     [updateGeoJson]
   );
@@ -156,6 +185,6 @@ export const useGPS = (): GpsState & {
     elevGain,
     currentAltitude,
     start,
-    stop
+    stop,
   };
 };
