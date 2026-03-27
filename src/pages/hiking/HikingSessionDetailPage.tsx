@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import ElevationProfileCard from "@/features/hiking/components/ElevationProfileCard";
 import HikingSessionHeader from "@/features/hiking/components/HikingSessionHeader";
 import HikingSummaryCards from "@/features/hiking/components/HikingSummaryCards";
 import HikingTrackSection from "@/features/hiking/components/HikingTrackSection";
@@ -81,7 +82,7 @@ export default function HikingSessionDetailPage() {
 
               <HikingTrackSection tracks={tracks} />
 
-              <div className="absolute top-4 right-4 left-4 z-30">
+              <div className="absolute top-4 right-4 left-4 z-20">
                 <HikingSessionHeader session={session} />
               </div>
 
@@ -99,75 +100,7 @@ export default function HikingSessionDetailPage() {
           </section>
 
           <div className="space-y-4 px-4 pt-4">
-            <section className="overflow-hidden rounded-3xl border border-[#89943d]/10 bg-white shadow-sm">
-              <div className="flex items-center justify-between px-5 py-4">
-                <div>
-                  <p className="text-[11px] font-semibold tracking-[0.04em] text-[#89943d]">
-                    고도 프로파일
-                  </p>
-                  <h2 className="mt-1 text-lg font-bold tracking-tight text-[#2f3415]">
-                    고도 변화
-                  </h2>
-                </div>
-                <span className="rounded-full bg-[#89943d]/10 px-3 py-1 text-[11px] font-semibold text-[#4a521e]">
-                  최고점
-                </span>
-              </div>
-
-              <div className="px-5 pb-5">
-                <div className="rounded-3xl border border-[#89943d]/10 bg-[#f7f7f6] px-4 py-4">
-                  <div className="flex items-end justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-[#4a521e]">
-                        프로파일 영역 자리
-                      </p>
-                      <p className="mt-1 text-xs text-slate-500">
-                        다음 단계에서 SVG 기반 그래프 연결
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 h-28 rounded-2xl bg-white px-3 py-3">
-                    <svg
-                      viewBox="0 0 320 120"
-                      className="h-full w-full"
-                      preserveAspectRatio="none">
-                      <defs>
-                        <linearGradient
-                          id="elevationSkeleton"
-                          x1="0%"
-                          y1="0%"
-                          x2="0%"
-                          y2="100%">
-                          <stop
-                            offset="0%"
-                            stopColor="#89943d"
-                            stopOpacity="0.28"
-                          />
-                          <stop
-                            offset="100%"
-                            stopColor="#89943d"
-                            stopOpacity="0"
-                          />
-                        </linearGradient>
-                      </defs>
-                      <path
-                        d="M0,92 L0,70 L40,62 L80,38 L120,58 L160,34 L200,50 L240,24 L280,46 L320,30 L320,120 L0,120 Z"
-                        fill="url(#elevationSkeleton)"
-                      />
-                      <path
-                        d="M0,70 L40,62 L80,38 L120,58 L160,34 L200,50 L240,24 L280,46 L320,30"
-                        fill="none"
-                        stroke="#89943d"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            </section>
+            <ElevationProfileCard elevationProfile={elevationProfile} />
 
             <section className="overflow-hidden rounded-3xl border border-[#89943d]/10 bg-white shadow-sm">
               <div className="bg-gradient-to-r from-[#4a521e] to-[#89943d] px-5 py-5 text-white">
