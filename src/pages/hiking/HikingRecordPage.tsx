@@ -13,6 +13,7 @@ import type { GpsPoint } from "@/features/gps/types/gps.types";
 
 const useElapsedTime = (isRunning: boolean) => {
   const [seconds, setSeconds] = useState(0);
+  const [lastSeconds, setLastSeconds] = useState(0); // finished 상태에서 마지막 시간 유지용
   const startTimeRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -22,14 +23,17 @@ const useElapsedTime = (isRunning: boolean) => {
     }
     startTimeRef.current = Date.now();
     const id = setInterval(() => {
-      setSeconds(
-        Math.floor((Date.now() - (startTimeRef.current ?? Date.now())) / 1000)
+      const elapsed = Math.floor(
+        (Date.now() - (startTimeRef.current ?? Date.now())) / 1000
       );
+      setSeconds(elapsed);
+      setLastSeconds(elapsed);
     }, 1000);
     return () => clearInterval(id);
   }, [isRunning]);
 
-  return isRunning ? seconds : 0;
+  // isRunning=false여도 마지막 측정값 유지 (finished 화면에서 시간 표시용)
+  return isRunning ? seconds : lastSeconds;
 };
 
 const formatTime = (totalSeconds: number): string => {
