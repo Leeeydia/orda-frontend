@@ -1,3 +1,4 @@
+import { formatDistanceKm } from "@/utils/format";
 import { mapElevationPointsToSvgPath } from "../mappers/hikingMappers";
 import type { ElevationProfileResponse } from "../types/hiking.types";
 
@@ -9,10 +10,20 @@ export default function ElevationProfileCard({
   elevationProfile
 }: Props) {
   const points = elevationProfile?.points ?? [];
-
   const path = mapElevationPointsToSvgPath(points);
-
   const maxElevation = elevationProfile?.summary.maxElevationMeters;
+  const totalDistanceMeters =
+    elevationProfile?.summary.totalDistanceMeters ?? null;
+
+  const xAxisLabels =
+    totalDistanceMeters != null
+      ? [
+          formatDistanceKm(0),
+          formatDistanceKm(totalDistanceMeters / 3),
+          formatDistanceKm((totalDistanceMeters * 2) / 3),
+          formatDistanceKm(totalDistanceMeters)
+        ]
+      : ["0km", "", "", ""];
 
   return (
     <section className="overflow-hidden rounded-3xl border border-[#89943d]/10 bg-white shadow-sm">
@@ -35,54 +46,67 @@ export default function ElevationProfileCard({
 
       <div className="px-5 pb-5">
         <div className="rounded-3xl border border-[#89943d]/10 bg-[#f7f7f6] px-4 py-4">
-          <div className="mt-2 h-28 rounded-2xl bg-white px-3 py-3">
+          <div className="mt-2 rounded-2xl bg-white px-3 py-3">
             {points.length === 0 ? (
-              <div className="flex h-full items-center justify-center text-xs text-slate-400">
+              <div className="flex h-28 items-center justify-center text-xs text-slate-400">
                 고도 데이터 없음
               </div>
             ) : (
-              <svg
-                viewBox="0 0 320 120"
-                className="h-full w-full"
-                preserveAspectRatio="none"
-              >
-                <defs>
-                  <linearGradient
-                    id="elevationGradient"
-                    x1="0%"
-                    y1="0%"
-                    x2="0%"
-                    y2="100%"
+              <>
+                <div className="h-28">
+                  <svg
+                    viewBox="0 0 320 120"
+                    className="h-full w-full"
+                    preserveAspectRatio="none"
                   >
-                    <stop
-                      offset="0%"
-                      stopColor="#89943d"
-                      stopOpacity="0.28"
-                    />
-                    <stop
-                      offset="100%"
-                      stopColor="#89943d"
-                      stopOpacity="0"
-                    />
-                  </linearGradient>
-                </defs>
+                    <defs>
+                      <linearGradient
+                        id="elevationGradient"
+                        x1="0%"
+                        y1="0%"
+                        x2="0%"
+                        y2="100%"
+                      >
+                        <stop
+                          offset="0%"
+                          stopColor="#89943d"
+                          stopOpacity="0.28"
+                        />
+                        <stop
+                          offset="100%"
+                          stopColor="#89943d"
+                          stopOpacity="0"
+                        />
+                      </linearGradient>
+                    </defs>
 
-                {/* 면 영역 */}
-                <path
-                  d={`${path} L 320 120 L 0 120 Z`}
-                  fill="url(#elevationGradient)"
-                />
+                    <path
+                      d={`${path} L 320 120 L 0 120 Z`}
+                      fill="url(#elevationGradient)"
+                    />
 
-                {/* 선 */}
-                <path
-                  d={path}
-                  fill="none"
-                  stroke="#89943d"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+                    <path
+                      d={path}
+                      fill="none"
+                      stroke="#89943d"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+
+                <div className="mt-2 flex items-center justify-between px-1">
+                  {xAxisLabels.map((label, index) => (
+                    <span
+                      key={`${label}-${index}`}
+                      className="text-[10px] font-semibold text-[#89943d]/70"
+                    >
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         </div>
