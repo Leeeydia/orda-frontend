@@ -4,6 +4,7 @@ import ElevationProfileCard from "@/features/hiking/components/ElevationProfileC
 import HikingSessionHeader from "@/features/hiking/components/HikingSessionHeader";
 import HikingSummaryCards from "@/features/hiking/components/HikingSummaryCards";
 import HikingTrackSection from "@/features/hiking/components/HikingTrackSection";
+import ReplayEntryCard from "@/features/hiking/components/ReplayEntryCard";
 import { useHikingSessionDetail } from "@/features/hiking/hooks/useHiking";
 
 export default function HikingSessionDetailPage() {
@@ -101,26 +102,7 @@ export default function HikingSessionDetailPage() {
 
           <div className="space-y-4 px-4 pt-4">
             <ElevationProfileCard elevationProfile={elevationProfile} />
-
-            <section className="overflow-hidden rounded-3xl border border-[#89943d]/10 bg-white shadow-sm">
-              <div className="bg-gradient-to-r from-[#4a521e] to-[#89943d] px-5 py-5 text-white">
-                <p className="text-[11px] font-semibold tracking-[0.04em] text-white/80">
-                  3D 리플레이
-                </p>
-                <h2 className="mt-1 text-lg font-bold tracking-tight">
-                  경로 다시 보기
-                </h2>
-                <p className="mt-2 text-sm text-white/80">
-                  다음 단계에서 저장된 GPS 트랙 기반 재생 화면으로 연결할 예정
-                </p>
-
-                <button
-                  type="button"
-                  className="mt-4 w-full rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-[#4a521e] transition hover:bg-white/90">
-                  3D 리플레이 보기
-                </button>
-              </div>
-            </section>
+            <ReplayEntryCard sessionId={numericSessionId} />
           </div>
         </main>
       </div>
