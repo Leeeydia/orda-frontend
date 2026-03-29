@@ -42,7 +42,7 @@ export default function HikingTrackSection({
 
   if (!tracks || tracks.features.length === 0) {
     return (
-      <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
+      <div className="absolute inset-0 z-0 flex items-center justify-center px-6 text-center">
         <div>
           <p className="text-base font-semibold text-[#4a521e]">
             표시할 트랙이 없습니다
@@ -66,9 +66,17 @@ export default function HikingTrackSection({
         pointColor="#4a521e"
         pointStrokeColor="#ffffff"
         pointRadius={6}
+        startPointColor="#A3BE4C"
+        endPointColor="#2F3415"
+        startPointRadius={8}
+        endPointRadius={8}
         onMapReady={(map) => {
           mapRef.current = map;
           setIsMapReady(true);
+
+          setTimeout(() => {
+            map.resize();
+          }, 0);
         }}
       />
     </div>

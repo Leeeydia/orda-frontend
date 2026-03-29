@@ -16,11 +16,17 @@ type CommonMapProps = {
   pointColor?: string;
   pointStrokeColor?: string;
   pointRadius?: number;
+  startPointColor?: string;
+  endPointColor?: string;
+  startPointRadius?: number;
+  endPointRadius?: number;
 };
 
 const GEOJSON_SOURCE_ID = "geojson-source";
 const GEOJSON_LINE_LAYER_ID = "geojson-line-layer";
 const GEOJSON_POINT_LAYER_ID = "geojson-point-layer";
+const GEOJSON_START_POINT_LAYER_ID = "geojson-start-point-layer";
+const GEOJSON_END_POINT_LAYER_ID = "geojson-end-point-layer";
 
 export default function CommonMap({
   center = [127.3845, 36.3504],
@@ -34,7 +40,11 @@ export default function CommonMap({
   lineWidth = 4,
   pointColor = "#dc2626",
   pointStrokeColor = "#ffffff",
-  pointRadius = 6
+  pointRadius = 6,
+  startPointColor = "#A3BE4C",
+  endPointColor = "#2F3415",
+  startPointRadius = 8,
+  endPointRadius = 8
 }: CommonMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -80,10 +90,48 @@ export default function CommonMap({
         id: GEOJSON_POINT_LAYER_ID,
         type: "circle",
         source: GEOJSON_SOURCE_ID,
-        filter: ["==", ["geometry-type"], "Point"],
+        filter: [
+          "all",
+          ["==", ["geometry-type"], "Point"],
+          ["!", ["in", ["get", "type"], ["literal", ["start-point", "end-point"]]]]
+        ],
         paint: {
           "circle-radius": pointRadius,
           "circle-color": pointColor,
+          "circle-stroke-width": 2,
+          "circle-stroke-color": pointStrokeColor
+        }
+      });
+
+      map.addLayer({
+        id: GEOJSON_START_POINT_LAYER_ID,
+        type: "circle",
+        source: GEOJSON_SOURCE_ID,
+        filter: [
+          "all",
+          ["==", ["geometry-type"], "Point"],
+          ["==", ["get", "type"], "start-point"]
+        ],
+        paint: {
+          "circle-radius": startPointRadius,
+          "circle-color": startPointColor,
+          "circle-stroke-width": 2,
+          "circle-stroke-color": pointStrokeColor
+        }
+      });
+
+      map.addLayer({
+        id: GEOJSON_END_POINT_LAYER_ID,
+        type: "circle",
+        source: GEOJSON_SOURCE_ID,
+        filter: [
+          "all",
+          ["==", ["geometry-type"], "Point"],
+          ["==", ["get", "type"], "end-point"]
+        ],
+        paint: {
+          "circle-radius": endPointRadius,
+          "circle-color": endPointColor,
           "circle-stroke-width": 2,
           "circle-stroke-color": pointStrokeColor
         }
