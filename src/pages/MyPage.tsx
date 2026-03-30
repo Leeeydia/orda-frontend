@@ -13,7 +13,7 @@ const MyPage = () => {
     loading,
     error,
     handleUploadImage,
-    handleDeleteImage,
+    handleDeleteImage
   } = useMyPage();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -21,6 +21,13 @@ const MyPage = () => {
   const navigate = useNavigate();
   // 프로필 이미지 변경 바텀시트 표시 여부
   const [showImageSheet, setShowImageSheet] = useState(false);
+  // 로그아웃 확인 팝업 표시 여부
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    navigate("/login");
+  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -51,14 +58,12 @@ const MyPage = () => {
   return (
     <div
       className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-white"
-      style={{ maxWidth: 390, margin: "0 auto" }}
-    >
+      style={{ maxWidth: 390, margin: "0 auto" }}>
       {/* ── 헤더 ── */}
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-50 bg-white px-4 py-3">
         <button
           onClick={() => navigate(-1)}
-          className="flex h-10 w-10 items-center justify-center text-slate-900"
-        >
+          className="flex h-10 w-10 items-center justify-center text-slate-900">
           <svg
             width="22"
             height="22"
@@ -67,8 +72,7 @@ const MyPage = () => {
             stroke="currentColor"
             strokeWidth="2.2"
             strokeLinecap="round"
-            strokeLinejoin="round"
-          >
+            strokeLinejoin="round">
             <path d="M15 18l-6-6 6-6" />
           </svg>
         </button>
@@ -79,7 +83,7 @@ const MyPage = () => {
       </header>
 
       {/* ── 프로필 섹션 ── */}
-      <section className="flex flex-col items-center px-6 pb-6 pt-8">
+      <section className="flex flex-col items-center px-6 pt-8 pb-6">
         {/* 아바타 */}
         <div className="relative">
           {profile?.profileImageUrl ? (
@@ -99,8 +103,7 @@ const MyPage = () => {
                 strokeWidth="1.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                opacity="0.4"
-              >
+                opacity="0.4">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
@@ -112,8 +115,7 @@ const MyPage = () => {
             <button
               onClick={() => setShowImageSheet((v) => !v)}
               title="프로필 이미지 변경"
-              className="absolute bottom-1 right-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[#89943d] text-white shadow-md transition-transform active:scale-90"
-            >
+              className="absolute right-1 bottom-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[#89943d] text-white shadow-md transition-transform active:scale-90">
               <svg
                 width="14"
                 height="14"
@@ -122,8 +124,7 @@ const MyPage = () => {
                 stroke="currentColor"
                 strokeWidth="2.2"
                 strokeLinecap="round"
-                strokeLinejoin="round"
-              >
+                strokeLinejoin="round">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                 <circle cx="12" cy="13" r="4" />
               </svg>
@@ -138,20 +139,29 @@ const MyPage = () => {
                   onClick={() => setShowImageSheet(false)}
                 />
                 {/* 팝오버 카드 */}
-                <div className="absolute bottom-10 right-0 z-50 w-44 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xl">
+                <div className="absolute right-0 bottom-10 z-50 w-44 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xl">
                   {/* 앨범에서 선택 */}
                   <button
                     onClick={() => {
                       setShowImageSheet(false);
                       fileInputRef.current?.click();
                     }}
-                    className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50 active:bg-slate-100"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#89943d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50 active:bg-slate-100">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#89943d"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round">
                       <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                       <circle cx="12" cy="13" r="4" />
                     </svg>
-                    <span className="text-[13px] font-semibold text-slate-800">앨범에서 선택</span>
+                    <span className="text-[13px] font-semibold text-slate-800">
+                      앨범에서 선택
+                    </span>
                   </button>
 
                   {/* 기본 이미지로 변경 — 이미지 있을 때만 */}
@@ -163,13 +173,22 @@ const MyPage = () => {
                           setShowImageSheet(false);
                           await handleDeleteImage();
                         }}
-                        className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-red-50 active:bg-red-100"
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-red-50 active:bg-red-100">
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="#ef4444"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round">
                           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                           <circle cx="12" cy="7" r="4" />
                         </svg>
-                        <span className="text-[13px] font-semibold text-red-500">기본 이미지로</span>
+                        <span className="text-[13px] font-semibold text-red-500">
+                          기본 이미지로
+                        </span>
                       </button>
                     </>
                   )}
@@ -192,7 +211,7 @@ const MyPage = () => {
           <p className="text-[22px] font-bold tracking-tight text-slate-900">
             {profile?.nickname ?? "—"}
           </p>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#89943d]">
+          <p className="text-[10px] font-bold tracking-widest text-[#89943d] uppercase">
             ORDA Member
           </p>
           <p className="mt-1 text-sm text-slate-400">{profile?.email}</p>
@@ -202,7 +221,7 @@ const MyPage = () => {
       {/* ── 통계 섹션 ── */}
       <section className="px-6 pb-6">
         <div className="rounded-xl border border-[#89943d]/8 bg-[#f7f7f6] p-5">
-          <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+          <p className="mb-4 text-[10px] font-bold tracking-[0.12em] text-slate-400 uppercase">
             나의 등산 통계
           </p>
           <div className="grid grid-cols-2 gap-3">
@@ -216,8 +235,7 @@ const MyPage = () => {
                   stroke="#89943d"
                   strokeWidth="2"
                   strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
+                  strokeLinejoin="round">
                   <path d="M3 17l4-8 4 4 4-6 4 10" />
                 </svg>
               }
@@ -234,8 +252,7 @@ const MyPage = () => {
                   stroke="#89943d"
                   strokeWidth="2"
                   strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
+                  strokeLinejoin="round">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                 </svg>
               }
@@ -252,8 +269,7 @@ const MyPage = () => {
                   stroke="#89943d"
                   strokeWidth="2"
                   strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
+                  strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10" />
                   <polyline points="12 6 12 12 16 14" />
                 </svg>
@@ -271,8 +287,7 @@ const MyPage = () => {
                   stroke="#89943d"
                   strokeWidth="2"
                   strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
+                  strokeLinejoin="round">
                   <path d="M8 3l4 8 5-5 5 15H2L8 3z" />
                 </svg>
               }
@@ -285,7 +300,7 @@ const MyPage = () => {
 
       {/* ── 등산 기록 섹션 ── */}
       <section className="px-6 pb-6">
-        <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+        <p className="mb-3 text-[10px] font-bold tracking-[0.12em] text-slate-400 uppercase">
           등산 기록
         </p>
 
@@ -300,8 +315,7 @@ const MyPage = () => {
               strokeWidth="1.4"
               strokeLinecap="round"
               strokeLinejoin="round"
-              opacity="0.4"
-            >
+              opacity="0.4">
               <path d="M8 3l4 8 5-5 5 15H2L8 3z" />
             </svg>
             <p className="text-sm text-slate-400">아직 등산 기록이 없습니다</p>
@@ -316,18 +330,16 @@ const MyPage = () => {
       </section>
 
       {/* 하단 버튼 공간 확보 */}
-      <div className="h-28" />
+      <div className="h-36" />
 
-      {/* ── 개인 정보 수정 버튼 (하단 고정) ── */}
+      {/* ── 개인 정보 수정 + 로그아웃 버튼 (하단 고정) ── */}
       {/* [윤종민] 개인 정보 수정 페이지 이동 버튼 */}
       <div
-        className="fixed bottom-0 left-1/2 w-full -translate-x-1/2 border-t border-slate-100 bg-white px-6 pb-8 pt-3"
-        style={{ maxWidth: 390 }}
-      >
+        className="fixed bottom-0 left-1/2 w-full -translate-x-1/2 border-t border-slate-100 bg-white px-6 pt-3 pb-8"
+        style={{ maxWidth: 390 }}>
         <button
           onClick={() => navigate("/edit-profile")}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#89943d] py-4 text-sm font-bold tracking-wide text-white shadow-md shadow-[#89943d]/20 transition-transform active:scale-[0.98]"
-        >
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#89943d] py-4 text-sm font-bold tracking-wide text-white shadow-md shadow-[#89943d]/20 transition-transform active:scale-[0.98]">
           <svg
             width="16"
             height="16"
@@ -336,14 +348,84 @@ const MyPage = () => {
             stroke="currentColor"
             strokeWidth="2.2"
             strokeLinecap="round"
-            strokeLinejoin="round"
-          >
+            strokeLinejoin="round">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
           </svg>
           개인 정보 수정
         </button>
+
+        {/* 로그아웃 버튼 */}
+        <button
+          onClick={() => setShowLogoutConfirm(true)}
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3.5 text-sm font-semibold text-slate-400 transition-colors active:bg-slate-50">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          로그아웃
+        </button>
       </div>
+
+      {/* ── 로그아웃 확인 팝업 ── */}
+      {showLogoutConfirm && (
+        <>
+          {/* 딤 배경 */}
+          <div
+            className="fixed inset-0 z-40 bg-black/40"
+            onClick={() => setShowLogoutConfirm(false)}
+          />
+          {/* 팝업 카드 */}
+          <div className="fixed top-1/2 left-1/2 z-50 w-72 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl bg-white shadow-2xl">
+            {/* 아이콘 + 텍스트 */}
+            <div className="flex flex-col items-center px-6 pt-8 pb-6 text-center">
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100">
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#94a3b8"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+              </div>
+              <p className="text-[17px] font-bold text-slate-900">로그아웃</p>
+              <p className="mt-1.5 text-sm text-slate-400">
+                정말 로그아웃 하시겠어요?
+              </p>
+            </div>
+
+            {/* 버튼 영역 */}
+            <div className="flex border-t border-slate-100">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 py-4 text-[15px] font-semibold text-slate-400 transition-colors active:bg-slate-50">
+                취소
+              </button>
+              <div className="w-px bg-slate-100" />
+              <button
+                onClick={handleLogout}
+                className="flex-1 py-4 text-[15px] font-bold text-red-500 transition-colors active:bg-red-50">
+                로그아웃
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
@@ -362,7 +444,7 @@ const StatCard = ({ icon, label, value }: StatCardProps) => (
       {icon}
     </div>
     <div>
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+      <p className="text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
         {label}
       </p>
       <p className="mt-0.5 text-lg font-bold text-slate-900">{value}</p>
@@ -408,8 +490,7 @@ const RecordCard = ({ record }: RecordCardProps) => {
           stroke="#89943d"
           strokeWidth="1.8"
           strokeLinecap="round"
-          strokeLinejoin="round"
-        >
+          strokeLinejoin="round">
           <path d="M8 3l4 8 5-5 5 15H2L8 3z" />
         </svg>
       </div>
@@ -435,8 +516,7 @@ const RecordCard = ({ record }: RecordCardProps) => {
         stroke="#cbd5e1"
         strokeWidth="2"
         strokeLinecap="round"
-        strokeLinejoin="round"
-      >
+        strokeLinejoin="round">
         <path d="M9 18l6-6-6-6" />
       </svg>
     </div>
