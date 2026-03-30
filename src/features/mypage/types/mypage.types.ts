@@ -34,3 +34,24 @@ export interface HikingRecord {
   totalElevationGainM: number | null;
   totalDurationSec: number | null;
 }
+export interface SettingsProfile {
+  userId: number;
+  email: string;
+  nickname: string;
+  name: string;
+  phone: string | null;
+  birthDate: string | null;
+  profileImageUrl: string | null;
+}
+
+// 프로필 수정 요청
+export interface UpdateProfileRequest {
+  nickname?: string;
+  phone?: string;
+}
+
+// 비밀번호 변경 요청
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
