@@ -4,6 +4,7 @@
  * 변경 사항:
  *  - /hiking → HikingRecordPage로 교체 (HikingPage 제거)
  *  - /hiking/record 라우터 제거 (중복)
+ *  - /edit-profile 라우트 추가
  */
 
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -13,6 +14,7 @@ import SignupPage from "./pages/auth/SignupPage";
 import LoginPage from "./pages/auth/LoginPage";
 import MyPage from "./pages/MyPage";
 import HikingRecordPage from "./pages/hiking/HikingRecordPage";
+import EditProfilePage from "./pages/mypage/EditProfilePage";
 
 export default function App() {
   return (
@@ -27,6 +29,7 @@ export default function App() {
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/mypage" element={<MyPage />} /> {/* 추가 */}
+        <Route path="/edit-profile" element={<EditProfilePage />} /> {/* 추가 */}
       </Routes>
     </BrowserRouter>
   );
