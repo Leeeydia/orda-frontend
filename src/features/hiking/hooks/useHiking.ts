@@ -149,12 +149,11 @@ export const useHiking = () => {
     if (!sessionId || !gps.currentPos) return;
     try {
       setError(null);
-      const res = await verifySummit({
+      return await verifySummit({
         sessionId,
         latitude: gps.currentPos.lat,
         longitude: gps.currentPos.lng
       });
-      return res;
     } catch {
       setError("정상 인증에 실패했습니다.");
     }
@@ -182,19 +181,25 @@ export const useHikingSessionDetail = (sessionId: number | null) => {
   const sessionQuery = useQuery({
     queryKey: ["hiking", "session", sessionId],
     queryFn: () => getHikingSession(sessionId as number),
-    enabled: sessionId != null
+    enabled: sessionId != null,
+    staleTime: 1000 * 60,
+    placeholderData: (prev) => prev
   });
 
   const tracksQuery = useQuery({
     queryKey: ["hiking", "tracks", sessionId],
     queryFn: () => getHikingTracks(sessionId as number),
-    enabled: sessionId != null
+    enabled: sessionId != null,
+    staleTime: 1000 * 60,
+    placeholderData: (prev) => prev
   });
 
   const elevationProfileQuery = useQuery({
     queryKey: ["hiking", "elevation-profile", sessionId],
     queryFn: () => getElevationProfile(sessionId as number),
-    enabled: sessionId != null
+    enabled: sessionId != null,
+    staleTime: 1000 * 60,
+    placeholderData: (prev) => prev
   });
 
   return {

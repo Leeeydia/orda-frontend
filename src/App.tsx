@@ -13,6 +13,10 @@ import HikingSessionDetailPage from "./pages/hiking/HikingSessionDetailPage";
 import SignupPage from "./pages/auth/SignupPage";
 import LoginPage from "./pages/auth/LoginPage";
 
+function HikingReplayPlaceholderPage() {
+  return <div>3D 리플레이 페이지 준비 중</div>;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -25,6 +29,7 @@ export default function App() {
         />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/hiking/sessions/:sessionId/replay" element={<HikingReplayPlaceholderPage />} />
       </Routes>
     </BrowserRouter>
   );
