@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MapTestPage from "./pages/MapTestPage";
-import HikingPage from "./pages/hiking/HikingPage"; // dev 기준 경로로 수정
+import HikingRecordPage from "./pages/hiking/HikingRecordPage";
 import HikingSessionDetailPage from "./pages/hiking/HikingSessionDetailPage";
 import SignupPage from "./pages/auth/SignupPage";
 import LoginPage from "./pages/auth/LoginPage";
@@ -11,14 +11,14 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<MapTestPage />} />
-        <Route path="/hiking" element={<HikingPage />} />
+        <Route path="/hiking" element={<HikingRecordPage />} />
         <Route
           path="/hiking/sessions/:sessionId"
           element={<HikingSessionDetailPage />}
         />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/mypage" element={<MyPage />} /> {/* 추가 */}
+        <Route path="/mypage" element={<MyPage />} />
       </Routes>
     </BrowserRouter>
   );

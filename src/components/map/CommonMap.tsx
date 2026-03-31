@@ -10,11 +10,23 @@ type CommonMapProps = {
   className?: string;
   geoJsonData?: FeatureCollection | null;
   onMapReady?: (map: maplibregl.Map) => void;
+  showNavigationControl?: boolean;
+  lineColor?: string;
+  lineWidth?: number;
+  pointColor?: string;
+  pointStrokeColor?: string;
+  pointRadius?: number;
+  startPointColor?: string;
+  endPointColor?: string;
+  startPointRadius?: number;
+  endPointRadius?: number;
 };
 
 const GEOJSON_SOURCE_ID = "geojson-source";
 const GEOJSON_LINE_LAYER_ID = "geojson-line-layer";
 const GEOJSON_POINT_LAYER_ID = "geojson-point-layer";
+const GEOJSON_START_POINT_LAYER_ID = "geojson-start-point-layer";
+const GEOJSON_END_POINT_LAYER_ID = "geojson-end-point-layer";
 
 export default function CommonMap({
   center = [127.3845, 36.3504],
@@ -22,19 +34,27 @@ export default function CommonMap({
   styleUrl = "https://tiles.openfreemap.org/styles/bright",
   className,
   geoJsonData = null,
-  onMapReady
+  onMapReady,
+  showNavigationControl = true,
+  lineColor = "#2563eb",
+  lineWidth = 4,
+  pointColor = "#dc2626",
+  pointStrokeColor = "#ffffff",
+  pointRadius = 6,
+  startPointColor = "#A3BE4C",
+  endPointColor = "#2F3415",
+  startPointRadius = 8,
+  endPointRadius = 8
 }: CommonMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const isLoadedRef = useRef(false);
   const onMapReadyRef = useRef(onMapReady);
 
-  // onMapReady가 인라인 함수여도 map 재생성 안 되게
   useEffect(() => {
     onMapReadyRef.current = onMapReady;
   }, [onMapReady]);
 
-  // 지도 초기화 — 마운트 1회만
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
@@ -45,10 +65,11 @@ export default function CommonMap({
       zoom
     });
 
-    map.addControl(new maplibregl.NavigationControl(), "top-right");
+    if (showNavigationControl) {
+      map.addControl(new maplibregl.NavigationControl(), "top-right");
+    }
 
     map.on("load", () => {
-      // 소스/레이어를 빈 데이터로 먼저 등록
       map.addSource(GEOJSON_SOURCE_ID, {
         type: "geojson",
         data: geoJsonData ?? { type: "FeatureCollection", features: [] }
@@ -60,8 +81,8 @@ export default function CommonMap({
         source: GEOJSON_SOURCE_ID,
         filter: ["==", ["geometry-type"], "LineString"],
         paint: {
-          "line-color": "#2563eb",
-          "line-width": 4
+          "line-color": lineColor,
+          "line-width": lineWidth
         }
       });
 
@@ -69,12 +90,50 @@ export default function CommonMap({
         id: GEOJSON_POINT_LAYER_ID,
         type: "circle",
         source: GEOJSON_SOURCE_ID,
-        filter: ["==", ["geometry-type"], "Point"],
+        filter: [
+          "all",
+          ["==", ["geometry-type"], "Point"],
+          ["!", ["in", ["get", "type"], ["literal", ["start-point", "end-point"]]]]
+        ],
         paint: {
-          "circle-radius": 6,
-          "circle-color": "#dc2626",
+          "circle-radius": pointRadius,
+          "circle-color": pointColor,
           "circle-stroke-width": 2,
-          "circle-stroke-color": "#ffffff"
+          "circle-stroke-color": pointStrokeColor
+        }
+      });
+
+      map.addLayer({
+        id: GEOJSON_START_POINT_LAYER_ID,
+        type: "circle",
+        source: GEOJSON_SOURCE_ID,
+        filter: [
+          "all",
+          ["==", ["geometry-type"], "Point"],
+          ["==", ["get", "type"], "start-point"]
+        ],
+        paint: {
+          "circle-radius": startPointRadius,
+          "circle-color": startPointColor,
+          "circle-stroke-width": 2,
+          "circle-stroke-color": pointStrokeColor
+        }
+      });
+
+      map.addLayer({
+        id: GEOJSON_END_POINT_LAYER_ID,
+        type: "circle",
+        source: GEOJSON_SOURCE_ID,
+        filter: [
+          "all",
+          ["==", ["geometry-type"], "Point"],
+          ["==", ["get", "type"], "end-point"]
+        ],
+        paint: {
+          "circle-radius": endPointRadius,
+          "circle-color": endPointColor,
+          "circle-stroke-width": 2,
+          "circle-stroke-color": pointStrokeColor
         }
       });
 
@@ -91,7 +150,6 @@ export default function CommonMap({
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // geoJsonData 변경 시 소스만 업데이트 (지도 재생성 X)
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !isLoadedRef.current) return;
