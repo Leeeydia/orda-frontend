@@ -1,5 +1,3 @@
-// src/features/edit-profile/hooks/useEditProfile.ts
-
 import { useState, useEffect } from "react";
 import {
   fetchSettingsProfile,
