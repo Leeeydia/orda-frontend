@@ -21,7 +21,7 @@ const MyPage = () => {
   } = useMyPage();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  // [윤종민] 개인 정보 수정 페이지 이동용
+  //  개인 정보 수정 페이지 이동용
   const navigate = useNavigate();
   // 프로필 이미지 변경 바텀시트 표시 여부
   const [showImageSheet, setShowImageSheet] = useState(false);
@@ -108,7 +108,7 @@ const MyPage = () => {
             </div>
           )}
 
-          {/* [윤종민] 카메라 아이콘 클릭 → 팝오버로 변경/삭제 선택 */}
+          {/*  카메라 아이콘 클릭 → 팝오버로 변경/삭제 선택 */}
           <div className="relative">
             <button
               onClick={() => setShowImageSheet((v) => !v)}
@@ -331,7 +331,7 @@ const MyPage = () => {
       <div className="h-28" />
 
       {/* ── 개인 정보 수정 버튼 (하단 고정) ── */}
-      {/* [윤종민] 개인 정보 수정 페이지 이동 버튼 */}
+      {/*  개인 정보 수정 페이지 이동 버튼 */}
       <div
         className="fixed bottom-0 left-1/2 w-full -translate-x-1/2 border-t border-slate-100 bg-white px-6 pt-3 pb-8"
         style={{ maxWidth: 390 }}>
