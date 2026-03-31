@@ -2,10 +2,8 @@ import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useMyPage from "../../features/mypage/hooks/useMyPage";
 
-// HikingRecord의 number | null 필드를 안전하게 number로 변환
 const toNum = (v: number | null | undefined): number => v ?? 0;
 
-// [수정] 하드코딩된 "http://localhost:8080" → 환경변수로 분리
 const API_URL = import.meta.env.VITE_API_URL ?? "";
 
 const MyPage = () => {
@@ -327,7 +325,7 @@ const MyPage = () => {
         className="fixed bottom-0 left-1/2 w-full -translate-x-1/2 border-t border-slate-100 bg-white px-6 pt-3 pb-8"
         style={{ maxWidth: 390 }}>
         <button
-          onClick={() => navigate("/edit-profile")}
+          onClick={() => navigate("/mypage/edit-profile")}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#89943d] py-4 text-sm font-bold tracking-wide text-white shadow-md shadow-[#89943d]/20 transition-transform active:scale-[0.98]">
           <svg
             width="16"
