@@ -9,11 +9,11 @@
 
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MapTestPage from "./pages/MapTestPage";
+import HikingRecordPage from "./pages/hiking/HikingRecordPage";
 import HikingSessionDetailPage from "./pages/hiking/HikingSessionDetailPage";
 import SignupPage from "./pages/auth/SignupPage";
 import LoginPage from "./pages/auth/LoginPage";
-import MyPage from "./pages/MyPage";
-import HikingRecordPage from "./pages/hiking/HikingRecordPage";
+import MyPage from "./pages/mypage/MyPage";
 import EditProfilePage from "./pages/mypage/EditProfilePage";
 
 export default function App() {
@@ -28,8 +28,8 @@ export default function App() {
         />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/mypage" element={<MyPage />} /> {/* 추가 */}
-        <Route path="/edit-profile" element={<EditProfilePage />} /> {/* 추가 */}
+        <Route path="/mypage" element={<MyPage />} />
+        <Route path="/edit-profile" element={<EditProfilePage />} />
       </Routes>
     </BrowserRouter>
   );

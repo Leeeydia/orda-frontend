@@ -1,9 +1,12 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import useMyPage from "../features/mypage/hooks/useMyPage";
+import useMyPage from "../../features/mypage/hooks/useMyPage";
 
 // HikingRecord의 number | null 필드를 안전하게 number로 변환
 const toNum = (v: number | null | undefined): number => v ?? 0;
+
+// [수정] 하드코딩된 "http://localhost:8080" → 환경변수로 분리
+const API_URL = import.meta.env.VITE_API_URL ?? "";
 
 const MyPage = () => {
   const {
@@ -17,11 +20,8 @@ const MyPage = () => {
   } = useMyPage();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  // [윤종민] 개인 정보 수정 페이지 이동용
   const navigate = useNavigate();
-  // 프로필 이미지 변경 바텀시트 표시 여부
   const [showImageSheet, setShowImageSheet] = useState(false);
-  // 로그아웃 확인 팝업 표시 여부
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const handleLogout = () => {
@@ -84,11 +84,10 @@ const MyPage = () => {
 
       {/* ── 프로필 섹션 ── */}
       <section className="flex flex-col items-center px-6 pt-8 pb-6">
-        {/* 아바타 */}
         <div className="relative">
           {profile?.profileImageUrl ? (
             <img
-              src={`http://localhost:8080${profile.profileImageUrl}`}
+              src={`${API_URL}${profile.profileImageUrl}`}
               alt="프로필 이미지"
               className="h-28 w-28 rounded-full object-cover shadow-lg ring-4 ring-[#89943d]/15"
             />
@@ -110,7 +109,6 @@ const MyPage = () => {
             </div>
           )}
 
-          {/* [윤종민] 카메라 아이콘 클릭 → 팝오버로 변경/삭제 선택 */}
           <div className="relative">
             <button
               onClick={() => setShowImageSheet((v) => !v)}
@@ -130,17 +128,13 @@ const MyPage = () => {
               </svg>
             </button>
 
-            {/* 팝오버 */}
             {showImageSheet && (
               <>
-                {/* 투명 딤 — 바깥 클릭 시 닫기 */}
                 <div
                   className="fixed inset-0 z-40"
                   onClick={() => setShowImageSheet(false)}
                 />
-                {/* 팝오버 카드 */}
                 <div className="absolute right-0 bottom-10 z-50 w-44 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xl">
-                  {/* 앨범에서 선택 */}
                   <button
                     onClick={() => {
                       setShowImageSheet(false);
@@ -164,7 +158,6 @@ const MyPage = () => {
                     </span>
                   </button>
 
-                  {/* 기본 이미지로 변경 — 이미지 있을 때만 */}
                   {profile?.profileImageUrl && (
                     <>
                       <div className="mx-3 border-t border-slate-100" />
@@ -206,7 +199,6 @@ const MyPage = () => {
           />
         </div>
 
-        {/* 닉네임 / 이메일 */}
         <div className="mt-4 flex flex-col items-center gap-1">
           <p className="text-[22px] font-bold tracking-tight text-slate-900">
             {profile?.nickname ?? "—"}
@@ -303,7 +295,6 @@ const MyPage = () => {
         <p className="mb-3 text-[10px] font-bold tracking-[0.12em] text-slate-400 uppercase">
           등산 기록
         </p>
-
         {(records ?? []).length === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-xl border border-slate-100 bg-[#f7f7f6] py-10">
             <svg
@@ -329,11 +320,9 @@ const MyPage = () => {
         )}
       </section>
 
-      {/* 하단 버튼 공간 확보 */}
       <div className="h-36" />
 
       {/* ── 개인 정보 수정 + 로그아웃 버튼 (하단 고정) ── */}
-      {/* [윤종민] 개인 정보 수정 페이지 이동 버튼 */}
       <div
         className="fixed bottom-0 left-1/2 w-full -translate-x-1/2 border-t border-slate-100 bg-white px-6 pt-3 pb-8"
         style={{ maxWidth: 390 }}>
@@ -355,7 +344,6 @@ const MyPage = () => {
           개인 정보 수정
         </button>
 
-        {/* 로그아웃 버튼 */}
         <button
           onClick={() => setShowLogoutConfirm(true)}
           className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3.5 text-sm font-semibold text-slate-400 transition-colors active:bg-slate-50">
@@ -379,14 +367,11 @@ const MyPage = () => {
       {/* ── 로그아웃 확인 팝업 ── */}
       {showLogoutConfirm && (
         <>
-          {/* 딤 배경 */}
           <div
             className="fixed inset-0 z-40 bg-black/40"
             onClick={() => setShowLogoutConfirm(false)}
           />
-          {/* 팝업 카드 */}
           <div className="fixed top-1/2 left-1/2 z-50 w-72 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl bg-white shadow-2xl">
-            {/* 아이콘 + 텍스트 */}
             <div className="flex flex-col items-center px-6 pt-8 pb-6 text-center">
               <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100">
                 <svg
@@ -408,8 +393,6 @@ const MyPage = () => {
                 정말 로그아웃 하시겠어요?
               </p>
             </div>
-
-            {/* 버튼 영역 */}
             <div className="flex border-t border-slate-100">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
@@ -480,7 +463,6 @@ const RecordCard = ({ record }: RecordCardProps) => {
 
   return (
     <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white px-4 py-4 shadow-sm">
-      {/* 아이콘 배지 */}
       <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-[#89943d]/10">
         <svg
           width="20"
