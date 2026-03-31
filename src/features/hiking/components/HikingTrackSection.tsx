@@ -135,7 +135,7 @@ export default function HikingTrackSection({
       },
       duration: 800
     });
-  }, [isMapReady, bounds, displayGeoJson]);
+  }, [isMapReady, bounds]);
 
   useEffect(() => {
     if (!isMapReady || !mapRef.current) return;
@@ -183,7 +183,6 @@ export default function HikingTrackSection({
 
           setTimeout(() => {
             map.resize();
-            renderSummitMarkers(map, verifiedSummits, summitMarkerRefs);
           }, 0);
         }}
       />
