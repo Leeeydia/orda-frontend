@@ -41,6 +41,7 @@ export interface HikingSessionResponse {
   totalElevationGainM: number | null;
   totalElevationLossM: number | null;
   totalDurationSec: number | null;
+  verifiedSummits: VerifiedSummit[];
 }
 
 export interface HikingTrackFeatureProperties {
@@ -110,4 +111,21 @@ export interface ReplayResponse {
   sessionId: number;
   summary: ReplaySummaryResponse;
   points: ReplayPointResponse[];
+}
+
+export interface VerifiedSummit {
+  summitId: string;
+  summitName: string;
+  latitude: number;
+  longitude: number;
+  verifiedAt: string;
+  verifiedElapsedSec: number;
+}
+
+export interface SummitMarkerItem {
+  summitId: string;
+  summitName: string;
+  latitude: number;
+  longitude: number;
+  verifiedAt?: string;
 }
