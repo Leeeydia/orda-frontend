@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useEditProfile from "@/features/edit-profile/hooks/useEditProfile";
 import type { SettingsProfile } from "@/features/edit-profile/types/editProfile.types";
+import Toast from "@/components/ui/Toast";
+import { validate } from "@/features/auth/hooks/useAuth";
 
 const EditProfileForm = ({
   profile,
@@ -19,141 +21,222 @@ const EditProfileForm = ({
   }) => Promise<{ success: boolean; message?: string }>;
 }) => {
   const [nickname, setNickname] = useState(profile.nickname);
+  const [nicknameError, setNicknameError] = useState("");
+
   const [phone, setPhone] = useState(profile.phone ?? "");
-  const [profileMessage, setProfileMessage] = useState<{
+  const [phoneError, setPhoneError] = useState("");
+
+  const [toast, setToast] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [newPasswordError, setNewPasswordError] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [passwordMessage, setPasswordMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, "").slice(0, 11);
+    let formatted = raw;
+    if (raw.length > 7)
+      formatted = `${raw.slice(0, 3)}-${raw.slice(3, 7)}-${raw.slice(7)}`;
+    else if (raw.length > 3) formatted = `${raw.slice(0, 3)}-${raw.slice(3)}`;
+    setPhone(formatted);
+    setPhoneError(validate.phone(formatted));
+  };
 
   const handleProfileSubmit = async () => {
-    setProfileMessage(null);
+    const nErr = validate.nickname(nickname);
+    const pErr = validate.phone(phone);
+    setNicknameError(nErr);
+    setPhoneError(pErr);
+    if (nErr || pErr) return;
+
     const result = await handleUpdateProfile({ nickname, phone });
     if (result.success) {
-      setProfileMessage({ type: "success", text: "프로필이 수정되었습니다" });
+      setToast({ type: "success", text: "프로필이 수정되었습니다" });
     } else {
-      setProfileMessage({ type: "error", text: result.message ?? "수정 실패" });
+      setToast({ type: "error", text: result.message ?? "수정 실패" });
     }
   };
 
   const handlePasswordSubmit = async () => {
-    setPasswordMessage(null);
-    if (newPassword !== confirmPassword) {
-      setPasswordMessage({
-        type: "error",
-        text: "새 비밀번호가 일치하지 않습니다"
-      });
-      return;
-    }
+    const pwErr = validate.password(newPassword);
+    const confirmErr =
+      newPassword !== confirmPassword ? "새 비밀번호가 일치하지 않습니다" : "";
+    setNewPasswordError(pwErr);
+    setConfirmPasswordError(confirmErr);
+    if (pwErr || confirmErr) return;
+
     const result = await handleChangePassword({ currentPassword, newPassword });
     if (result.success) {
-      setPasswordMessage({
-        type: "success",
-        text: "비밀번호가 변경되었습니다"
-      });
+      setToast({ type: "success", text: "비밀번호가 변경되었습니다" });
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+      setNewPasswordError("");
+      setConfirmPasswordError("");
     } else {
-      setPasswordMessage({
-        type: "error",
-        text: result.message ?? "변경 실패"
-      });
+      setToast({ type: "error", text: result.message ?? "변경 실패" });
     }
   };
 
   return (
     <>
+      {toast && (
+        <Toast
+          message={toast.text}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      {/* 기본 정보 */}
       <section className="mb-6">
-        <h2 className="mb-2 text-lg font-semibold">기본 정보</h2>
-        <div className="mb-2">
-          <label className="block text-sm text-gray-600">이메일</label>
-          <p className="text-sm">{profile.email}</p>
+        <p className="mb-3 text-[10px] font-bold tracking-[0.12em] text-slate-400 uppercase">
+          기본 정보
+        </p>
+        <div className="flex flex-col gap-4 rounded-xl border border-slate-100 bg-[#f7f7f6] px-5 py-4">
+          <div>
+            <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+              이메일
+            </p>
+            <p className="text-sm text-slate-700">{profile.email}</p>
+          </div>
+          <div>
+            <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+              이름
+            </p>
+            <p className="text-sm text-slate-700">{profile.name}</p>
+          </div>
+          <div>
+            <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+              생년월일
+            </p>
+            <p className="text-sm text-slate-700">{profile.birthDate ?? "-"}</p>
+          </div>
+          <div>
+            <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+              닉네임
+            </p>
+            <input
+              className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition outline-none focus:ring-1 ${
+                nicknameError
+                  ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+                  : "border-slate-200 focus:border-[#89943d] focus:ring-[#89943d]/30"
+              }`}
+              value={nickname}
+              onChange={(e) => {
+                setNickname(e.target.value);
+                setNicknameError(validate.nickname(e.target.value));
+              }}
+            />
+            {nicknameError && (
+              <p className="mt-1 pl-1 text-[12px] text-red-500">
+                {nicknameError}
+              </p>
+            )}
+          </div>
+          <div>
+            <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+              전화번호
+            </p>
+            <input
+              className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition outline-none focus:ring-1 ${
+                phoneError
+                  ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+                  : "border-slate-200 focus:border-[#89943d] focus:ring-[#89943d]/30"
+              }`}
+              value={phone}
+              onChange={handlePhoneChange}
+              placeholder="010-XXXX-XXXX"
+            />
+            {phoneError && (
+              <p className="mt-1 pl-1 text-[12px] text-red-500">{phoneError}</p>
+            )}
+          </div>
         </div>
-        <div className="mb-2">
-          <label className="block text-sm text-gray-600">이름</label>
-          <p className="text-sm">{profile.name}</p>
-        </div>
-        <div className="mb-2">
-          <label className="block text-sm text-gray-600">생년월일</label>
-          <p className="text-sm">{profile.birthDate ?? "-"}</p>
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm text-gray-600">닉네임</label>
-          <input
-            className="w-full rounded border px-2 py-1 text-sm"
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm text-gray-600">전화번호</label>
-          <input
-            className="w-full rounded border px-2 py-1 text-sm"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-          />
-        </div>
-        {profileMessage && (
-          <p
-            className={`mb-2 text-sm ${profileMessage.type === "success" ? "text-green-500" : "text-red-500"}`}>
-            {profileMessage.text}
-          </p>
-        )}
         <button
           onClick={handleProfileSubmit}
-          className="rounded bg-blue-500 px-4 py-2 text-sm text-white">
+          className="mt-3 w-full rounded-xl bg-[#89943d] py-4 text-sm font-bold tracking-wide text-white shadow-md shadow-[#89943d]/20 transition-transform active:scale-[0.98]">
           저장
         </button>
       </section>
 
-      <section>
-        <h2 className="mb-2 text-lg font-semibold">비밀번호 변경</h2>
-        <div className="mb-2">
-          <label className="block text-sm text-gray-600">현재 비밀번호</label>
-          <input
-            type="password"
-            className="w-full rounded border px-2 py-1 text-sm"
-            value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
-          />
+      {/* 비밀번호 변경 */}
+      <section className="mb-8">
+        <p className="mb-3 text-[10px] font-bold tracking-[0.12em] text-slate-400 uppercase">
+          비밀번호 변경
+        </p>
+        <div className="flex flex-col gap-4 rounded-xl border border-slate-100 bg-[#f7f7f6] px-5 py-4">
+          <div>
+            <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+              현재 비밀번호
+            </p>
+            <input
+              type="password"
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 transition outline-none focus:border-[#89943d] focus:ring-1 focus:ring-[#89943d]/30"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+            />
+          </div>
+          <div>
+            <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+              새 비밀번호
+            </p>
+            <input
+              type="password"
+              className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition outline-none focus:ring-1 ${
+                newPasswordError
+                  ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+                  : "border-slate-200 focus:border-[#89943d] focus:ring-[#89943d]/30"
+              }`}
+              value={newPassword}
+              onChange={(e) => {
+                setNewPassword(e.target.value);
+                setNewPasswordError(validate.password(e.target.value));
+              }}
+              placeholder="8자 이상, 영문+숫자+특수문자"
+            />
+            {newPasswordError && (
+              <p className="mt-1 pl-1 text-[12px] text-red-500">
+                {newPasswordError}
+              </p>
+            )}
+          </div>
+          <div>
+            <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+              새 비밀번호 확인
+            </p>
+            <input
+              type="password"
+              className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition outline-none focus:ring-1 ${
+                confirmPasswordError
+                  ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+                  : "border-slate-200 focus:border-[#89943d] focus:ring-[#89943d]/30"
+              }`}
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                setConfirmPasswordError(
+                  e.target.value !== newPassword
+                    ? "새 비밀번호가 일치하지 않습니다"
+                    : ""
+                );
+              }}
+            />
+            {confirmPasswordError && (
+              <p className="mt-1 pl-1 text-[12px] text-red-500">
+                {confirmPasswordError}
+              </p>
+            )}
+          </div>
         </div>
-        <div className="mb-2">
-          <label className="block text-sm text-gray-600">새 비밀번호</label>
-          <input
-            type="password"
-            className="w-full rounded border px-2 py-1 text-sm"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm text-gray-600">
-            새 비밀번호 확인
-          </label>
-          <input
-            type="password"
-            className="w-full rounded border px-2 py-1 text-sm"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-          />
-        </div>
-        {passwordMessage && (
-          <p
-            className={`mb-2 text-sm ${passwordMessage.type === "success" ? "text-green-500" : "text-red-500"}`}>
-            {passwordMessage.text}
-          </p>
-        )}
         <button
           onClick={handlePasswordSubmit}
-          className="rounded bg-blue-500 px-4 py-2 text-sm text-white">
+          className="mt-3 w-full rounded-xl border border-slate-200 bg-white py-3.5 text-sm font-semibold text-slate-600 transition-colors active:bg-slate-50">
           변경
         </button>
       </section>
@@ -167,23 +250,60 @@ const EditProfilePage = () => {
     useEditProfile();
 
   if (loading)
-    return <div className="p-4 text-sm text-gray-500">로딩 중...</div>;
-  if (error) return <div className="p-4 text-sm text-red-500">{error}</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f7f7f6]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#89943d] border-t-transparent" />
+          <p className="text-sm font-medium tracking-wide text-[#89943d]">
+            불러오는 중...
+          </p>
+        </div>
+      </div>
+    );
+
+  if (error)
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f7f7f6]">
+        <p className="text-sm text-red-500">{error}</p>
+      </div>
+    );
+
   if (!profile) return null;
 
   return (
-    <div className="mx-auto max-w-md p-4">
-      <button
-        onClick={() => navigate(-1)}
-        className="mb-4 text-sm text-gray-500">
-        ← 뒤로
-      </button>
-      <h1 className="mb-6 text-xl font-bold">개인정보 수정</h1>
-      <EditProfileForm
-        profile={profile}
-        handleUpdateProfile={handleUpdateProfile}
-        handleChangePassword={handleChangePassword}
-      />
+    <div
+      className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-white"
+      style={{ maxWidth: 390, margin: "0 auto" }}>
+      {/* 헤더 */}
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-50 bg-white px-4 py-3">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex h-10 w-10 items-center justify-center text-slate-900">
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+        </button>
+        <h1 className="flex-1 text-center text-[17px] font-bold tracking-tight text-slate-900">
+          개인정보 수정
+        </h1>
+        <div className="h-10 w-10" />
+      </header>
+
+      <div className="px-6 pt-6">
+        <EditProfileForm
+          profile={profile}
+          handleUpdateProfile={handleUpdateProfile}
+          handleChangePassword={handleChangePassword}
+        />
+      </div>
     </div>
   );
 };
