@@ -6,12 +6,13 @@ import path from "path";
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
-  host: true,
-  allowedHosts: ["untrivial-uncausatively-shaun.ngrok-free.dev"],
-  proxy: {
-    '/api': 'http://localhost:8080'  // 이거 추가
-  }
-},
+    host: true,
+    allowedHosts: ["untrivial-uncausatively-shaun.ngrok-free.dev"],
+    proxy: {
+      "/api": "http://localhost:8080",
+      "/uploads": "http://localhost:8080"
+    }
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src")

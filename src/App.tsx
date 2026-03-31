@@ -1,21 +1,10 @@
-/**
- * 📄 src/App.tsx
- *
- * 변경 사항:
- *  - /hiking → HikingRecordPage로 교체 (HikingPage 제거)
- *  - /hiking/record 라우터 제거 (중복)
- */
-
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MapTestPage from "./pages/MapTestPage";
 import HikingRecordPage from "./pages/hiking/HikingRecordPage";
 import HikingSessionDetailPage from "./pages/hiking/HikingSessionDetailPage";
 import SignupPage from "./pages/auth/SignupPage";
 import LoginPage from "./pages/auth/LoginPage";
-
-function HikingReplayPlaceholderPage() {
-  return <div>3D 리플레이 페이지 준비 중</div>;
-}
+import MyPage from "./pages/mypage/MyPage";
 
 export default function App() {
   return (
@@ -29,7 +18,7 @@ export default function App() {
         />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/hiking/sessions/:sessionId/replay" element={<HikingReplayPlaceholderPage />} />
+        <Route path="/mypage" element={<MyPage />} />
       </Routes>
     </BrowserRouter>
   );
