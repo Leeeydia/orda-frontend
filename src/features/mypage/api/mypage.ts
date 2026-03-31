@@ -1,71 +1,70 @@
-const BASE_URL = "http://localhost:8080";
+import axios from "axios";
+import type { ApiResponse } from "@/types/common.types";
+import type {
+  MyPageProfile,
+  MyPageStats,
+  HikingRecord
+} from "../types/mypage.types";
 
-const getToken = () => localStorage.getItem("accessToken");
+const BASE_URL = import.meta.env.VITE_API_URL ?? "";
 
-const authHeaders = () => ({
-  "Content-Type": "application/json",
-  Authorization: `Bearer ${getToken()}`
+const mypageAxios = axios.create({
+  baseURL: BASE_URL,
+  headers: {
+    "Content-Type": "application/json"
+  }
 });
 
-export const fetchProfile = async () => {
-  const res = await fetch(`${BASE_URL}/api/mypage/profile`, {
-    headers: authHeaders()
-  });
-  return res.json();
+mypageAxios.interceptors.request.use((config) => {
+  const token = localStorage.getItem("accessToken");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export const fetchProfile = async (): Promise<ApiResponse<MyPageProfile>> => {
+  const res = await mypageAxios.get<ApiResponse<MyPageProfile>>(
+    "/api/mypage/profile"
+  );
+  return res.data;
 };
 
-export const fetchStats = async () => {
-  const res = await fetch(`${BASE_URL}/api/mypage/stats`, {
-    headers: authHeaders()
-  });
-  return res.json();
+export const fetchStats = async (): Promise<ApiResponse<MyPageStats>> => {
+  const res =
+    await mypageAxios.get<ApiResponse<MyPageStats>>("/api/mypage/stats");
+  return res.data;
 };
 
-export const fetchRecords = async () => {
-  const res = await fetch(`${BASE_URL}/api/mypage/records`, {
-    headers: authHeaders()
-  });
-  return res.json();
+export const fetchRecords = async (): Promise<ApiResponse<HikingRecord[]>> => {
+  const res = await mypageAxios.get<ApiResponse<HikingRecord[]>>(
+    "/api/mypage/records"
+  );
+  return res.data;
 };
 
-export const updateProfile = async (nickname: string) => {
-  const res = await fetch(`${BASE_URL}/api/mypage/profile`, {
-    method: "PATCH",
-    headers: authHeaders(),
-    body: JSON.stringify({ nickname })
-  });
-  return res.json();
-};
-
-export const changePassword = async (
-  currentPassword: string,
-  newPassword: string
-) => {
-  const res = await fetch(`${BASE_URL}/api/mypage/password`, {
-    method: "PATCH",
-    headers: authHeaders(),
-    body: JSON.stringify({ currentPassword, newPassword })
-  });
-  return res.json();
-};
-
-export const uploadProfileImage = async (file: File) => {
+export const uploadProfileImage = async (
+  file: File
+): Promise<ApiResponse<string>> => {
   const formData = new FormData();
-  formData.append("file", file); // [윤종민] "image" → "file" 수정 (백엔드 key명 맞춤)
-  const res = await fetch(`${BASE_URL}/api/mypage/profile-image`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${getToken()}`
-    },
-    body: formData
-  });
-  return res.json();
+  formData.append("file", file);
+
+  const res = await mypageAxios.post<ApiResponse<string>>(
+    "/api/mypage/profile-image",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data"
+      }
+    }
+  );
+
+  return res.data;
 };
 
-export const deleteProfileImage = async () => {
-  const res = await fetch(`${BASE_URL}/api/mypage/profile-image`, {
-    method: "DELETE",
-    headers: authHeaders()
-  });
-  return res.json();
+export const deleteProfileImage = async (): Promise<ApiResponse<null>> => {
+  const res = await mypageAxios.delete<ApiResponse<null>>(
+    "/api/mypage/profile-image"
+  );
+  return res.data;
 };

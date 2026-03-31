@@ -4,7 +4,7 @@ import HikingPage from "./pages/hiking/HikingPage"; // dev 기준 경로로 수�
 import HikingSessionDetailPage from "./pages/hiking/HikingSessionDetailPage";
 import SignupPage from "./pages/auth/SignupPage";
 import LoginPage from "./pages/auth/LoginPage";
-import MyPage from "./pages/MyPage";
+import MyPage from "./pages/mypage/MyPage";
 
 export default function App() {
   return (

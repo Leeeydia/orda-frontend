@@ -1,9 +1,13 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import useMyPage from "../features/mypage/hooks/useMyPage";
+import useMyPage from "../../features/mypage/hooks/useMyPage";
 
 // HikingRecord의 number | null 필드를 안전하게 number로 변환
 const toNum = (v: number | null | undefined): number => v ?? 0;
+
+// [수정] 하드코딩된 "http://localhost:8080" → 환경변수로 분리
+// .env 파일에 VITE_API_URL=http://localhost:8080 설정 필요
+const API_URL = import.meta.env.VITE_API_URL ?? "";
 
 const MyPage = () => {
   const {
@@ -81,7 +85,8 @@ const MyPage = () => {
         <div className="relative">
           {profile?.profileImageUrl ? (
             <img
-              src={`http://localhost:8080${profile.profileImageUrl}`}
+              // [수정] 하드코딩된 "http://localhost:8080" → VITE_API_URL 환경변수로 교체
+              src={`${API_URL}${profile.profileImageUrl}`}
               alt="프로필 이미지"
               className="h-28 w-28 rounded-full object-cover shadow-lg ring-4 ring-[#89943d]/15"
             />

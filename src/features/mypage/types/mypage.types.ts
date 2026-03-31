@@ -1,20 +1,12 @@
-// 공통 API 응답 래퍼
-export interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
-}
+export type { ApiResponse } from "@/types/common.types";
 
-// 프로필
 export interface MyPageProfile {
   userId: number;
   email: string;
   nickname: string;
   profileImageUrl: string | null;
-  createdAt: string;
 }
 
-// 통계
 export interface MyPageStats {
   totalHikes: number;
   totalSummits: number;
@@ -24,7 +16,6 @@ export interface MyPageStats {
   lastHikedAt: string | null;
 }
 
-// 등산 기록 단건
 export interface HikingRecord {
   sessionId: number;
   status: string;
