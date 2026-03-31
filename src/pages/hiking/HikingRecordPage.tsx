@@ -1,19 +1,17 @@
 /**
  * 📄 src/pages/hiking/HikingRecordPage.tsx
- *
- * 변경 사항:
- *  - handleStart: start() 반환값(boolean)으로 상태 전환 판단
- *  - handleEnd: end() 실패 시 finished 전환 안 되도록 try/catch 처리
  */
 
 import { useState, useEffect, useRef } from "react";
 import GpsTrackingMap from "@/features/gps/components/GpsTrackingMap";
 import { useHiking } from "@/features/hiking/hooks/useHiking";
 import type { GpsPoint } from "@/features/gps/types/gps.types";
+import Header from "@/components/layout/Header";
+import BackIcon from "@/assets/icons/back.svg?react";
 
 const useElapsedTime = (isRunning: boolean) => {
   const [seconds, setSeconds] = useState(0);
-  const [lastSeconds, setLastSeconds] = useState(0); // finished 상태에서 마지막 시간 유지용
+  const [lastSeconds, setLastSeconds] = useState(0);
   const startTimeRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -32,7 +30,6 @@ const useElapsedTime = (isRunning: boolean) => {
     return () => clearInterval(id);
   }, [isRunning]);
 
-  // isRunning=false여도 마지막 측정값 유지 (finished 화면에서 시간 표시용)
   return isRunning ? seconds : lastSeconds;
 };
 
@@ -149,7 +146,6 @@ const HikingRecordPage = () => {
 
   const elapsedSeconds = useElapsedTime(pageState === "hiking");
 
-  // start() 반환값(boolean)으로 성공 여부 판단
   const handleStart = async () => {
     const success = await start();
     if (success) setPageState("hiking");
@@ -171,17 +167,22 @@ const HikingRecordPage = () => {
     }
   };
 
-  // end() 실패 시 finished 전환 안 되도록 try/catch 처리
   const handleEnd = async () => {
     try {
       await end();
       setPageState("finished");
       setShowFinishConfirm(false);
     } catch {
-      // error는 useHiking 내부에서 setError로 처리됨
       setShowFinishConfirm(false);
     }
   };
+
+  const pageTitle =
+    pageState === "idle"
+      ? "등산 시작"
+      : pageState === "hiking"
+        ? "기록 중"
+        : "등산 완료";
 
   return (
     <div
@@ -199,27 +200,23 @@ const HikingRecordPage = () => {
         />
       </div>
 
-      {/* ── 상단 헤더 ────────────────────────────── */}
-      <header className="relative z-10 flex items-center justify-between bg-transparent p-4">
-        <button className="flex size-10 items-center justify-center rounded-full bg-white/80 text-slate-900 shadow-sm backdrop-blur-md transition-colors active:bg-white">
-          <span className="material-symbols-outlined">arrow_back</span>
-        </button>
-        <div className="flex flex-col items-center">
-          {pageState === "hiking" && (
-            <span className="text-[10px] font-bold tracking-widest text-[#89943d] uppercase">
-              Live Activity
-            </span>
-          )}
-          <h2 className="text-sm leading-tight font-bold text-slate-900 dark:text-slate-100">
-            {pageState === "idle" && "등산 시작"}
-            {pageState === "hiking" && "기록 중"}
-            {pageState === "finished" && "등산 완료"}
-          </h2>
-        </div>
-        <button className="flex size-10 items-center justify-center rounded-full bg-white/80 text-slate-900 shadow-sm backdrop-blur-md transition-colors active:bg-white">
-          <span className="material-symbols-outlined">settings</span>
-        </button>
-      </header>
+      {/* ── 공통 헤더 ────────────────────────────── */}
+      <div className="relative z-10">
+        <Header
+          leftSlot={
+            <button className="flex size-10 items-center justify-center rounded-full bg-white/80 shadow-sm backdrop-blur-md transition-colors active:bg-white">
+              <BackIcon className="h-4 w-4" />
+            </button>
+          }
+          rightSlot={
+            <button className="flex size-10 items-center justify-center rounded-full bg-white/80 text-slate-900 shadow-sm backdrop-blur-md transition-colors active:bg-white">
+              <span className="material-symbols-outlined">settings</span>
+            </button>
+          }
+          subTitle={pageState === "hiking" ? "Live Activity" : undefined}
+          title={pageTitle}
+        />
+      </div>
 
       {/* ── 하단 패널 ────────────────────────────── */}
       <div className="relative z-10 mt-auto w-full rounded-t-[2.5rem] border-t border-slate-100 bg-white shadow-2xl dark:border-slate-800 dark:bg-[#1c1d15]">
