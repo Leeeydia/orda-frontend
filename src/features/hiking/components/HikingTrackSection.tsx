@@ -5,14 +5,15 @@ import {
   getTrackBounds,
   mapTrackFeaturesToDisplayGeoJson
 } from "../mappers/hikingMappers";
-import type { HikingTrackFeatureCollection } from "../types/hiking.types";
+import type { HikingTrackFeatureCollection, SummitMarkerItem } from "../types/hiking.types";
 
 type HikingTrackSectionProps = {
   tracks: HikingTrackFeatureCollection | null;
+  verifiedSummits?: SummitMarkerItem[];
 };
 
 export default function HikingTrackSection({
-  tracks
+  tracks, verifiedSummits = []
 }: HikingTrackSectionProps) {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const [isMapReady, setIsMapReady] = useState(false);
@@ -59,6 +60,7 @@ export default function HikingTrackSection({
     <div className="absolute inset-0 z-0">
       <CommonMap
         geoJsonData={displayGeoJson}
+        summitMarkers={verifiedSummits}
         className="h-full w-full"
         showNavigationControl={false}
         lineColor="#89943d"
