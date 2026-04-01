@@ -189,7 +189,7 @@ export default function SignupPage() {
               type="submit"
               disabled={loading}
               aria-busy={loading}
-              className="mt-2 flex h-14 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#4a521e] to-[#89943d] text-[17px] font-bold tracking-wide text-white shadow-md transition active:scale-[0.98] active:opacity-90 disabled:opacity-55">
+              className="mt-2 flex h-14 w-full items-center justify-center rounded-2xl bg-linear-to-r from-[#4a521e] to-[#89943d] text-[17px] font-bold tracking-wide text-white shadow-md transition active:scale-[0.98] active:opacity-90 disabled:opacity-55">
               {loading ? (
                 <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
               ) : (
