@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useSignup, validate } from "../../features/auth/hooks/useAuth";
+import { useSignup } from "../../features/auth/hooks/useAuth";
+import { validate } from "../../utils/validate";
 import type { SignupRequest } from "../../features/auth/types/auth.types";
 import Toast from "../../components/ui/Toast";
 
