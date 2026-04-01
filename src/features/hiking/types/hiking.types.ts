@@ -47,7 +47,8 @@ export interface HikingSessionResponse {
 export interface HikingTrackFeatureProperties {
   trackId: number;
   sequenceNum: number;
-  elevationM: number | null;
+  canonicalElevationM: number | null;
+  elevationSource: string | null;
   accuracyM: number | null;
   recordedAt: string;
 }
