@@ -21,10 +21,9 @@ export const validate = {
     /^[가-힣a-zA-Z]{2,20}$/.test(v) ? "" : "한글/영문 2~20자로 입력해주세요.",
 
   // 사용자 입력: 010-XXXX-XXXX / 전송 시: 하이픈 제거 후 01012345678
+  // 010 번호만 허용
   phone: (v: string) =>
-    /^01[0-9]-?\d{3,4}-?\d{4}$/.test(v)
-      ? ""
-      : "전화번호 형식으로 입력해주세요.",
+    /^010-\d{4}-\d{4}$/.test(v) ? "" : "010-XXXX-XXXX 형식으로 입력해주세요.",
 
   // type="text" 기반 자동 포맷 (YYYY-MM-DD)
   birthDate: (v: string) => {

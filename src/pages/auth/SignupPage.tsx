@@ -56,6 +56,7 @@ export default function SignupPage() {
     }
   }, []);
 
+  // 010 고정, 가운데 4자리, 마지막 4자리 자동 포맷
   const handlePhoneChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const raw = e.target.value.replace(/\D/g, "").slice(0, 11);
