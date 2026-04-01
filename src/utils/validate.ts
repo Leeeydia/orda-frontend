@@ -22,9 +22,9 @@ export const validate = {
 
   // 사용자 입력: 010-XXXX-XXXX / 전송 시: 하이픈 제거 후 01012345678
   phone: (v: string) =>
-    /^01[0-9]-\d{3,4}-\d{4}$/.test(v)
+    /^01[0-9]-?\d{3,4}-?\d{4}$/.test(v)
       ? ""
-      : "010-XXXX-XXXX 형식으로 입력해주세요.",
+      : "전화번호 형식으로 입력해주세요.",
 
   // type="text" 기반 자동 포맷 (YYYY-MM-DD)
   birthDate: (v: string) => {
