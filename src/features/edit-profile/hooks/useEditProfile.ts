@@ -28,7 +28,9 @@ const useEditProfile = () => {
         }
       } catch (err) {
         if (axios.isAxiosError(err)) {
-          setError(err.response?.data?.message ?? "프로필을 불러오지 못했습니다");
+          setError(
+            err.response?.data?.message ?? "프로필을 불러오지 못했습니다"
+          );
         } else {
           setError("프로필을 불러오지 못했습니다");
         }

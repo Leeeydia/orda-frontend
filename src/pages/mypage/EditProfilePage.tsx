@@ -3,13 +3,12 @@ import { useNavigate } from "react-router-dom";
 import useEditProfile from "@/features/edit-profile/hooks/useEditProfile";
 import type { SettingsProfile } from "@/features/edit-profile/types/editProfile.types";
 import Toast from "@/components/ui/Toast";
-import { validate } from "@/features/auth/hooks/useAuth";
+import { validate } from "@/utils/validate";
 
 const EditProfileForm = ({
   profile,
   handleUpdateProfile,
-  handleChangePassword,
-  onProfileSaveSuccess
+  handleChangePassword
 }: {
   profile: SettingsProfile;
   handleUpdateProfile: (req: {
@@ -20,7 +19,6 @@ const EditProfileForm = ({
     currentPassword: string;
     newPassword: string;
   }) => Promise<{ success: boolean; message?: string }>;
-  onProfileSaveSuccess: () => void;
 }) => {
   const [nickname, setNickname] = useState(profile.nickname);
   const [nicknameError, setNicknameError] = useState("");
@@ -34,7 +32,7 @@ const EditProfileForm = ({
   } | null>(null);
 
   const [currentPassword, setCurrentPassword] = useState("");
-  const [currentPasswordError, setCurrentPasswordError] = useState(""); // 현재 비밀번호 빈값 검증 추가
+  const [currentPasswordError, setCurrentPasswordError] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordError, setNewPasswordError] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -50,6 +48,14 @@ const EditProfileForm = ({
     setPhoneError(validate.phone(formatted));
   };
 
+  const getNewPasswordError = (value: string, curPw: string) => {
+    const pwErr = validate.password(value);
+    if (pwErr) return pwErr;
+    if (value === curPw && value !== "")
+      return "현재 비밀번호와 동일한 비밀번호는 사용할 수 없습니다";
+    return "";
+  };
+
   const handleProfileSubmit = async () => {
     const nErr = validate.nickname(nickname);
     const pErr = validate.phone(phone);
@@ -59,18 +65,16 @@ const EditProfileForm = ({
 
     const result = await handleUpdateProfile({ nickname, phone });
     if (result.success) {
-      // 저장 성공: Toast 표시 후 1초 뒤 /mypage로 이동 (replace로 뒤로가기 차단)
       setToast({ type: "success", text: "프로필이 수정되었습니다" });
-      setTimeout(() => onProfileSaveSuccess(), 1000);
     } else {
       setToast({ type: "error", text: result.message ?? "수정 실패" });
     }
   };
 
   const handlePasswordSubmit = async () => {
-    // 현재 비밀번호 빈값 검증
-    const curPwErr = currentPassword.trim() === "" ? "현재 비밀번호를 입력해주세요" : "";
-    const pwErr = validate.password(newPassword);
+    const curPwErr =
+      currentPassword.trim() === "" ? "현재 비밀번호를 입력해주세요" : "";
+    const pwErr = getNewPasswordError(newPassword, currentPassword);
     const confirmErr =
       newPassword !== confirmPassword ? "새 비밀번호가 일치하지 않습니다" : "";
     setCurrentPasswordError(curPwErr);
@@ -195,6 +199,11 @@ const EditProfileForm = ({
               onChange={(e) => {
                 setCurrentPassword(e.target.value);
                 if (e.target.value.trim() !== "") setCurrentPasswordError("");
+                // 현재 비밀번호 변경 시 새 비밀번호 에러도 재검증
+                if (newPassword !== "")
+                  setNewPasswordError(
+                    getNewPasswordError(newPassword, e.target.value)
+                  );
               }}
             />
             {currentPasswordError && (
@@ -217,7 +226,9 @@ const EditProfileForm = ({
               value={newPassword}
               onChange={(e) => {
                 setNewPassword(e.target.value);
-                setNewPasswordError(validate.password(e.target.value));
+                setNewPasswordError(
+                  getNewPasswordError(e.target.value, currentPassword)
+                );
               }}
               placeholder="8자 이상, 영문+숫자+특수문자"
             />
@@ -323,9 +334,6 @@ const EditProfilePage = () => {
           profile={profile}
           handleUpdateProfile={handleUpdateProfile}
           handleChangePassword={handleChangePassword}
-          onProfileSaveSuccess={() =>
-            navigate("/mypage", { replace: true })
-          }
         />
       </div>
     </div>

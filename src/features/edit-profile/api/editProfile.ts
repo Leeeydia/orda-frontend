@@ -25,7 +25,9 @@ editProfileAxios.interceptors.request.use((config) => {
   return config;
 });
 
-export const fetchSettingsProfile = async (): Promise<ApiResponse<SettingsProfile>> => {
+export const fetchSettingsProfile = async (): Promise<
+  ApiResponse<SettingsProfile>
+> => {
   const res = await editProfileAxios.get<ApiResponse<SettingsProfile>>(
     "/api/settings/profile"
   );
@@ -35,9 +37,14 @@ export const fetchSettingsProfile = async (): Promise<ApiResponse<SettingsProfil
 export const updateProfile = async (
   request: UpdateProfileRequest
 ): Promise<ApiResponse<SettingsProfile>> => {
+  // 전송 전 전화번호 하이픈 제거 — useSignup과 동일한 정책 (010XXXXXXXX)
+  const normalized: UpdateProfileRequest = {
+    ...request,
+    ...(request.phone && { phone: request.phone.replace(/-/g, "") })
+  };
   const res = await editProfileAxios.patch<ApiResponse<SettingsProfile>>(
     "/api/settings/profile",
-    request
+    normalized
   );
   return res.data;
 };
