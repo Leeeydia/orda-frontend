@@ -8,7 +8,8 @@ import { validate } from "@/features/auth/hooks/useAuth";
 const EditProfileForm = ({
   profile,
   handleUpdateProfile,
-  handleChangePassword
+  handleChangePassword,
+  onProfileSaveSuccess
 }: {
   profile: SettingsProfile;
   handleUpdateProfile: (req: {
@@ -19,6 +20,7 @@ const EditProfileForm = ({
     currentPassword: string;
     newPassword: string;
   }) => Promise<{ success: boolean; message?: string }>;
+  onProfileSaveSuccess: () => void;
 }) => {
   const [nickname, setNickname] = useState(profile.nickname);
   const [nicknameError, setNicknameError] = useState("");
@@ -32,6 +34,7 @@ const EditProfileForm = ({
   } | null>(null);
 
   const [currentPassword, setCurrentPassword] = useState("");
+  const [currentPasswordError, setCurrentPasswordError] = useState(""); // 현재 비밀번호 빈값 검증 추가
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordError, setNewPasswordError] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -56,19 +59,24 @@ const EditProfileForm = ({
 
     const result = await handleUpdateProfile({ nickname, phone });
     if (result.success) {
+      // 저장 성공: Toast 표시 후 1초 뒤 /mypage로 이동 (replace로 뒤로가기 차단)
       setToast({ type: "success", text: "프로필이 수정되었습니다" });
+      setTimeout(() => onProfileSaveSuccess(), 1000);
     } else {
       setToast({ type: "error", text: result.message ?? "수정 실패" });
     }
   };
 
   const handlePasswordSubmit = async () => {
+    // 현재 비밀번호 빈값 검증
+    const curPwErr = currentPassword.trim() === "" ? "현재 비밀번호를 입력해주세요" : "";
     const pwErr = validate.password(newPassword);
     const confirmErr =
       newPassword !== confirmPassword ? "새 비밀번호가 일치하지 않습니다" : "";
+    setCurrentPasswordError(curPwErr);
     setNewPasswordError(pwErr);
     setConfirmPasswordError(confirmErr);
-    if (pwErr || confirmErr) return;
+    if (curPwErr || pwErr || confirmErr) return;
 
     const result = await handleChangePassword({ currentPassword, newPassword });
     if (result.success) {
@@ -76,6 +84,7 @@ const EditProfileForm = ({
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+      setCurrentPasswordError("");
       setNewPasswordError("");
       setConfirmPasswordError("");
     } else {
@@ -177,10 +186,22 @@ const EditProfileForm = ({
             </p>
             <input
               type="password"
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 transition outline-none focus:border-[#89943d] focus:ring-1 focus:ring-[#89943d]/30"
+              className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition outline-none focus:ring-1 ${
+                currentPasswordError
+                  ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+                  : "border-slate-200 focus:border-[#89943d] focus:ring-[#89943d]/30"
+              }`}
               value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
+              onChange={(e) => {
+                setCurrentPassword(e.target.value);
+                if (e.target.value.trim() !== "") setCurrentPasswordError("");
+              }}
             />
+            {currentPasswordError && (
+              <p className="mt-1 pl-1 text-[12px] text-red-500">
+                {currentPasswordError}
+              </p>
+            )}
           </div>
           <div>
             <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
@@ -302,6 +323,9 @@ const EditProfilePage = () => {
           profile={profile}
           handleUpdateProfile={handleUpdateProfile}
           handleChangePassword={handleChangePassword}
+          onProfileSaveSuccess={() =>
+            navigate("/mypage", { replace: true })
+          }
         />
       </div>
     </div>
