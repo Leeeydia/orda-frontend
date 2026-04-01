@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import ReplayMapSection from "@/features/hiking/components/ReplayMapSection";
 import { useReplayQuery } from "@/features/hiking/hooks/useReplayQuery";
 
 export default function HikingSessionReplayPage() {
@@ -93,17 +94,13 @@ export default function HikingSessionReplayPage() {
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(137,148,61,0.16),_transparent_55%)]" />
               <div className="absolute inset-0 bg-[linear-gradient(to_bottom,_rgba(255,255,255,0.18),_rgba(255,255,255,0)_28%,_rgba(0,0,0,0.08)_100%)]" />
 
-              <div className="absolute inset-0 z-0 flex items-center justify-center">
-                <div className="flex h-[78%] w-[88%] items-center justify-center rounded-[24px] border border-dashed border-[#89943d]/25 bg-white/30 text-sm font-medium text-[#4a521e]/70 backdrop-blur-[2px]">
-                  Replay Map Section Placeholder
-                </div>
-              </div>
+              <ReplayMapSection replay={replay} />
 
-              <div className="absolute top-4 left-4 right-4 z-20">
+              <div className="absolute top-4 right-4 left-4 z-20">
                 <div className="rounded-3xl border border-white/50 bg-white/88 px-4 py-3 shadow-sm backdrop-blur">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#89943d]">
+                      <p className="text-[11px] font-semibold tracking-[0.18em] text-[#89943d] uppercase">
                         ORDA
                       </p>
                       <h1 className="mt-1 text-base font-bold tracking-tight text-[#2f3415]">
@@ -115,7 +112,7 @@ export default function HikingSessionReplayPage() {
                     </div>
 
                     <div className="rounded-2xl bg-[#89943d]/10 px-3 py-2 text-right">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#89943d]">
+                      <p className="text-[10px] font-semibold tracking-[0.16em] text-[#89943d] uppercase">
                         total points
                       </p>
                       <p className="mt-1 text-sm font-bold text-[#2f3415]">
@@ -127,7 +124,7 @@ export default function HikingSessionReplayPage() {
               </div>
 
               {isLoading ? (
-                <div className="absolute top-28 left-4 right-4 z-20 rounded-2xl border border-white/50 bg-white/90 px-4 py-3 text-sm text-slate-500 shadow-sm backdrop-blur">
+                <div className="absolute top-28 right-4 left-4 z-20 rounded-2xl border border-white/50 bg-white/90 px-4 py-3 text-sm text-slate-500 shadow-sm backdrop-blur">
                   리플레이 정보를 불러오는 중...
                 </div>
               ) : null}
@@ -136,7 +133,7 @@ export default function HikingSessionReplayPage() {
                 <div className="rounded-3xl border border-white/50 bg-white/90 px-4 py-4 shadow-sm backdrop-blur">
                   <div className="mb-3 flex items-center justify-between">
                     <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#89943d]">
+                      <p className="text-[11px] font-semibold tracking-[0.16em] text-[#89943d] uppercase">
                         Replay Progress
                       </p>
                       <p className="mt-1 text-sm font-bold text-[#2f3415]">
@@ -159,7 +156,7 @@ export default function HikingSessionReplayPage() {
               <div className="rounded-[28px] border border-[#89943d]/10 bg-white/92 px-4 py-4 shadow-sm backdrop-blur">
                 <div className="mb-3 flex items-center justify-between">
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#89943d]">
+                    <p className="text-[11px] font-semibold tracking-[0.16em] text-[#89943d] uppercase">
                       Replay Controls
                     </p>
                     <h2 className="mt-1 text-sm font-bold text-[#2f3415]">
@@ -185,7 +182,7 @@ export default function HikingSessionReplayPage() {
                   </button>
 
                   <div className="min-w-0 flex-1 rounded-2xl bg-[#f7f7f6] px-4 py-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#89943d]">
+                    <p className="text-[11px] font-semibold tracking-[0.16em] text-[#89943d] uppercase">
                       상태
                     </p>
                     <p className="mt-1 truncate text-sm text-slate-600">
@@ -201,7 +198,7 @@ export default function HikingSessionReplayPage() {
             <section className="rounded-3xl border border-[#89943d]/10 bg-white px-4 py-4 shadow-sm">
               <div className="mb-3 flex items-center justify-between">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#89943d]">
+                  <p className="text-[11px] font-semibold tracking-[0.16em] text-[#89943d] uppercase">
                     Replay Summary
                   </p>
                   <h2 className="mt-1 text-sm font-bold text-[#2f3415]">
@@ -212,7 +209,7 @@ export default function HikingSessionReplayPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#89943d]">
+                  <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
                     총 거리
                   </p>
                   <p className="mt-1 text-base font-bold text-[#2f3415]">
@@ -221,7 +218,7 @@ export default function HikingSessionReplayPage() {
                 </div>
 
                 <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#89943d]">
+                  <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
                     총 시간
                   </p>
                   <p className="mt-1 text-base font-bold text-[#2f3415]">
@@ -230,7 +227,7 @@ export default function HikingSessionReplayPage() {
                 </div>
 
                 <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#89943d]">
+                  <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
                     상승 고도
                   </p>
                   <p className="mt-1 text-base font-bold text-[#2f3415]">
@@ -239,7 +236,7 @@ export default function HikingSessionReplayPage() {
                 </div>
 
                 <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#89943d]">
+                  <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
                     하강 고도
                   </p>
                   <p className="mt-1 text-base font-bold text-[#2f3415]">
