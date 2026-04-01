@@ -126,7 +126,7 @@ export default function SignupPage() {
               label="이메일"
               name="email"
               type="email"
-              placeholder="example@orda.com"
+              placeholder=""
               value={form.email}
               error={errors.email}
               onChange={handleChange}
@@ -157,7 +157,7 @@ export default function SignupPage() {
                 label="이름"
                 name="name"
                 type="text"
-                placeholder="홍길동"
+                placeholder=""
                 value={form.name}
                 error={errors.name}
                 onChange={handleChange}
@@ -168,7 +168,7 @@ export default function SignupPage() {
               label="전화번호"
               name="phone"
               type="tel"
-              placeholder="010-0000-0000"
+              placeholder=""
               value={form.phone}
               error={errors.phone}
               onChange={handlePhoneChange}
