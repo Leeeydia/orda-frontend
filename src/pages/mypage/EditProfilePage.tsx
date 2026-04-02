@@ -5,10 +5,21 @@ import type { SettingsProfile } from "@/features/edit-profile/types/editProfile.
 import Toast from "@/components/ui/Toast";
 import { validate } from "@/utils/validate";
 
+// 숫자만 있는 전화번호를 010-XXXX-XXXX 포맷으로 변환
+const formatPhone = (phone: string | null): string => {
+  if (!phone) return "";
+  const raw = phone.replace(/-/g, "");
+  if (raw.length > 7)
+    return `${raw.slice(0, 3)}-${raw.slice(3, 7)}-${raw.slice(7)}`;
+  if (raw.length > 3) return `${raw.slice(0, 3)}-${raw.slice(3)}`;
+  return raw;
+};
+
 const EditProfileForm = ({
   profile,
   handleUpdateProfile,
-  handleChangePassword
+  handleChangePassword,
+  onSuccess
 }: {
   profile: SettingsProfile;
   handleUpdateProfile: (req: {
@@ -19,11 +30,12 @@ const EditProfileForm = ({
     currentPassword: string;
     newPassword: string;
   }) => Promise<{ success: boolean; message?: string }>;
+  onSuccess: () => void;
 }) => {
   const [nickname, setNickname] = useState(profile.nickname);
   const [nicknameError, setNicknameError] = useState("");
 
-  const [phone, setPhone] = useState(profile.phone ?? "");
+  const [phone, setPhone] = useState(formatPhone(profile.phone)); // 초기값 포맷 적용
   const [phoneError, setPhoneError] = useState("");
 
   const [toast, setToast] = useState<{
@@ -66,6 +78,7 @@ const EditProfileForm = ({
     const result = await handleUpdateProfile({ nickname, phone });
     if (result.success) {
       setToast({ type: "success", text: "프로필이 수정되었습니다" });
+      setTimeout(() => onSuccess(), 1000);
     } else {
       setToast({ type: "error", text: result.message ?? "수정 실패" });
     }
@@ -85,12 +98,7 @@ const EditProfileForm = ({
     const result = await handleChangePassword({ currentPassword, newPassword });
     if (result.success) {
       setToast({ type: "success", text: "비밀번호가 변경되었습니다" });
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      setCurrentPasswordError("");
-      setNewPasswordError("");
-      setConfirmPasswordError("");
+      setTimeout(() => onSuccess(), 1000);
     } else {
       setToast({ type: "error", text: result.message ?? "변경 실패" });
     }
@@ -199,7 +207,6 @@ const EditProfileForm = ({
               onChange={(e) => {
                 setCurrentPassword(e.target.value);
                 if (e.target.value.trim() !== "") setCurrentPasswordError("");
-                // 현재 비밀번호 변경 시 새 비밀번호 에러도 재검증
                 if (newPassword !== "")
                   setNewPasswordError(
                     getNewPasswordError(newPassword, e.target.value)
@@ -334,6 +341,7 @@ const EditProfilePage = () => {
           profile={profile}
           handleUpdateProfile={handleUpdateProfile}
           handleChangePassword={handleChangePassword}
+          onSuccess={() => navigate("/mypage", { replace: true })}
         />
       </div>
     </div>
