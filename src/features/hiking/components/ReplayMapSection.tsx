@@ -4,8 +4,14 @@ import type { FeatureCollection, LineString, Point } from "geojson";
 import CommonMap from "@/components/map/CommonMap";
 import type { ReplaySessionModel } from "../types/hiking.types";
 
+type ReplayCurrentPosition = {
+  lat: number;
+  lng: number;
+};
+
 type ReplayMapSectionProps = {
   replay: ReplaySessionModel | null;
+  currentPosition?: ReplayCurrentPosition | null;
 };
 
 const EMPTY_FEATURE_COLLECTION: FeatureCollection = {
@@ -68,45 +74,72 @@ function getReplayDisplayGeoJson(
   };
 }
 
-function getReplayBounds(
-  replay: ReplaySessionModel | null
-): [[number, number], [number, number]] | null {
-  if (!replay || replay.lineCoordinates.length === 0) {
-    return null;
-  }
+function createReplayMarkerElement() {
+  const wrapper = document.createElement("div");
+  wrapper.style.width = "24px";
+  wrapper.style.height = "24px";
+  wrapper.style.display = "flex";
+  wrapper.style.alignItems = "center";
+  wrapper.style.justifyContent = "center";
+  wrapper.style.pointerEvents = "none";
 
-  const longitudes = replay.lineCoordinates.map((coord) => coord[0]);
-  const latitudes = replay.lineCoordinates.map((coord) => coord[1]);
+  const outerRing = document.createElement("div");
+  outerRing.style.width = "24px";
+  outerRing.style.height = "24px";
+  outerRing.style.borderRadius = "9999px";
+  outerRing.style.background = "rgba(163, 190, 76, 0.22)";
+  outerRing.style.border = "2px solid rgba(163, 190, 76, 0.45)";
+  outerRing.style.display = "flex";
+  outerRing.style.alignItems = "center";
+  outerRing.style.justifyContent = "center";
+  outerRing.style.boxShadow = "0 4px 14px rgba(47, 52, 21, 0.28)";
 
-  const minLng = Math.min(...longitudes);
-  const maxLng = Math.max(...longitudes);
-  const minLat = Math.min(...latitudes);
-  const maxLat = Math.max(...latitudes);
+  const innerDot = document.createElement("div");
+  innerDot.style.width = "12px";
+  innerDot.style.height = "12px";
+  innerDot.style.borderRadius = "9999px";
+  innerDot.style.background = "#2F3415";
+  innerDot.style.border = "3px solid #ffffff";
+  innerDot.style.boxSizing = "border-box";
 
-  return [
-    [minLng, minLat],
-    [maxLng, maxLat]
-  ];
+  outerRing.appendChild(innerDot);
+  wrapper.appendChild(outerRing);
+
+  return wrapper;
 }
 
 export default function ReplayMapSection({
-  replay
+  replay,
+  currentPosition
 }: ReplayMapSectionProps) {
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const markerRef = useRef<maplibregl.Marker | null>(null);
   const [isMapReady, setIsMapReady] = useState(false);
 
   const displayGeoJson = useMemo(() => {
     return getReplayDisplayGeoJson(replay);
   }, [replay]);
 
-  const bounds = useMemo(() => {
-    return getReplayBounds(replay);
-  }, [replay]);
-
   useEffect(() => {
-    if (!isMapReady || !mapRef.current || !bounds) return;
+    if (!isMapReady || !mapRef.current || !replay) return;
 
-    mapRef.current.resize();
+    const coords = replay.lineCoordinates;
+    if (coords.length === 0) return;
+
+    if (coords.length === 1) {
+      mapRef.current.easeTo({
+        center: coords[0],
+        zoom: 15,
+        duration: 800
+      });
+      return;
+    }
+
+    const bounds = coords.reduce(
+      (acc, coord) => acc.extend(coord),
+      new maplibregl.LngLatBounds(coords[0], coords[0])
+    );
+
     mapRef.current.fitBounds(bounds, {
       padding: {
         top: 110,
@@ -116,7 +149,43 @@ export default function ReplayMapSection({
       },
       duration: 800
     });
-  }, [isMapReady, bounds]);
+  }, [isMapReady, replay]);
+
+  useEffect(() => {
+    if (!isMapReady || !mapRef.current) return;
+
+    if (!currentPosition) {
+      if (markerRef.current) {
+        markerRef.current.remove();
+        markerRef.current = null;
+      }
+      return;
+    }
+
+    const lngLat: [number, number] = [currentPosition.lng, currentPosition.lat];
+
+    if (!markerRef.current) {
+      const el = createReplayMarkerElement();
+
+      markerRef.current = new maplibregl.Marker({
+        element: el,
+        anchor: "center"
+      })
+        .setLngLat(lngLat)
+        .addTo(mapRef.current);
+    } else {
+      markerRef.current.setLngLat(lngLat);
+    }
+  }, [isMapReady, currentPosition]);
+
+  useEffect(() => {
+    return () => {
+      if (markerRef.current) {
+        markerRef.current.remove();
+        markerRef.current = null;
+      }
+    };
+  }, []);
 
   if (!replay || replay.lineCoordinates.length === 0) {
     return (

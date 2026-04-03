@@ -12,14 +12,15 @@ type ReplayContentProps = {
 
 function ReplayPageContent({ replay, onBack }: ReplayContentProps) {
   const {
-    isPlaying,
-    currentReplaySeconds,
-    durationSeconds,
-    progress,
-    play,
-    pause,
-    reset
-  } = useReplayPlayer(replay);
+  isPlaying,
+  currentReplaySeconds,
+  durationSeconds,
+  currentPosition,
+  progress,
+  play,
+  pause,
+  reset
+} = useReplayPlayer(replay);
 
   return (
     <>
@@ -43,7 +44,7 @@ function ReplayPageContent({ replay, onBack }: ReplayContentProps) {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(137,148,61,0.16),_transparent_55%)]" />
             <div className="absolute inset-0 bg-[linear-gradient(to_bottom,_rgba(255,255,255,0.18),_rgba(255,255,255,0)_28%,_rgba(0,0,0,0.08)_100%)]" />
 
-            <ReplayMapSection replay={replay} />
+            <ReplayMapSection replay={replay} currentPosition={currentPosition} />
 
             <div className="absolute top-4 right-4 left-4 z-20">
               <div className="rounded-3xl border border-white/50 bg-white/88 px-4 py-3 shadow-sm backdrop-blur">

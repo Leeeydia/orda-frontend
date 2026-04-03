@@ -4,19 +4,25 @@ import type {
   ReplayTrackPoint
 } from "../types/hiking.types";
 
+type ReplayCurrentPosition = {
+  lat: number;
+  lng: number;
+};
+
 type UseReplayPlayerResult = {
   isPlaying: boolean;
   currentReplaySeconds: number;
   durationSeconds: number;
   currentPoint: ReplayTrackPoint | null;
   currentIndex: number;
+  currentPosition: ReplayCurrentPosition | null;
   progress: number;
   play: () => void;
   pause: () => void;
   reset: () => void;
 };
 
-const TICK_MS = 100;
+const TICK_MS = 50;
 
 function findCurrentIndex(
   points: ReplayTrackPoint[],
@@ -35,6 +41,39 @@ function findCurrentIndex(
   }
 
   return currentIndex;
+}
+
+function interpolatePosition(
+  currentPoint: ReplayTrackPoint | null,
+  nextPoint: ReplayTrackPoint | null,
+  currentReplaySeconds: number
+): ReplayCurrentPosition | null {
+  if (!currentPoint) return null;
+
+  if (!nextPoint) {
+    return {
+      lat: currentPoint.lat,
+      lng: currentPoint.lng
+    };
+  }
+
+  const startTime = currentPoint.replayElapsedSeconds;
+  const endTime = nextPoint.replayElapsedSeconds;
+
+  if (endTime <= startTime) {
+    return {
+      lat: currentPoint.lat,
+      lng: currentPoint.lng
+    };
+  }
+
+  const rawRatio = (currentReplaySeconds - startTime) / (endTime - startTime);
+  const ratio = Math.min(Math.max(rawRatio, 0), 1);
+
+  return {
+    lat: currentPoint.lat + (nextPoint.lat - currentPoint.lat) * ratio,
+    lng: currentPoint.lng + (nextPoint.lng - currentPoint.lng) * ratio
+  };
 }
 
 export const useReplayPlayer = (
@@ -58,6 +97,22 @@ export const useReplayPlayer = (
     }
     return trackPoints[currentIndex];
   }, [trackPoints, currentIndex]);
+
+  const nextPoint = useMemo(() => {
+    const nextIndex = currentIndex + 1;
+    if (nextIndex < 0 || nextIndex >= trackPoints.length) {
+      return null;
+    }
+    return trackPoints[nextIndex];
+  }, [trackPoints, currentIndex]);
+
+  const currentPosition = useMemo(() => {
+    return interpolatePosition(
+      currentPoint,
+      nextPoint,
+      currentReplaySeconds
+    );
+  }, [currentPoint, nextPoint, currentReplaySeconds]);
 
   const progress = useMemo(() => {
     if (durationSeconds <= 0) return 0;
@@ -91,9 +146,11 @@ export const useReplayPlayer = (
 
   const play = () => {
     if (durationSeconds <= 0) return;
+
     if (currentReplaySeconds >= durationSeconds) {
       setCurrentReplaySeconds(0);
     }
+
     setIsPlaying(true);
   };
 
@@ -112,6 +169,7 @@ export const useReplayPlayer = (
     durationSeconds,
     currentPoint,
     currentIndex,
+    currentPosition,
     progress,
     play,
     pause,
