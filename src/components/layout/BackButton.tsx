@@ -1,15 +1,16 @@
 // src/components/layout/BackButton.tsx
 
 import { useNavigate } from "react-router-dom";
-import BackIcon from "@/assets/icons/back.svg?react";
 
 const BackButton = () => {
   const navigate = useNavigate();
   return (
     <button
+      type="button"
       onClick={() => navigate(-1)}
-      className="flex size-10 items-center justify-center transition-colors active:bg-white">
-      <BackIcon className="h-4 w-4" />
+      className="flex h-10 w-10 items-center justify-center rounded-full text-[#4a521e] transition hover:bg-[#89943d]/10"
+      aria-label="뒤로가기">
+      <span className="text-xl">←</span>
     </button>
   );
 };
