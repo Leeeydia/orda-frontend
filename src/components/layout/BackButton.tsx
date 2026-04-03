@@ -8,8 +8,7 @@ const BackButton = () => {
   return (
     <button
       onClick={() => navigate(-1)}
-      className="flex size-10 items-center justify-center rounded-full bg-white/80 shadow-sm backdrop-blur-md transition-colors active:bg-white"
-    >
+      className="flex size-10 items-center justify-center transition-colors active:bg-white">
       <BackIcon className="h-4 w-4" />
     </button>
   );
