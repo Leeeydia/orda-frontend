@@ -195,16 +195,7 @@ const HikingRecordPage = () => {
 
       {/* ── 공통 헤더 ────────────────────────────── */}
       <div className="relative z-10">
-        <Header
-          leftSlot={<BackButton />}
-          subTitle="ORDA"
-          title="등산 기록"
-          rightSlot={
-            <button className="flex size-10 items-center justify-center rounded-full bg-white/80 text-slate-900 shadow-sm backdrop-blur-md transition-colors active:bg-white">
-              <span className="material-symbols-outlined">settings</span>
-            </button>
-          }
-        />
+        <Header leftSlot={<BackButton />} subTitle="ORDA" title="등산 기록" />
       </div>
 
       {/* ── 하단 패널 ────────────────────────────── */}
