@@ -3,9 +3,8 @@
 import CommonMap from "../components/map/CommonMap";
 import { sampleGeoJson } from "../mock/sampleGeoJson";
 import Header from "@/components/layout/Header";
-import BackButton from "@/components/layout/BackButton";
 
-export default function MapTestPage() {
+const MapTestPage = () => {
   return (
     <div className="bg-bg-page min-h-dvh">
       <div className="mx-auto min-h-dvh w-full max-w-[390px] bg-white">
@@ -31,4 +30,6 @@ export default function MapTestPage() {
       </div>
     </div>
   );
-}
+};
+
+export default MapTestPage;
