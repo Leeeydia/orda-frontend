@@ -48,6 +48,8 @@
 - `title`을 넘기지 않으면 로고가 표시된다
 - 뒤로가기는 항상 `BackButton` 컴포넌트를 사용한다
 - `rightSlot`이 없으면 우측은 빈 공간으로 유지된다 (레이아웃 균형 유지)
+- 배경은 `bg-white/90 backdrop-blur` 반투명 블러 적용
+- `subTitle`은 디자인 시스템 최소 폰트(12px) 예외로 11px 사용 (타이틀 위계 강조 목적)
 
 ---
 
@@ -59,6 +61,8 @@
 <Header leftSlot={<BackButton />} title="페이지 제목" />
 ```
 
+### 규칙
+
 - 내부적으로 `navigate(-1)`을 호출한다
-- 아이콘은 `src/assets/icons/back.svg`를 사용한다
-- 원형 배경 없이 아이콘만 표시한다
+- `←` 텍스트 아이콘 사용 (SVG 파일 미사용)
+- 원형 배경 없이 hover 시 연한 primary 색상으로 전환
