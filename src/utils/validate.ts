@@ -1,0 +1,54 @@
+// ─── Validation ───────────────────────────────────────────────────────────────
+// 여러 도메인에서 공통으로 사용하는 입력값 유효성 검증 함수 모음
+
+export const validate = {
+  email: (v: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
+      ? ""
+      : "올바른 이메일 형식을 입력해주세요.",
+
+  password: (v: string) =>
+    /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}$/.test(v)
+      ? ""
+      : "8자 이상, 영문 + 숫자 + 특수문자(!@#$%^&*)를 포함해야 합니다.",
+
+  nickname: (v: string) =>
+    /^[가-힣a-zA-Z0-9]{2,10}$/.test(v)
+      ? ""
+      : "한글/영문/숫자 2~10자로 입력해주세요.",
+
+  name: (v: string) =>
+    /^[가-힣a-zA-Z]{2,20}$/.test(v) ? "" : "한글/영문 2~20자로 입력해주세요.",
+
+  // 사용자 입력: 010-XXXX-XXXX / 전송 시: 하이픈 제거 후 01012345678
+  // 010 번호만 허용
+  phone: (v: string) =>
+    /^010-\d{4}-\d{4}$/.test(v) ? "" : "010-XXXX-XXXX 형식으로 입력해주세요.",
+
+  // type="text" 기반 자동 포맷 (YYYY-MM-DD)
+  // 존재하지 않는 날짜 (예: 2024-02-31) 도 검증
+  birthDate: (v: string) => {
+    if (!v) return "";
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return "날짜를 끝까지 입력해주세요.";
+
+    const [year, month, day] = v.split("-").map(Number);
+
+    // 월 범위 체크
+    if (month < 1 || month > 12) return "올바른 날짜를 입력해주세요.";
+
+    // 실제 존재하는 날짜인지 체크 (JS Date 보정 방지)
+    const date = new Date(year, month - 1, day);
+    if (
+      date.getFullYear() !== year ||
+      date.getMonth() + 1 !== month ||
+      date.getDate() !== day
+    ) {
+      return "올바른 날짜를 입력해주세요.";
+    }
+
+    // 과거 날짜 체크
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return date >= today ? "과거 날짜를 입력해주세요." : "";
+  }
+};

@@ -28,6 +28,13 @@ const GEOJSON_POINT_LAYER_ID = "geojson-point-layer";
 const GEOJSON_START_POINT_LAYER_ID = "geojson-start-point-layer";
 const GEOJSON_END_POINT_LAYER_ID = "geojson-end-point-layer";
 
+function createEmptyFeatureCollection(): FeatureCollection {
+  return {
+    type: "FeatureCollection",
+    features: []
+  };
+}
+
 export default function CommonMap({
   center = [127.3845, 36.3504],
   zoom = 12,
@@ -72,7 +79,7 @@ export default function CommonMap({
     map.on("load", () => {
       map.addSource(GEOJSON_SOURCE_ID, {
         type: "geojson",
-        data: geoJsonData ?? { type: "FeatureCollection", features: [] }
+        data: geoJsonData ?? createEmptyFeatureCollection()
       });
 
       map.addLayer({
@@ -157,9 +164,10 @@ export default function CommonMap({
     const source = map.getSource(GEOJSON_SOURCE_ID) as
       | maplibregl.GeoJSONSource
       | undefined;
+
     if (!source) return;
 
-    source.setData(geoJsonData ?? { type: "FeatureCollection", features: [] });
+    source.setData(geoJsonData ?? createEmptyFeatureCollection());
   }, [geoJsonData]);
 
   return (

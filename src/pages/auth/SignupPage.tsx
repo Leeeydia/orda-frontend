@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useSignup, validate } from "../../features/auth/hooks/useAuth";
+import { useSignup } from "../../features/auth/hooks/useAuth";
+import { validate } from "../../utils/validate";
 import type { SignupRequest } from "../../features/auth/types/auth.types";
 import Toast from "../../components/ui/Toast";
 
@@ -56,6 +57,7 @@ export default function SignupPage() {
     }
   }, []);
 
+  // 010 고정, 가운데 4자리, 마지막 4자리 자동 포맷
   const handlePhoneChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const raw = e.target.value.replace(/\D/g, "").slice(0, 11);
@@ -126,7 +128,7 @@ export default function SignupPage() {
               label="이메일"
               name="email"
               type="email"
-              placeholder="example@orda.com"
+              placeholder=""
               value={form.email}
               error={errors.email}
               onChange={handleChange}
@@ -157,7 +159,7 @@ export default function SignupPage() {
                 label="이름"
                 name="name"
                 type="text"
-                placeholder="홍길동"
+                placeholder=""
                 value={form.name}
                 error={errors.name}
                 onChange={handleChange}
@@ -168,7 +170,7 @@ export default function SignupPage() {
               label="전화번호"
               name="phone"
               type="tel"
-              placeholder="010-0000-0000"
+              placeholder=""
               value={form.phone}
               error={errors.phone}
               onChange={handlePhoneChange}
@@ -188,7 +190,7 @@ export default function SignupPage() {
               type="submit"
               disabled={loading}
               aria-busy={loading}
-              className="mt-2 flex h-14 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#4a521e] to-[#89943d] text-[17px] font-bold tracking-wide text-white shadow-md transition active:scale-[0.98] active:opacity-90 disabled:opacity-55">
+              className="mt-2 flex h-14 w-full items-center justify-center rounded-2xl bg-linear-to-r from-[#4a521e] to-[#89943d] text-[17px] font-bold tracking-wide text-white shadow-md transition active:scale-[0.98] active:opacity-90 disabled:opacity-55">
               {loading ? (
                 <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
               ) : (
