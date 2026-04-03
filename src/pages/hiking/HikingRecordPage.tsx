@@ -7,7 +7,7 @@ import GpsTrackingMap from "@/features/gps/components/GpsTrackingMap";
 import { useHiking } from "@/features/hiking/hooks/useHiking";
 import type { GpsPoint } from "@/features/gps/types/gps.types";
 import Header from "@/components/layout/Header";
-import BackIcon from "@/assets/icons/back.svg?react";
+import BackButton from "@/components/layout/BackButton";
 
 const useElapsedTime = (isRunning: boolean) => {
   const [seconds, setSeconds] = useState(0);
@@ -177,13 +177,6 @@ const HikingRecordPage = () => {
     }
   };
 
-  const pageTitle =
-    pageState === "idle"
-      ? "등산 시작"
-      : pageState === "hiking"
-        ? "기록 중"
-        : "등산 완료";
-
   return (
     <div
       className="relative flex h-screen w-full flex-col overflow-hidden bg-[#f7f7f6] dark:bg-[#1c1d15]"
@@ -203,18 +196,14 @@ const HikingRecordPage = () => {
       {/* ── 공통 헤더 ────────────────────────────── */}
       <div className="relative z-10">
         <Header
-          leftSlot={
-            <button className="flex size-10 items-center justify-center rounded-full bg-white/80 shadow-sm backdrop-blur-md transition-colors active:bg-white">
-              <BackIcon className="h-4 w-4" />
-            </button>
-          }
+          leftSlot={<BackButton />}
+          subTitle="ORDA"
+          title="등산 기록"
           rightSlot={
             <button className="flex size-10 items-center justify-center rounded-full bg-white/80 text-slate-900 shadow-sm backdrop-blur-md transition-colors active:bg-white">
               <span className="material-symbols-outlined">settings</span>
             </button>
           }
-          subTitle={pageState === "hiking" ? "Live Activity" : undefined}
-          title={pageTitle}
         />
       </div>
 
