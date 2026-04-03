@@ -13,9 +13,9 @@ type HeaderProps = {
 
 const Header = ({ leftSlot, rightSlot, title, subTitle }: HeaderProps) => {
   return (
-    <header className="fixed top-0 left-1/2 z-50 h-14 w-full max-w-[390px] -translate-x-1/2 border-b border-[#D7DACB] bg-white">
-      <div className="flex h-full items-center justify-between px-4">
-        <div className="flex h-10 w-10 items-center justify-start">
+    <header className="fixed top-0 left-1/2 z-50 w-full max-w-[390px] -translate-x-1/2 border-b border-[#89943d]/10 bg-white/90 backdrop-blur">
+      <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex h-10 w-10 items-center justify-center">
           {leftSlot}
         </div>
 
@@ -23,11 +23,13 @@ const Header = ({ leftSlot, rightSlot, title, subTitle }: HeaderProps) => {
           {title ? (
             <>
               {subTitle && (
-                <p className="text-primary text-xs font-semibold tracking-[0.18em] uppercase">
+                <p className="text-[11px] font-semibold tracking-[0.18em] text-[#89943d] uppercase">
                   {subTitle}
                 </p>
               )}
-              <h1 className="text-heading text-lg font-semibold">{title}</h1>
+              <h1 className="text-base font-bold tracking-tight text-[#2f3415]">
+                {title}
+              </h1>
             </>
           ) : (
             <Link to="/">
@@ -36,7 +38,7 @@ const Header = ({ leftSlot, rightSlot, title, subTitle }: HeaderProps) => {
           )}
         </div>
 
-        <div className="flex h-10 w-10 items-center justify-end">
+        <div className="flex h-10 w-10 items-center justify-center">
           {rightSlot}
         </div>
       </div>
