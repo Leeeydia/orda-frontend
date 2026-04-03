@@ -1,1 +1,39 @@
 @import "tailwindcss";
+@import "pretendard/dist/web/static/pretendard.css";
+
+@theme {
+  --font-family-base:
+    "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+
+  --color-primary: #89943d;
+  --color-primary-dark: #4a521e;
+  --color-primary-hover: #7a8536;
+  --color-secondary: #f4f5ef;
+  --color-accent: #e9e5d6;
+
+  --color-bg-page: #f7f7f6;
+  --color-bg-accent: #dfe6ba;
+  --color-bg-soft: #eef1dc;
+
+  --color-text-heading: #4a521e;
+  --color-text-body: #3d3d2e;
+  --color-text-muted: #7a8070;
+
+  --color-border-default: #d7dacb;
+  --color-border-strong: #b8baa8;
+  --color-border-focus: #89943d;
+
+  --color-success: #4f8a5b;
+  --color-error: #c05555;
+  --color-warning: #f9f387;
+  --color-info: #4a6fa5;
+
+  --z-dropdown: 100;
+  --z-overlay: 150;
+  --z-modal: 200;
+  --z-toast: 300;
+}
+
+body {
+  font-family: var(--font-family-base);
+}
