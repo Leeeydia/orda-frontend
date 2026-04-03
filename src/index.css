@@ -1,1 +1,11 @@
 @import "tailwindcss";
+@import "pretendard/dist/web/static/pretendard.css";
+
+@theme {
+  --font-family-base:
+    "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+body {
+  font-family: var(--font-family-base);
+}
