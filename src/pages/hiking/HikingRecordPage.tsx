@@ -195,7 +195,7 @@ const HikingRecordPage = () => {
 
       {/* ── 공통 헤더 ────────────────────────────── */}
       <div className="relative z-10">
-        <Header leftSlot={<BackButton />} subTitle="ORDA" title="등산 기록" />
+        <Header leftSlot={<BackButton />} title="등산 기록" />
       </div>
 
       {/* ── 하단 패널 ────────────────────────────── */}
