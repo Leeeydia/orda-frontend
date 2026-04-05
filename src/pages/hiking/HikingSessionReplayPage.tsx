@@ -49,6 +49,8 @@ function ReplayPageContent({ replay, onBack }: ReplayContentProps) {
               replay={replay}
               currentPosition={currentPosition}
               currentIndex={currentIndex}
+              isPlaying={isPlaying}
+              progress={progress}
             />
 
             <div className="absolute top-4 right-4 left-4 z-20">

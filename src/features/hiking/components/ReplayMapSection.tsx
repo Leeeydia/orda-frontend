@@ -13,6 +13,8 @@ type ReplayMapSectionProps = {
   replay: ReplaySessionModel | null;
   currentPosition?: ReplayCurrentPosition | null;
   currentIndex?: number;
+  isPlaying?: boolean;
+  progress?: number;
 };
 
 const EMPTY_FEATURE_COLLECTION: FeatureCollection = {
@@ -138,13 +140,46 @@ function getReplayDisplayGeoJson(
   };
 }
 
+function fitReplayBounds(map: maplibregl.Map, replay: ReplaySessionModel) {
+  const coords = replay.lineCoordinates;
+  if (coords.length === 0) return;
+
+  if (coords.length === 1) {
+    map.easeTo({
+      center: coords[0],
+      zoom: 15,
+      duration: 800
+    });
+    return;
+  }
+
+  const bounds = coords.reduce(
+    (acc, coord) => acc.extend(coord),
+    new maplibregl.LngLatBounds(coords[0], coords[0])
+  );
+
+  map.fitBounds(bounds, {
+    padding: {
+      top: 110,
+      right: 24,
+      bottom: 170,
+      left: 24
+    },
+    duration: 800
+  });
+}
+
 export default function ReplayMapSection({
   replay,
   currentPosition,
-  currentIndex = -1
+  currentIndex = -1,
+  isPlaying = false,
+  progress = 0
 }: ReplayMapSectionProps) {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markerRef = useRef<maplibregl.Marker | null>(null);
+  const hasFittedInitialBoundsRef = useRef(false);
+  const hasShownOutroOverviewRef = useRef(false);
   const [isMapReady, setIsMapReady] = useState(false);
 
   const displayGeoJson = useMemo(() => {
@@ -152,34 +187,16 @@ export default function ReplayMapSection({
   }, [replay, currentIndex, currentPosition]);
 
   useEffect(() => {
+    hasFittedInitialBoundsRef.current = false;
+    hasShownOutroOverviewRef.current = false;
+  }, [replay?.sessionId]);
+
+  useEffect(() => {
     if (!isMapReady || !mapRef.current || !replay) return;
+    if (hasFittedInitialBoundsRef.current) return;
 
-    const coords = replay.lineCoordinates;
-    if (coords.length === 0) return;
-
-    if (coords.length === 1) {
-      mapRef.current.easeTo({
-        center: coords[0],
-        zoom: 15,
-        duration: 800
-      });
-      return;
-    }
-
-    const bounds = coords.reduce(
-      (acc, coord) => acc.extend(coord),
-      new maplibregl.LngLatBounds(coords[0], coords[0])
-    );
-
-    mapRef.current.fitBounds(bounds, {
-      padding: {
-        top: 110,
-        right: 24,
-        bottom: 170,
-        left: 24
-      },
-      duration: 800
-    });
+    fitReplayBounds(mapRef.current, replay);
+    hasFittedInitialBoundsRef.current = true;
   }, [isMapReady, replay]);
 
   useEffect(() => {
@@ -208,6 +225,28 @@ export default function ReplayMapSection({
       markerRef.current.setLngLat(lngLat);
     }
   }, [isMapReady, currentPosition]);
+
+  useEffect(() => {
+    if (!isMapReady || !mapRef.current || !currentPosition) return;
+    if (!isPlaying) return;
+    if (progress >= 1) return;
+
+    mapRef.current.easeTo({
+      center: [currentPosition.lng, currentPosition.lat],
+      duration: 250,
+      essential: true
+    });
+  }, [isMapReady, currentPosition, isPlaying, progress]);
+
+  useEffect(() => {
+    if (!isMapReady || !mapRef.current || !replay) return;
+    if (isPlaying) return;
+    if (progress < 1) return;
+    if (hasShownOutroOverviewRef.current) return;
+
+    fitReplayBounds(mapRef.current, replay);
+    hasShownOutroOverviewRef.current = true;
+  }, [isMapReady, replay, isPlaying, progress]);
 
   useEffect(() => {
     return () => {
