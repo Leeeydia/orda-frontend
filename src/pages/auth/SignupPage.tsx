@@ -1,11 +1,15 @@
+// src/pages/auth/SignupPage.tsx
+
 import { useState, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useSignup } from "../../features/auth/hooks/useAuth";
 import { validate } from "../../utils/validate";
 import type { SignupRequest } from "../../features/auth/types/auth.types";
 import Toast from "../../components/ui/Toast";
+import Header from "../../components/layout/Header";
+import BackButton from "../../components/layout/BackButton";
 
-// ─── 초기값 & 타입 ────────────────────────────────────────────────────────────
+// ─── 타입 ─────────────────────────────────────────────────────────────────────
 
 type FormFields = Omit<SignupRequest, "birthDate"> & { birthDate: string };
 
@@ -27,7 +31,9 @@ const INITIAL_ERRORS: Record<keyof FormFields, string> = {
   birthDate: ""
 };
 
-export default function SignupPage() {
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
+const SignupPage = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState<FormFields>(INITIAL_FORM);
   const [errors, setErrors] = useState(INITIAL_ERRORS);
@@ -45,7 +51,7 @@ export default function SignupPage() {
       showToast("회원가입이 완료되었습니다! 로그인 해주세요.", "success");
       setTimeout(() => navigate("/login"), 1500);
     },
-    (msg) => showToast(msg, "error")
+    (msg: string) => showToast(msg, "error")
   );
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -57,7 +63,6 @@ export default function SignupPage() {
     }
   }, []);
 
-  // 010 고정, 가운데 4자리, 마지막 4자리 자동 포맷
   const handlePhoneChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const raw = e.target.value.replace(/\D/g, "").slice(0, 11);
@@ -105,24 +110,12 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f7f6] text-slate-900">
-      <div className="mx-auto min-h-screen w-full max-w-md bg-[#f7f7f6]">
-        <header className="sticky top-0 z-30 border-b border-[#89943d]/10 bg-white/90 backdrop-blur">
-          <div className="flex items-center justify-between px-4 py-3">
-            <div className="h-10 w-10" />
-            <div className="flex flex-1 flex-col items-center px-2">
-              <p className="text-[11px] font-semibold tracking-[0.18em] text-[#89943d] uppercase">
-                ORDA
-              </p>
-              <h1 className="text-base font-bold tracking-tight text-[#2f3415]">
-                회원가입
-              </h1>
-            </div>
-            <div className="h-10 w-10" />
-          </div>
-        </header>
+    <div className="bg-bg-page min-h-screen">
+      <div className="mx-auto min-h-screen w-full max-w-[390px]">
+        <Header title="회원가입" leftSlot={<BackButton />} />
 
-        <main className="px-4 pt-6 pb-10">
+        {/* Header fixed 높이 보정 */}
+        <main className="px-4 pt-[76px] pb-20">
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
             <Field
               label="이메일"
@@ -190,20 +183,20 @@ export default function SignupPage() {
               type="submit"
               disabled={loading}
               aria-busy={loading}
-              className="mt-2 flex h-14 w-full items-center justify-center rounded-2xl bg-linear-to-r from-[#4a521e] to-[#89943d] text-[17px] font-bold tracking-wide text-white shadow-md transition active:scale-[0.98] active:opacity-90 disabled:opacity-55">
+              className="bg-primary hover:bg-primary-hover disabled:text-muted mt-2 h-12 w-full rounded-md px-6 text-sm font-semibold text-white transition-colors duration-150 active:opacity-60 disabled:cursor-not-allowed disabled:bg-[#D7DACB]">
               {loading ? (
-                <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                <span className="mx-auto block h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
               ) : (
                 "가입하기"
               )}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-slate-400">
+          <p className="text-muted mt-6 text-center text-sm leading-5">
             이미 계정이 있으신가요?{" "}
             <Link
               to="/login"
-              className="font-semibold text-[#4a521e] active:opacity-70">
+              className="text-primary-dark font-semibold transition-colors duration-150 active:opacity-70">
               로그인
             </Link>
           </p>
@@ -219,7 +212,9 @@ export default function SignupPage() {
       )}
     </div>
   );
-}
+};
+
+export default SignupPage;
 
 // ─── Field 서브컴포넌트 ────────────────────────────────────────────────────────
 
@@ -234,7 +229,7 @@ interface FieldProps {
   required?: boolean;
 }
 
-function Field({
+const Field = ({
   label,
   name,
   type,
@@ -243,19 +238,18 @@ function Field({
   error,
   onChange,
   required
-}: FieldProps) {
+}: FieldProps) => {
   return (
     <div className="flex flex-col gap-1.5">
-      <label
-        htmlFor={name}
-        className="text-[11px] font-semibold tracking-[0.08em] text-[#89943d] uppercase">
+      <label htmlFor={name} className="text-heading text-sm font-semibold">
         {label}
         {required && (
-          <span className="ml-0.5 text-[#4a521e]" aria-hidden="true">
+          <span className="text-primary ml-0.5" aria-hidden="true">
             *
           </span>
         )}
       </label>
+
       <input
         id={name}
         name={name}
@@ -266,20 +260,21 @@ function Field({
         aria-invalid={!!error}
         aria-describedby={error ? `${name}-error` : undefined}
         required={required}
-        className={`h-[52px] w-full rounded-2xl border bg-white px-4 text-[16px] text-slate-800 transition outline-none placeholder:text-slate-300 ${
+        className={`bg-secondary text-body placeholder:text-muted h-12 w-full rounded-md border px-4 text-base transition-colors duration-150 outline-none ${
           error
-            ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
-            : "border-[#89943d]/20 focus:border-[#89943d]/60 focus:ring-2 focus:ring-[#89943d]/10"
+            ? "border-error focus:border-error focus:ring-error bg-white focus:ring-1"
+            : "border-border-default focus:border-primary focus:ring-primary focus:bg-white focus:ring-1"
         }`}
       />
+
       {error && (
         <p
           id={`${name}-error`}
-          className="pl-1 text-[12px] text-red-500"
+          className="text-error pl-1 text-xs leading-4"
           role="alert">
           {error}
         </p>
       )}
     </div>
   );
-}
+};
