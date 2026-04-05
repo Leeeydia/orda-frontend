@@ -1,27 +1,159 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import ReplayMapSection from "@/features/hiking/components/ReplayMapSection";
+import ReplayMapSection, {
+  type ReplayCameraMode
+} from "@/features/hiking/components/ReplayMapSection";
 import { useReplayQuery } from "@/features/hiking/hooks/useReplayQuery";
 import { useReplayPlayer } from "@/features/hiking/hooks/useReplayPlayer";
 import type { ReplaySessionModel } from "@/features/hiking/types/hiking.types";
+
+const INTRO_OVERVIEW_MS = 2200;
+const START_FOCUS_MS = 1200;
+const OUTRO_OVERVIEW_MS = 1800;
+const SEQUENCE_TICK_MS = 50;
 
 type ReplayContentProps = {
   replay: ReplaySessionModel;
   onBack: () => void;
 };
 
+function formatMsToDisplay(ms: number) {
+  const totalSeconds = Math.max(ms / 1000, 0);
+  return `${totalSeconds.toFixed(1)}s`;
+}
+
+function getReplayCameraMode(
+  sequenceElapsedMs: number,
+  replayDurationMs: number
+): ReplayCameraMode {
+  const introEnd = INTRO_OVERVIEW_MS;
+  const focusEnd = INTRO_OVERVIEW_MS + START_FOCUS_MS;
+  const followEnd = focusEnd + replayDurationMs;
+
+  if (sequenceElapsedMs < introEnd) {
+    return "intro-overview";
+  }
+
+  if (sequenceElapsedMs < focusEnd) {
+    return "focus-start";
+  }
+
+  if (sequenceElapsedMs < followEnd) {
+    return "follow";
+  }
+
+  return "outro-overview";
+}
+
 function ReplayPageContent({ replay, onBack }: ReplayContentProps) {
   const {
-    isPlaying,
     currentReplaySeconds,
     durationSeconds,
     currentPosition,
     currentIndex,
-    progress,
     play,
     pause,
     reset
   } = useReplayPlayer(replay);
+
+  const replayDurationMs = useMemo(() => {
+    return Math.round(durationSeconds * 1000);
+  }, [durationSeconds]);
+
+  const totalSequenceMs = useMemo(() => {
+    return (
+      INTRO_OVERVIEW_MS + START_FOCUS_MS + replayDurationMs + OUTRO_OVERVIEW_MS
+    );
+  }, [replayDurationMs]);
+
+  const [sequenceElapsedMs, setSequenceElapsedMs] = useState(0);
+  const [isSequencePlaying, setIsSequencePlaying] = useState(false);
+
+  const cameraMode = useMemo(() => {
+    return getReplayCameraMode(sequenceElapsedMs, replayDurationMs);
+  }, [sequenceElapsedMs, replayDurationMs]);
+
+  const sequenceProgress = useMemo(() => {
+    if (totalSequenceMs <= 0) return 0;
+    return Math.min(sequenceElapsedMs / totalSequenceMs, 1);
+  }, [sequenceElapsedMs, totalSequenceMs]);
+
+  useEffect(() => {
+    if (!isSequencePlaying) return;
+    if (totalSequenceMs <= 0) return;
+
+    const timer = window.setInterval(() => {
+      setSequenceElapsedMs((prev) => {
+        const next = prev + SEQUENCE_TICK_MS;
+
+        if (next >= totalSequenceMs) {
+          setIsSequencePlaying(false);
+          return totalSequenceMs;
+        }
+
+        return next;
+      });
+    }, SEQUENCE_TICK_MS);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [isSequencePlaying, totalSequenceMs]);
+
+  useEffect(() => {
+    if (cameraMode === "follow" && isSequencePlaying) {
+      play();
+      return;
+    }
+
+    pause();
+  }, [cameraMode, isSequencePlaying, play, pause]);
+
+  const handlePlayPause = () => {
+    if (isSequencePlaying) {
+      setIsSequencePlaying(false);
+      pause();
+      return;
+    }
+
+    if (sequenceElapsedMs >= totalSequenceMs) {
+      reset();
+      setSequenceElapsedMs(0);
+    }
+
+    setIsSequencePlaying(true);
+  };
+
+  const handleResetReplay = () => {
+    setIsSequencePlaying(false);
+    setSequenceElapsedMs(0);
+    pause();
+    reset();
+  };
+
+  const statusText = (() => {
+    if (isSequencePlaying && cameraMode === "intro-overview") {
+      return "인트로 연출 재생 중";
+    }
+
+    if (isSequencePlaying && cameraMode === "focus-start") {
+      return "시작 지점 포커스 연출 중";
+    }
+
+    if (isSequencePlaying && cameraMode === "follow") {
+      return "경로 재생 중";
+    }
+
+    if (isSequencePlaying && cameraMode === "outro-overview") {
+      return "아웃트로 연출 재생 중";
+    }
+
+    if (sequenceElapsedMs >= totalSequenceMs && totalSequenceMs > 0) {
+      return "리플레이 완료";
+    }
+
+    return "대기 중";
+  })();
 
   return (
     <>
@@ -49,8 +181,7 @@ function ReplayPageContent({ replay, onBack }: ReplayContentProps) {
               replay={replay}
               currentPosition={currentPosition}
               currentIndex={currentIndex}
-              isPlaying={isPlaying}
-              progress={progress}
+              cameraMode={cameraMode}
             />
 
             <div className="absolute top-4 right-4 left-4 z-20">
@@ -70,10 +201,10 @@ function ReplayPageContent({ replay, onBack }: ReplayContentProps) {
 
                   <div className="rounded-2xl bg-[#89943d]/10 px-3 py-2 text-right">
                     <p className="text-[10px] font-semibold tracking-[0.16em] text-[#89943d] uppercase">
-                      total points
+                      camera mode
                     </p>
                     <p className="mt-1 text-sm font-bold text-[#2f3415]">
-                      {replay.totalPoints}
+                      {cameraMode}
                     </p>
                   </div>
                 </div>
@@ -88,19 +219,19 @@ function ReplayPageContent({ replay, onBack }: ReplayContentProps) {
                       Replay Progress
                     </p>
                     <p className="mt-1 text-sm font-bold text-[#2f3415]">
-                      {currentReplaySeconds.toFixed(1)}s /{" "}
-                      {durationSeconds.toFixed(1)}s
+                      {formatMsToDisplay(sequenceElapsedMs)} /{" "}
+                      {formatMsToDisplay(totalSequenceMs)}
                     </p>
                   </div>
                   <p className="text-xs font-medium text-slate-500">
-                    {(progress * 100).toFixed(0)}%
+                    {(sequenceProgress * 100).toFixed(0)}%
                   </p>
                 </div>
 
                 <div className="h-2 overflow-hidden rounded-full bg-[#89943d]/12">
                   <div
                     className="h-full rounded-full bg-[#89943d] transition-[width]"
-                    style={{ width: `${progress * 100}%` }}
+                    style={{ width: `${sequenceProgress * 100}%` }}
                   />
                 </div>
               </div>
@@ -126,14 +257,14 @@ function ReplayPageContent({ replay, onBack }: ReplayContentProps) {
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={isPlaying ? pause : play}
+                  onClick={handlePlayPause}
                   className="flex h-14 w-14 items-center justify-center rounded-full bg-[#89943d] text-white shadow-sm transition active:scale-95">
-                  {isPlaying ? "⏸" : "▶"}
+                  {isSequencePlaying ? "⏸" : "▶"}
                 </button>
 
                 <button
                   type="button"
-                  onClick={reset}
+                  onClick={handleResetReplay}
                   className="flex h-11 items-center justify-center rounded-2xl border border-[#89943d]/15 bg-[#f7f7f6] px-4 text-sm font-medium text-[#4a521e] transition hover:bg-[#eef1dc]">
                   처음으로
                 </button>
@@ -143,7 +274,7 @@ function ReplayPageContent({ replay, onBack }: ReplayContentProps) {
                     상태
                   </p>
                   <p className="mt-1 truncate text-sm text-slate-600">
-                    {isPlaying ? "재생 중" : "일시정지"}
+                    {statusText}
                   </p>
                 </div>
               </div>
@@ -198,6 +329,37 @@ function ReplayPageContent({ replay, onBack }: ReplayContentProps) {
                 </p>
                 <p className="mt-1 text-base font-bold text-[#2f3415]">
                   {replay.summary.totalElevationLossMeters.toLocaleString()} m
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-[#89943d]/10 bg-white px-4 py-4 shadow-sm">
+            <div className="mb-3">
+              <p className="text-[11px] font-semibold tracking-[0.16em] text-[#89943d] uppercase">
+                Internal Replay Debug
+              </p>
+              <h2 className="mt-1 text-sm font-bold text-[#2f3415]">
+                실제 replay 시간 확인
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
+                <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
+                  replay time
+                </p>
+                <p className="mt-1 text-base font-bold text-[#2f3415]">
+                  {currentReplaySeconds.toFixed(1)}s
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
+                <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
+                  replay total
+                </p>
+                <p className="mt-1 text-base font-bold text-[#2f3415]">
+                  {durationSeconds.toFixed(1)}s
                 </p>
               </div>
             </div>
@@ -314,7 +476,7 @@ export default function HikingSessionReplayPage() {
     <div className="min-h-screen bg-[#f7f7f6] text-slate-900">
       <div className="mx-auto min-h-screen w-full max-w-md bg-[#f7f7f6]">
         <ReplayPageContent
-          key={numericSessionId}
+          key={replay.sessionId}
           replay={replay}
           onBack={() => navigate(-1)}
         />

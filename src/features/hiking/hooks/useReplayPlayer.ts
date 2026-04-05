@@ -23,6 +23,7 @@ type UseReplayPlayerResult = {
 };
 
 const TICK_MS = 50;
+const EMPTY_TRACK_POINTS: ReplayTrackPoint[] = [];
 
 function findCurrentIndex(
   points: ReplayTrackPoint[],
@@ -85,7 +86,7 @@ export const useReplayPlayer = (
   const intervalRef = useRef<number | null>(null);
 
   const durationSeconds = replay?.durationSeconds ?? 0;
-  const trackPoints = replay?.trackPoints ?? [];
+  const trackPoints = replay?.trackPoints ?? EMPTY_TRACK_POINTS;
 
   const currentIndex = useMemo(() => {
     return findCurrentIndex(trackPoints, currentReplaySeconds);
@@ -107,11 +108,7 @@ export const useReplayPlayer = (
   }, [trackPoints, currentIndex]);
 
   const currentPosition = useMemo(() => {
-    return interpolatePosition(
-      currentPoint,
-      nextPoint,
-      currentReplaySeconds
-    );
+    return interpolatePosition(currentPoint, nextPoint, currentReplaySeconds);
   }, [currentPoint, nextPoint, currentReplaySeconds]);
 
   const progress = useMemo(() => {

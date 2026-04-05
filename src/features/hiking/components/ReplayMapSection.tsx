@@ -9,12 +9,17 @@ type ReplayCurrentPosition = {
   lng: number;
 };
 
+export type ReplayCameraMode =
+  | "intro-overview"
+  | "focus-start"
+  | "follow"
+  | "outro-overview";
+
 type ReplayMapSectionProps = {
   replay: ReplaySessionModel | null;
   currentPosition?: ReplayCurrentPosition | null;
   currentIndex?: number;
-  isPlaying?: boolean;
-  progress?: number;
+  cameraMode: ReplayCameraMode;
 };
 
 const EMPTY_FEATURE_COLLECTION: FeatureCollection = {
@@ -148,7 +153,7 @@ function fitReplayBounds(map: maplibregl.Map, replay: ReplaySessionModel) {
     map.easeTo({
       center: coords[0],
       zoom: 15,
-      duration: 800
+      duration: 900
     });
     return;
   }
@@ -165,7 +170,19 @@ function fitReplayBounds(map: maplibregl.Map, replay: ReplaySessionModel) {
       bottom: 170,
       left: 24
     },
-    duration: 800
+    duration: 900
+  });
+}
+
+function focusStartPoint(map: maplibregl.Map, replay: ReplaySessionModel) {
+  const startCoordinate = replay.lineCoordinates[0];
+  if (!startCoordinate) return;
+
+  map.easeTo({
+    center: startCoordinate,
+    zoom: 16,
+    duration: 850,
+    essential: true
   });
 }
 
@@ -173,13 +190,11 @@ export default function ReplayMapSection({
   replay,
   currentPosition,
   currentIndex = -1,
-  isPlaying = false,
-  progress = 0
+  cameraMode
 }: ReplayMapSectionProps) {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markerRef = useRef<maplibregl.Marker | null>(null);
-  const hasFittedInitialBoundsRef = useRef(false);
-  const hasShownOutroOverviewRef = useRef(false);
+  const appliedCameraModeRef = useRef<ReplayCameraMode | null>(null);
   const [isMapReady, setIsMapReady] = useState(false);
 
   const displayGeoJson = useMemo(() => {
@@ -187,17 +202,35 @@ export default function ReplayMapSection({
   }, [replay, currentIndex, currentPosition]);
 
   useEffect(() => {
-    hasFittedInitialBoundsRef.current = false;
-    hasShownOutroOverviewRef.current = false;
+    appliedCameraModeRef.current = null;
   }, [replay?.sessionId]);
 
   useEffect(() => {
     if (!isMapReady || !mapRef.current || !replay) return;
-    if (hasFittedInitialBoundsRef.current) return;
+    if (appliedCameraModeRef.current === cameraMode) return;
 
-    fitReplayBounds(mapRef.current, replay);
-    hasFittedInitialBoundsRef.current = true;
-  }, [isMapReady, replay]);
+    if (cameraMode === "intro-overview") {
+      fitReplayBounds(mapRef.current, replay);
+      appliedCameraModeRef.current = cameraMode;
+      return;
+    }
+
+    if (cameraMode === "focus-start") {
+      focusStartPoint(mapRef.current, replay);
+      appliedCameraModeRef.current = cameraMode;
+      return;
+    }
+
+    if (cameraMode === "outro-overview") {
+      fitReplayBounds(mapRef.current, replay);
+      appliedCameraModeRef.current = cameraMode;
+      return;
+    }
+
+    if (cameraMode === "follow") {
+      appliedCameraModeRef.current = cameraMode;
+    }
+  }, [isMapReady, replay, cameraMode]);
 
   useEffect(() => {
     if (!isMapReady || !mapRef.current) return;
@@ -228,25 +261,14 @@ export default function ReplayMapSection({
 
   useEffect(() => {
     if (!isMapReady || !mapRef.current || !currentPosition) return;
-    if (!isPlaying) return;
-    if (progress >= 1) return;
+    if (cameraMode !== "follow") return;
 
     mapRef.current.easeTo({
       center: [currentPosition.lng, currentPosition.lat],
       duration: 250,
       essential: true
     });
-  }, [isMapReady, currentPosition, isPlaying, progress]);
-
-  useEffect(() => {
-    if (!isMapReady || !mapRef.current || !replay) return;
-    if (isPlaying) return;
-    if (progress < 1) return;
-    if (hasShownOutroOverviewRef.current) return;
-
-    fitReplayBounds(mapRef.current, replay);
-    hasShownOutroOverviewRef.current = true;
-  }, [isMapReady, replay, isPlaying, progress]);
+  }, [isMapReady, currentPosition, cameraMode]);
 
   useEffect(() => {
     return () => {
