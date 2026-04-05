@@ -19,7 +19,62 @@ type ReplayContentProps = {
 
 function formatMsToDisplay(ms: number) {
   const totalSeconds = Math.max(ms / 1000, 0);
-  return `${totalSeconds.toFixed(1)}s`;
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = Math.floor(totalSeconds % 60);
+
+  if (hours > 0) {
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
+      2,
+      "0"
+    )}:${String(seconds).padStart(2, "0")}`;
+  }
+
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(
+    2,
+    "0"
+  )}`;
+}
+
+function formatDistanceMeters(distanceMeters: number) {
+  if (distanceMeters >= 1000) {
+    return `${(distanceMeters / 1000).toFixed(2)}km`;
+  }
+
+  return `${Math.round(distanceMeters)}m`;
+}
+
+function formatDurationSeconds(totalSeconds: number) {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = Math.floor(totalSeconds % 60);
+
+  if (hours > 0) {
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
+      2,
+      "0"
+    )}:${String(seconds).padStart(2, "0")}`;
+  }
+
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(
+    2,
+    "0"
+  )}`;
+}
+
+function formatPace(distanceMeters: number, totalElapsedSeconds: number) {
+  if (distanceMeters <= 0 || totalElapsedSeconds <= 0) {
+    return "-";
+  }
+
+  const paceSeconds = totalElapsedSeconds / (distanceMeters / 1000);
+  const minutes = Math.floor(paceSeconds / 60);
+  const seconds = Math.floor(paceSeconds % 60);
+
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(
+    2,
+    "0"
+  )}`;
 }
 
 function getReplayCameraMode(
@@ -45,20 +100,42 @@ function getReplayCameraMode(
   return "outro-overview";
 }
 
+function getStatusText(
+  isSequencePlaying: boolean,
+  cameraMode: ReplayCameraMode,
+  sequenceElapsedMs: number,
+  totalSequenceMs: number
+) {
+  if (isSequencePlaying && cameraMode === "intro-overview") {
+    return "전체 경로 확인 중";
+  }
+
+  if (isSequencePlaying && cameraMode === "focus-start") {
+    return "출발 지점 확인 중";
+  }
+
+  if (isSequencePlaying && cameraMode === "follow") {
+    return "재생 중";
+  }
+
+  if (isSequencePlaying && cameraMode === "outro-overview") {
+    return "마무리 중";
+  }
+
+  if (sequenceElapsedMs >= totalSequenceMs && totalSequenceMs > 0) {
+    return "완료";
+  }
+
+  return "재생 준비됨";
+}
+
 function ReplayPageContent({ replay, onBack }: ReplayContentProps) {
-  const {
-    currentReplaySeconds,
-    durationSeconds,
-    currentPosition,
-    currentIndex,
-    play,
-    pause,
-    reset
-  } = useReplayPlayer(replay);
+  const { currentPosition, currentIndex, play, pause, reset } =
+    useReplayPlayer(replay);
 
   const replayDurationMs = useMemo(() => {
-    return Math.round(durationSeconds * 1000);
-  }, [durationSeconds]);
+    return Math.round((replay.durationSeconds ?? 0) * 1000);
+  }, [replay.durationSeconds]);
 
   const totalSequenceMs = useMemo(() => {
     return (
@@ -131,29 +208,12 @@ function ReplayPageContent({ replay, onBack }: ReplayContentProps) {
     reset();
   };
 
-  const statusText = (() => {
-    if (isSequencePlaying && cameraMode === "intro-overview") {
-      return "인트로 연출 재생 중";
-    }
-
-    if (isSequencePlaying && cameraMode === "focus-start") {
-      return "시작 지점 포커스 연출 중";
-    }
-
-    if (isSequencePlaying && cameraMode === "follow") {
-      return "경로 재생 중";
-    }
-
-    if (isSequencePlaying && cameraMode === "outro-overview") {
-      return "아웃트로 연출 재생 중";
-    }
-
-    if (sequenceElapsedMs >= totalSequenceMs && totalSequenceMs > 0) {
-      return "리플레이 완료";
-    }
-
-    return "대기 중";
-  })();
+  const statusText = getStatusText(
+    isSequencePlaying,
+    cameraMode,
+    sequenceElapsedMs,
+    totalSequenceMs
+  );
 
   return (
     <>
@@ -172,11 +232,8 @@ function ReplayPageContent({ replay, onBack }: ReplayContentProps) {
       </header>
 
       <main className="pb-6">
-        <section className="relative px-4 pt-4">
-          <div className="relative min-h-[520px] overflow-hidden rounded-[28px] border border-[#89943d]/10 bg-gradient-to-br from-[#dfe6ba] via-[#eef1dc] to-[#f7f7f6] shadow-sm">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(137,148,61,0.16),_transparent_55%)]" />
-            <div className="absolute inset-0 bg-[linear-gradient(to_bottom,_rgba(255,255,255,0.18),_rgba(255,255,255,0)_28%,_rgba(0,0,0,0.08)_100%)]" />
-
+        <section className="relative">
+          <div className="relative h-[56dvh] max-h-[560px] min-h-[380px] overflow-hidden bg-[#f7f7f6]">
             <ReplayMapSection
               replay={replay}
               currentPosition={currentPosition}
@@ -186,97 +243,84 @@ function ReplayPageContent({ replay, onBack }: ReplayContentProps) {
 
             <div className="absolute top-4 right-4 left-4 z-20">
               <div className="rounded-3xl border border-white/50 bg-white/88 px-4 py-3 shadow-sm backdrop-blur">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-[11px] font-semibold tracking-[0.18em] text-[#89943d] uppercase">
-                      ORDA
-                    </p>
-                    <h1 className="mt-1 text-base font-bold tracking-tight text-[#2f3415]">
-                      세션 리플레이
-                    </h1>
-                    <p className="mt-1 text-xs text-slate-500">
-                      저장된 GPS 트랙을 기준으로 이동 경로를 재생합니다.
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0 truncate">
+                    <p className="truncate text-sm tracking-tight text-[#2f3415]">
+                      <span className="font-bold text-[#2f3415]">리플레이</span>
+                      <span className="mx-1.5 font-medium text-slate-400">
+                        ·
+                      </span>
+                      <span className="font-medium text-xs text-slate-500">
+                        {formatDistanceMeters(
+                          replay.summary.totalDistanceMeters
+                        )}{" "}
+                        ·{" "}
+                        {formatDurationSeconds(
+                          replay.summary.totalElapsedSeconds
+                        )}
+                      </span>
                     </p>
                   </div>
 
-                  <div className="rounded-2xl bg-[#89943d]/10 px-3 py-2 text-right">
-                    <p className="text-[10px] font-semibold tracking-[0.16em] text-[#89943d] uppercase">
-                      camera mode
-                    </p>
-                    <p className="mt-1 text-sm font-bold text-[#2f3415]">
-                      {cameraMode}
-                    </p>
+                  <div className="shrink-0 rounded-full bg-[#89943d]/10 px-3 py-1 text-[11px] font-medium text-[#4a521e]">
+                    {statusText}
                   </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="absolute inset-x-4 bottom-4 z-20">
-              <div className="rounded-3xl border border-white/50 bg-white/90 px-4 py-4 shadow-sm backdrop-blur">
-                <div className="mb-3 flex items-center justify-between">
-                  <div>
-                    <p className="text-[11px] font-semibold tracking-[0.16em] text-[#89943d] uppercase">
-                      Replay Progress
-                    </p>
-                    <p className="mt-1 text-sm font-bold text-[#2f3415]">
-                      {formatMsToDisplay(sequenceElapsedMs)} /{" "}
-                      {formatMsToDisplay(totalSequenceMs)}
-                    </p>
-                  </div>
-                  <p className="text-xs font-medium text-slate-500">
-                    {(sequenceProgress * 100).toFixed(0)}%
-                  </p>
-                </div>
-
-                <div className="h-2 overflow-hidden rounded-full bg-[#89943d]/12">
-                  <div
-                    className="h-full rounded-full bg-[#89943d] transition-[width]"
-                    style={{ width: `${sequenceProgress * 100}%` }}
-                  />
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="relative z-20 -mt-6 px-2">
-            <div className="rounded-[28px] border border-[#89943d]/10 bg-white/92 px-4 py-4 shadow-sm backdrop-blur">
-              <div className="mb-3 flex items-center justify-between">
-                <div>
-                  <p className="text-[11px] font-semibold tracking-[0.16em] text-[#89943d] uppercase">
-                    Replay Controls
+          <div className="bg-white px-4 pt-4 pb-5">
+            <div className="rounded-[28px] border border-[#89943d]/10 bg-[#f7f7f6] px-4 py-4 shadow-sm">
+              <div className="mb-4">
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-sm font-bold text-[#2f3415]">
+                    {formatMsToDisplay(sequenceElapsedMs)} /{" "}
+                    {formatMsToDisplay(totalSequenceMs)}
                   </p>
-                  <h2 className="mt-1 text-sm font-bold text-[#2f3415]">
-                    리플레이 제어
-                  </h2>
+                  <p className="text-xs font-medium text-slate-500">
+                    {Math.round(sequenceProgress * 100)}%
+                  </p>
                 </div>
-                <div className="rounded-full bg-[#89943d]/10 px-3 py-1 text-xs font-semibold text-[#4a521e]">
-                  MVP
+
+                <div className="h-2.5 overflow-hidden rounded-full bg-[#89943d]/12">
+                  <div
+                    className="relative h-full rounded-full bg-[#89943d] transition-[width]"
+                    style={{ width: `${sequenceProgress * 100}%` }}>
+                    <div className="absolute top-1/2 right-0 h-4 w-4 -translate-y-1/2 rounded-full border-2 border-[#89943d] bg-white shadow-sm" />
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center gap-10">
+                <button
+                  type="button"
+                  className="flex h-11 w-11 items-center justify-center rounded-full text-[#424434]/60 transition hover:bg-white hover:text-[#424434]"
+                  aria-label="이전 구간">
+                  <span className="material-symbols-outlined material-symbols-filled text-[28px]">
+                    skip_previous
+                  </span>
+                </button>
+
                 <button
                   type="button"
                   onClick={handlePlayPause}
-                  className="flex h-14 w-14 items-center justify-center rounded-full bg-[#89943d] text-white shadow-sm transition active:scale-95">
-                  {isSequencePlaying ? "⏸" : "▶"}
+                  className="flex h-16 w-16 items-center justify-center rounded-full bg-[#89943d] text-white shadow-lg shadow-[#89943d]/30 transition active:scale-95"
+                  aria-label={isSequencePlaying ? "일시정지" : "재생"}>
+                  <span className="material-symbols-outlined material-symbols-filled fill-1 text-[34px]">
+                    {isSequencePlaying ? "pause" : "play_arrow"}
+                  </span>
                 </button>
 
                 <button
                   type="button"
                   onClick={handleResetReplay}
-                  className="flex h-11 items-center justify-center rounded-2xl border border-[#89943d]/15 bg-[#f7f7f6] px-4 text-sm font-medium text-[#4a521e] transition hover:bg-[#eef1dc]">
-                  처음으로
+                  className="flex h-11 w-11 items-center justify-center rounded-full text-[#424434]/60 transition hover:bg-white hover:text-[#424434]"
+                  aria-label="처음으로">
+                  <span className="material-symbols-outlined material-symbols-filled text-[28px]">
+                    restart_alt
+                  </span>
                 </button>
-
-                <div className="min-w-0 flex-1 rounded-2xl bg-[#f7f7f6] px-4 py-3">
-                  <p className="text-[11px] font-semibold tracking-[0.16em] text-[#89943d] uppercase">
-                    상태
-                  </p>
-                  <p className="mt-1 truncate text-sm text-slate-600">
-                    {statusText}
-                  </p>
-                </div>
               </div>
             </div>
           </div>
@@ -284,82 +328,52 @@ function ReplayPageContent({ replay, onBack }: ReplayContentProps) {
 
         <div className="space-y-4 px-4 pt-4">
           <section className="rounded-3xl border border-[#89943d]/10 bg-white px-4 py-4 shadow-sm">
-            <div className="mb-3 flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-semibold tracking-[0.16em] text-[#89943d] uppercase">
-                  Replay Summary
-                </p>
-                <h2 className="mt-1 text-sm font-bold text-[#2f3415]">
-                  리플레이 요약
-                </h2>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
-                <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
-                  총 거리
-                </p>
-                <p className="mt-1 text-base font-bold text-[#2f3415]">
-                  {replay.summary.totalDistanceMeters.toLocaleString()} m
-                </p>
-              </div>
-
-              <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
-                <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
-                  총 시간
-                </p>
-                <p className="mt-1 text-base font-bold text-[#2f3415]">
-                  {replay.summary.totalElapsedSeconds}s
-                </p>
-              </div>
-
-              <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
-                <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
-                  상승 고도
-                </p>
-                <p className="mt-1 text-base font-bold text-[#2f3415]">
-                  {replay.summary.totalElevationGainMeters.toLocaleString()} m
-                </p>
-              </div>
-
-              <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
-                <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
-                  하강 고도
-                </p>
-                <p className="mt-1 text-base font-bold text-[#2f3415]">
-                  {replay.summary.totalElevationLossMeters.toLocaleString()} m
-                </p>
-              </div>
-            </div>
-          </section>
-
-          <section className="rounded-3xl border border-[#89943d]/10 bg-white px-4 py-4 shadow-sm">
             <div className="mb-3">
               <p className="text-[11px] font-semibold tracking-[0.16em] text-[#89943d] uppercase">
-                Internal Replay Debug
+                기록 요약
               </p>
-              <h2 className="mt-1 text-sm font-bold text-[#2f3415]">
-                실제 replay 시간 확인
-              </h2>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
                 <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
-                  replay time
+                  거리
                 </p>
                 <p className="mt-1 text-base font-bold text-[#2f3415]">
-                  {currentReplaySeconds.toFixed(1)}s
+                  {formatDistanceMeters(replay.summary.totalDistanceMeters)}
                 </p>
               </div>
 
               <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
                 <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
-                  replay total
+                  시간
                 </p>
                 <p className="mt-1 text-base font-bold text-[#2f3415]">
-                  {durationSeconds.toFixed(1)}s
+                  {formatDurationSeconds(replay.summary.totalElapsedSeconds)}
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
+                <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
+                  상승
+                </p>
+                <p className="mt-1 text-base font-bold text-[#2f3415]">
+                  {Math.round(replay.summary.totalElevationGainMeters)}m
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
+                <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
+                  페이스
+                </p>
+                <p className="mt-1 text-base font-bold text-[#2f3415]">
+                  {formatPace(
+                    replay.summary.totalDistanceMeters,
+                    replay.summary.totalElapsedSeconds
+                  )}
+                  <span className="ml-1 text-xs font-medium text-[#424434]/60">
+                    /km
+                  </span>
                 </p>
               </div>
             </div>

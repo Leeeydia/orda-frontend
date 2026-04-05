@@ -11,6 +11,8 @@ type CommonMapProps = {
   geoJsonData?: FeatureCollection | null;
   onMapReady?: (map: maplibregl.Map) => void;
   showNavigationControl?: boolean;
+  showAttributionControl?: boolean;
+  compactAttributionControl?: boolean;
   lineColor?: string;
   lineWidth?: number;
   pointColor?: string;
@@ -43,6 +45,8 @@ export default function CommonMap({
   geoJsonData = null,
   onMapReady,
   showNavigationControl = true,
+  showAttributionControl = true,
+  compactAttributionControl = true,
   lineColor = "#2563eb",
   lineWidth = 4,
   pointColor = "#dc2626",
@@ -69,11 +73,21 @@ export default function CommonMap({
       container: mapContainerRef.current,
       style: styleUrl,
       center,
-      zoom
+      zoom,
+      attributionControl: false
     });
 
     if (showNavigationControl) {
       map.addControl(new maplibregl.NavigationControl(), "top-right");
+    }
+
+    if (showAttributionControl) {
+      map.addControl(
+        new maplibregl.AttributionControl({
+          compact: compactAttributionControl
+        }),
+        "bottom-right"
+      );
     }
 
     map.on("load", () => {
@@ -100,7 +114,10 @@ export default function CommonMap({
         filter: [
           "all",
           ["==", ["geometry-type"], "Point"],
-          ["!", ["in", ["get", "type"], ["literal", ["start-point", "end-point"]]]]
+          [
+            "!",
+            ["in", ["get", "type"], ["literal", ["start-point", "end-point"]]]
+          ]
         ],
         paint: {
           "circle-radius": pointRadius,

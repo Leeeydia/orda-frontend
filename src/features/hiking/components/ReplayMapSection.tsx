@@ -165,9 +165,9 @@ function fitReplayBounds(map: maplibregl.Map, replay: ReplaySessionModel) {
 
   map.fitBounds(bounds, {
     padding: {
-      top: 110,
+      top: 88,
       right: 24,
-      bottom: 170,
+      bottom: 112,
       left: 24
     },
     duration: 900
@@ -282,7 +282,7 @@ export default function ReplayMapSection({
   if (!replay || replay.lineCoordinates.length === 0) {
     return (
       <div className="absolute inset-0 z-0 flex items-center justify-center px-6 text-center">
-        <div className="rounded-3xl border border-white/40 bg-white/88 px-5 py-4 shadow-sm backdrop-blur">
+        <div className="rounded-3xl bg-white/88 px-5 py-4 shadow-sm backdrop-blur">
           <p className="text-base font-semibold text-[#4a521e]">
             표시할 리플레이 경로가 없습니다
           </p>
@@ -295,14 +295,15 @@ export default function ReplayMapSection({
   }
 
   return (
-    <div className="absolute inset-0 z-0">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(137,148,61,0.14),_transparent_60%)]" />
-      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,_rgba(255,255,255,0.12),_rgba(255,255,255,0)_28%,_rgba(0,0,0,0.08)_100%)]" />
+    <div className="absolute inset-0 z-0 overflow-hidden">
+      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,_rgba(0,0,0,0.10),_rgba(0,0,0,0)_22%,_rgba(0,0,0,0.24)_100%)]" />
 
       <CommonMap
         geoJsonData={displayGeoJson}
         className="h-full w-full"
         showNavigationControl={false}
+        showAttributionControl={false}
+        compactAttributionControl={true}
         lineColor="#89943d"
         lineWidth={5}
         pointColor="#4a521e"
