@@ -12,67 +12,13 @@ type ReplayCurrentPosition = {
 type ReplayMapSectionProps = {
   replay: ReplaySessionModel | null;
   currentPosition?: ReplayCurrentPosition | null;
+  currentIndex?: number;
 };
 
 const EMPTY_FEATURE_COLLECTION: FeatureCollection = {
   type: "FeatureCollection",
   features: []
 };
-
-function getReplayDisplayGeoJson(
-  replay: ReplaySessionModel | null
-): FeatureCollection {
-  if (!replay || replay.lineCoordinates.length === 0) {
-    return EMPTY_FEATURE_COLLECTION;
-  }
-
-  const features: FeatureCollection["features"] = [];
-
-  if (replay.lineCoordinates.length >= 2) {
-    features.push({
-      type: "Feature",
-      geometry: {
-        type: "LineString",
-        coordinates: replay.lineCoordinates
-      } satisfies LineString,
-      properties: {
-        type: "track-line"
-      }
-    });
-  }
-
-  const startPoint = replay.lineCoordinates[0];
-  const endPoint = replay.lineCoordinates[replay.lineCoordinates.length - 1];
-
-  features.push({
-    type: "Feature",
-    geometry: {
-      type: "Point",
-      coordinates: startPoint
-    } satisfies Point,
-    properties: {
-      type: "start-point"
-    }
-  });
-
-  if (replay.lineCoordinates.length > 1) {
-    features.push({
-      type: "Feature",
-      geometry: {
-        type: "Point",
-        coordinates: endPoint
-      } satisfies Point,
-      properties: {
-        type: "end-point"
-      }
-    });
-  }
-
-  return {
-    type: "FeatureCollection",
-    features
-  };
-}
 
 function createReplayMarkerElement() {
   const wrapper = document.createElement("div");
@@ -108,17 +54,102 @@ function createReplayMarkerElement() {
   return wrapper;
 }
 
+function getPassedLineCoordinates(
+  replay: ReplaySessionModel | null,
+  currentIndex: number,
+  currentPosition?: ReplayCurrentPosition | null
+): [number, number][] {
+  if (!replay || replay.lineCoordinates.length === 0) {
+    return [];
+  }
+
+  if (currentIndex < 0) {
+    return [];
+  }
+
+  const safeIndex = Math.min(currentIndex, replay.lineCoordinates.length - 1);
+  const passedCoordinates = replay.lineCoordinates.slice(0, safeIndex + 1);
+
+  if (currentPosition) {
+    const lastCoordinate = passedCoordinates[passedCoordinates.length - 1];
+    const currentCoordinate: [number, number] = [
+      currentPosition.lng,
+      currentPosition.lat
+    ];
+
+    if (
+      !lastCoordinate ||
+      lastCoordinate[0] !== currentCoordinate[0] ||
+      lastCoordinate[1] !== currentCoordinate[1]
+    ) {
+      passedCoordinates.push(currentCoordinate);
+    }
+  }
+
+  return passedCoordinates;
+}
+
+function getReplayDisplayGeoJson(
+  replay: ReplaySessionModel | null,
+  currentIndex: number,
+  currentPosition?: ReplayCurrentPosition | null
+): FeatureCollection {
+  if (!replay || replay.lineCoordinates.length === 0) {
+    return EMPTY_FEATURE_COLLECTION;
+  }
+
+  const passedCoordinates = getPassedLineCoordinates(
+    replay,
+    currentIndex,
+    currentPosition
+  );
+
+  const features: FeatureCollection["features"] = [];
+
+  if (passedCoordinates.length >= 2) {
+    features.push({
+      type: "Feature",
+      geometry: {
+        type: "LineString",
+        coordinates: passedCoordinates
+      } satisfies LineString,
+      properties: {
+        type: "track-line"
+      }
+    });
+  }
+
+  if (passedCoordinates.length >= 1) {
+    features.push({
+      type: "Feature",
+      geometry: {
+        type: "Point",
+        coordinates: passedCoordinates[0]
+      } satisfies Point,
+      properties: {
+        type: "start-point"
+      }
+    });
+  }
+
+  return {
+    type: "FeatureCollection",
+    features
+  };
+}
+
 export default function ReplayMapSection({
   replay,
-  currentPosition
+  currentPosition,
+  currentIndex = -1
 }: ReplayMapSectionProps) {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markerRef = useRef<maplibregl.Marker | null>(null);
   const [isMapReady, setIsMapReady] = useState(false);
 
   const displayGeoJson = useMemo(() => {
-    return getReplayDisplayGeoJson(replay);
-  }, [replay]);
+    return getReplayDisplayGeoJson(replay, currentIndex, currentPosition);
+  }, [replay, currentIndex, currentPosition]);
 
   useEffect(() => {
     if (!isMapReady || !mapRef.current || !replay) return;
