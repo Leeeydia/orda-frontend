@@ -1,12 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import ReplayMapSection, {
   type ReplayCameraMode
 } from "@/features/hiking/components/ReplayMapSection";
 import { useReplayQuery } from "@/features/hiking/hooks/useReplayQuery";
 import { useReplayPlayer } from "@/features/hiking/hooks/useReplayPlayer";
-import type { ReplaySessionModel } from "@/features/hiking/types/hiking.types";
-import { formatDistanceKm, formatDuration, formatMeters } from "@/utils/format";
+import { getHikingSession } from "@/features/hiking/api/hikingApi";
+import {
+  getInterpolatedActualElapsedSeconds
+} from "@/features/hiking/mappers/hikingMappers";
+import type {
+  ReplaySessionModel,
+  SummitMarkerItem,
+  VerifiedSummit
+} from "@/features/hiking/types/hiking.types";
+import {
+  formatDistanceKm,
+  formatDuration,
+  formatMeters
+} from "@/utils/format";
 
 const INTRO_OVERVIEW_MS = 2200;
 const START_FOCUS_MS = 1200;
@@ -15,6 +28,7 @@ const SEQUENCE_TICK_MS = 50;
 
 type ReplayContentProps = {
   replay: ReplaySessionModel;
+  verifiedSummits: VerifiedSummit[];
   onBack: () => void;
 };
 
@@ -45,6 +59,7 @@ function formatDistanceDisplay(distanceMeters: number | null | undefined) {
   if (distanceMeters >= 1000) {
     return formatDistanceKm(distanceMeters, 2);
   }
+
   return formatMeters(distanceMeters, 0);
 }
 
@@ -232,9 +247,19 @@ function ReplayScaffoldState({
   );
 }
 
-function ReplayPageContent({ replay, onBack }: ReplayContentProps) {
-  const { currentPosition, currentIndex, play, pause, reset } =
-    useReplayPlayer(replay);
+function ReplayPageContent({
+  replay,
+  verifiedSummits,
+  onBack
+}: ReplayContentProps) {
+  const {
+    currentPosition,
+    currentIndex,
+    currentReplaySeconds,
+    play,
+    pause,
+    reset
+  } = useReplayPlayer(replay);
 
   const replayDurationMs = useMemo(() => {
     return Math.round((replay.durationSeconds ?? 0) * 1000);
@@ -259,6 +284,35 @@ function ReplayPageContent({ replay, onBack }: ReplayContentProps) {
   }, [sequenceElapsedMs, totalSequenceMs]);
 
   const hasReplayPath = replay.lineCoordinates.length > 0;
+
+  const currentActualElapsedSeconds = useMemo(() => {
+    return getInterpolatedActualElapsedSeconds(
+      replay.trackPoints,
+      currentReplaySeconds
+    );
+  }, [replay.trackPoints, currentReplaySeconds]);
+
+  const visibleSummits: SummitMarkerItem[] = useMemo(() => {
+    return verifiedSummits
+      .filter((summit) => {
+        const verifiedElapsedSec = Number(summit.verifiedElapsedSec);
+        return (
+          !Number.isNaN(verifiedElapsedSec) &&
+          verifiedElapsedSec <= currentActualElapsedSeconds
+        );
+      })
+      .map((summit) => ({
+        summitId: summit.summitId,
+        summitName: summit.summitName,
+        latitude: Number(summit.latitude),
+        longitude: Number(summit.longitude),
+        verifiedAt: summit.verifiedAt
+      }))
+      .filter(
+        (summit) =>
+          !Number.isNaN(summit.latitude) && !Number.isNaN(summit.longitude)
+      );
+  }, [verifiedSummits, currentActualElapsedSeconds]);
 
   useEffect(() => {
     if (!isSequencePlaying) return;
@@ -354,6 +408,7 @@ function ReplayPageContent({ replay, onBack }: ReplayContentProps) {
               currentPosition={currentPosition}
               currentIndex={currentIndex}
               cameraMode={cameraMode}
+              visibleSummits={visibleSummits}
             />
 
             <div className="absolute top-4 right-4 left-4 z-20">
@@ -473,6 +528,17 @@ export default function HikingSessionReplayPage() {
 
   const { replay, isLoading, isError } = useReplayQuery(numericSessionId);
 
+  const sessionQuery = useQuery({
+    queryKey: ["hiking", "session", numericSessionId],
+    queryFn: () => getHikingSession(numericSessionId as number),
+    enabled: numericSessionId != null,
+    staleTime: 1000 * 60,
+    placeholderData: (prev) => prev
+  });
+
+  const verifiedSummits: VerifiedSummit[] =
+    sessionQuery.data?.verifiedSummits ?? [];
+
   if (numericSessionId == null) {
     return <ReplayScaffoldState message="잘못된 세션 ID입니다." tone="error" />;
   }
@@ -496,6 +562,7 @@ export default function HikingSessionReplayPage() {
         <ReplayPageContent
           key={replay.sessionId}
           replay={replay}
+          verifiedSummits={verifiedSummits}
           onBack={() => navigate(-1)}
         />
       </div>

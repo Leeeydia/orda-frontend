@@ -218,3 +218,48 @@ export const mapReplayResponseToReplaySessionModel = (
     totalPoints: trackPoints.length
   };
 };
+
+export const getInterpolatedActualElapsedSeconds = (
+  trackPoints: ReplayTrackPoint[],
+  currentReplaySeconds: number
+): number => {
+  if (!trackPoints.length) return 0;
+
+  const firstPoint = trackPoints[0];
+  const lastPoint = trackPoints[trackPoints.length - 1];
+
+  if (currentReplaySeconds <= 0) {
+    return firstPoint.actualElapsedSeconds ?? 0;
+  }
+
+  if (currentReplaySeconds >= lastPoint.replayElapsedSeconds) {
+    return lastPoint.actualElapsedSeconds ?? 0;
+  }
+
+  for (let i = 0; i < trackPoints.length - 1; i++) {
+    const startPoint = trackPoints[i];
+    const endPoint = trackPoints[i + 1];
+
+    const startReplay = startPoint.replayElapsedSeconds;
+    const endReplay = endPoint.replayElapsedSeconds;
+
+    if (
+      currentReplaySeconds >= startReplay &&
+      currentReplaySeconds <= endReplay
+    ) {
+      const startActual = startPoint.actualElapsedSeconds ?? 0;
+      const endActual = endPoint.actualElapsedSeconds ?? startActual;
+      const replayRange = endReplay - startReplay;
+
+      if (replayRange <= 0) {
+        return startActual;
+      }
+
+      const ratio = (currentReplaySeconds - startReplay) / replayRange;
+
+      return Math.round(startActual + (endActual - startActual) * ratio);
+    }
+  }
+
+  return lastPoint.actualElapsedSeconds ?? 0;
+};
