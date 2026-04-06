@@ -3,6 +3,10 @@
 import CommonMap from "../components/map/CommonMap";
 import { sampleGeoJson } from "../mock/sampleGeoJson";
 import Header from "@/components/layout/Header";
+import ElevationChart from "@/components/ui/ElevationChart";
+
+const MOCK_SVG_PATH =
+  "M 0 100 C 20 90, 40 60, 80 50 C 120 40, 140 55, 160 45 C 180 35, 200 20, 240 25 C 280 30, 300 40, 320 35";
 
 const MapTestPage = () => {
   return (
@@ -21,11 +25,27 @@ const MapTestPage = () => {
               console.log("지도 준비 완료", map);
             }}
           />
-          {/* 경계선 페이드 오버레이 */}
-          {/* <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-11 bg-[linear-gradient(to_bottom,rgba(255,255,255,1)_0%,rgba(255,255,255,0.95)_30%,rgba(255,255,255,0.70)_60%,rgba(255,255,255,0.22)_84%,rgba(255,255,255,0)_100%)]"
-          /> */}
+        </div>
+
+        {/* ElevationChart 테스트 */}
+        <div className="space-y-4 px-4 py-6">
+          <p className="text-text-muted text-xs font-semibold">
+            ElevationChart 테스트
+          </p>
+
+          {/* 데이터 있는 경우 */}
+          <ElevationChart
+            svgPath={MOCK_SVG_PATH}
+            xAxisLabels={["0km", "1.2km", "2.4km", "3.6km"]}
+            maxElevationMeters={847}
+          />
+
+          {/* 데이터 없는 경우 */}
+          <ElevationChart
+            svgPath=""
+            xAxisLabels={["0km", "", "", ""]}
+            isEmpty
+          />
         </div>
       </div>
     </div>
