@@ -8,6 +8,7 @@ import { useHiking } from "@/features/hiking/hooks/useHiking";
 import type { GpsPoint } from "@/features/gps/types/gps.types";
 import Header from "@/components/layout/Header";
 import BackButton from "@/components/layout/BackButton";
+import Button from "@/components/ui/Button";
 
 const useElapsedTime = (isRunning: boolean) => {
   const [seconds, setSeconds] = useState(0);
@@ -279,6 +280,7 @@ const HikingRecordPage = () => {
             </div>
           )}
 
+          {/* 등산 시작 — 아이콘+텍스트 세로 배열 특수 레이아웃, Button 컴포넌트 미적용 */}
           {pageState === "idle" && (
             <button
               onClick={handleStart}
@@ -291,6 +293,7 @@ const HikingRecordPage = () => {
             </button>
           )}
 
+          {/* 정상 인증 + Finish — 아이콘+텍스트 세로 배열 특수 레이아웃, Button 컴포넌트 미적용 */}
           {pageState === "hiking" && (
             <div className="flex gap-3 pt-2">
               <button
@@ -315,15 +318,16 @@ const HikingRecordPage = () => {
             </div>
           )}
 
+          {/* 홈으로 — Button 컴포넌트 적용 */}
           {pageState === "finished" && (
-            <button
+            <Button
+              variant="primary"
               onClick={() => {
                 setPageState("idle");
                 setSummitResult(null);
-              }}
-              className="w-full rounded-2xl bg-slate-900 py-4 font-bold text-white transition-all active:scale-95 dark:bg-slate-100 dark:text-slate-900">
+              }}>
               홈으로
-            </button>
+            </Button>
           )}
         </div>
 
@@ -347,18 +351,22 @@ const HikingRecordPage = () => {
             <p className="mb-6 text-center text-sm text-slate-400">
               {formatTime(elapsedSeconds)} 동안 {distanceKm.toFixed(2)}km 이동
             </p>
+            {/* 계속하기 + 기록 저장 — Button 컴포넌트 적용 */}
             <div className="flex gap-3">
-              <button
-                onClick={() => setShowFinishConfirm(false)}
-                className="flex-1 rounded-2xl border border-slate-200 py-4 text-sm font-medium text-slate-500 dark:border-slate-700">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => setShowFinishConfirm(false)}>
                 계속하기
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="primary"
+                className="flex-1"
                 onClick={handleEnd}
-                disabled={isLoading}
-                className="flex-1 rounded-2xl bg-[#89943d] py-4 text-sm font-bold text-white disabled:opacity-60">
-                {isLoading ? "저장 중..." : "기록 저장"}
-              </button>
+                isLoading={isLoading}
+                disabled={isLoading}>
+                기록 저장
+              </Button>
             </div>
           </div>
         </div>
