@@ -1,5 +1,11 @@
 /**
  * 📄 src/pages/hiking/HikingRecordPage.tsx
+ *
+ * 변경 사항:
+ *  - [orda/feat/trail-difficulty] BottomNav 추가
+ *  - [orda/feat/trail-difficulty] 하단 패널 제거, 등산 시작 버튼 플로팅으로 변경
+ *  - [orda/feat/trail-difficulty] 등산로 로딩 오버레이 추가, 버튼 위치 조정
+ *  - [orda/feat/trail-difficulty] 등산 시작 버튼 위 배낭맨 아이콘 추가 및 대각선 애니메이션
  */
 
 import { useState, useEffect, useRef } from "react";
@@ -8,6 +14,10 @@ import { useHiking } from "@/features/hiking/hooks/useHiking";
 import type { GpsPoint } from "@/features/gps/types/gps.types";
 import Header from "@/components/layout/Header";
 import BackButton from "@/components/layout/BackButton";
+import BottomNav from "@/components/layout/BottomNav";
+
+// [orda/feat/trail-difficulty] 배낭맨 아이콘
+import hikingIcon from "@/assets/free-icon-hiking-5064158.png";
 
 const useElapsedTime = (isRunning: boolean) => {
   const [seconds, setSeconds] = useState(0);
@@ -51,7 +61,7 @@ const ElevationChart = ({ trail }: { trail: GpsPoint[] }) => {
 
   if (elevations.length < 2) {
     return (
-      <div className="relative flex h-20 w-full items-center justify-center overflow-hidden rounded-xl bg-slate-50 dark:bg-slate-900/50">
+      <div className="relative flex h-20 w-full items-center justify-center overflow-hidden rounded-xl bg-slate-50">
         <span className="text-xs text-slate-400">고도 데이터 수집 중...</span>
       </div>
     );
@@ -74,7 +84,7 @@ const ElevationChart = ({ trail }: { trail: GpsPoint[] }) => {
   const fillD = `${pathD} L ${w} ${h} L 0 ${h} Z`;
 
   return (
-    <div className="relative h-20 w-full overflow-hidden rounded-xl bg-slate-50 dark:bg-slate-900/50">
+    <div className="relative h-20 w-full overflow-hidden rounded-xl bg-slate-50">
       <svg
         viewBox={`0 0 ${w} ${h}`}
         preserveAspectRatio="none"
@@ -105,14 +115,12 @@ const StatItem = ({
   bordered?: "both";
 }) => (
   <div
-    className={`flex flex-col items-center ${bordered === "both" ? "border-x border-slate-50 dark:border-slate-800" : ""}`}>
+    className={`flex flex-col items-center ${bordered === "both" ? "border-x border-slate-100" : ""}`}>
     <span className="mb-1 text-[10px] font-bold text-[#89943d] uppercase">
       {label}
     </span>
     <div className="flex items-baseline gap-0.5">
-      <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-        {value}
-      </span>
+      <span className="text-2xl font-bold text-slate-900">{value}</span>
       <span className="text-xs font-medium text-slate-400">{unit}</span>
     </div>
   </div>
@@ -143,8 +151,18 @@ const HikingRecordPage = () => {
   } | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
+  const [trailLoaded, setTrailLoaded] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   const elapsedSeconds = useElapsedTime(pageState === "hiking");
+
+  const handleStartWithAnimation = () => {
+    setIsAnimating(true);
+    setTimeout(() => {
+      setIsAnimating(false);
+      handleStart();
+    }, 2000);
+  };
 
   const handleStart = async () => {
     const success = await start();
@@ -179,162 +197,175 @@ const HikingRecordPage = () => {
 
   return (
     <div
-      className="relative mx-auto flex flex-col overflow-hidden bg-[#f7f7f6] dark:bg-[#1c1d15]"
+      className="relative mx-auto flex flex-col bg-[#f7f7f6]"
       style={{
         maxWidth: 390,
-        minHeight: "max(884px, 100dvh)",
+        minHeight: "max(844px, 100dvh)",
         height: "100dvh"
       }}>
+      {/* ── 애니메이션 스타일 ─────────────────────── */}
+      <style>{`
+        @keyframes diagonalFly {
+          0% { transform: translate(0, 0); opacity: 1; }
+          100% { transform: translate(60px, -120px); opacity: 0; }
+        }
+        .animate-diagonal-fly {
+          animation: diagonalFly 2s ease-in forwards;
+        }
+      `}</style>
+
       {/* ── 지도 배경 ────────────────────────────── */}
       <div className="absolute inset-0 z-0">
-        <GpsTrackingMap geoJson={geoJson} currentPos={currentPos} />
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(180deg, rgba(247,247,246,0.8) 0%, rgba(247,247,246,0) 20%, rgba(247,247,246,0) 80%, rgba(247,247,246,1) 100%)"
-          }}
+        <GpsTrackingMap
+          geoJson={geoJson}
+          currentPos={currentPos}
+          onTrailLoaded={() => setTrailLoaded(true)}
         />
       </div>
+
+      {/* ── 등산로 로딩 오버레이 ─────────────────── */}
+      {!trailLoaded && (
+        <div className="absolute inset-x-0 top-20 z-10 flex justify-center">
+          <div className="flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 shadow-md backdrop-blur-sm">
+            <div className="h-3 w-3 animate-spin rounded-full border-2 border-[#89943d] border-t-transparent" />
+            <span className="text-xs font-medium text-slate-600">
+              등산로 불러오는 중...
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* ── 공통 헤더 ────────────────────────────── */}
       <div className="relative z-10">
         <Header leftSlot={<BackButton />} title="등산 기록" />
       </div>
 
-      {/* ── 하단 패널 ────────────────────────────── */}
-      <div className="relative z-10 mt-auto w-full rounded-t-[2.5rem] border-t border-slate-100 bg-white shadow-2xl dark:border-slate-800 dark:bg-[#1c1d15]">
-        <div className="flex justify-center py-3">
-          <div className="h-1.5 w-12 rounded-full bg-slate-200 dark:bg-slate-700" />
-        </div>
+      {/* ── hiking 중 정보 패널 ───────────────────── */}
+      {(pageState === "hiking" || pageState === "finished") && (
+        <div className="relative z-10 mx-4 mt-4 rounded-2xl border border-slate-100 bg-white/95 p-4 shadow-lg backdrop-blur-sm">
+          <div className="mb-4 flex flex-col items-center">
+            <span className="mb-1 text-xs font-bold tracking-[0.2em] text-slate-400 uppercase">
+              Time
+            </span>
+            <span className="text-4xl font-bold tracking-tighter text-slate-900 tabular-nums">
+              {formatTime(elapsedSeconds)}
+            </span>
+          </div>
 
-        <div className="space-y-6 px-6 pb-8">
-          {pageState === "idle" && (
-            <div className="flex flex-col items-center space-y-2 py-4">
-              <span className="text-4xl">⛰</span>
-              <p className="text-sm text-slate-400">
-                버튼을 눌러 등산을 시작하세요
-              </p>
-            </div>
-          )}
+          <div className="grid grid-cols-3 gap-4 border-y border-slate-100 py-4">
+            <StatItem
+              label="이동 거리"
+              value={distanceKm.toFixed(2)}
+              unit="km"
+            />
+            <StatItem
+              label="누적 상승"
+              value={elevGain}
+              unit="m"
+              bordered="both"
+            />
+            <StatItem
+              label="현재 고도"
+              value={
+                currentAltitude != null ? currentAltitude.toLocaleString() : "—"
+              }
+              unit={currentAltitude != null ? "m" : ""}
+            />
+          </div>
 
-          {(pageState === "hiking" || pageState === "finished") && (
-            <>
-              <div className="flex flex-col items-center">
-                <span className="mb-1 text-xs font-bold tracking-[0.2em] text-slate-400 uppercase">
-                  Time
-                </span>
-                <span className="text-5xl font-bold tracking-tighter text-slate-900 tabular-nums dark:text-slate-100">
-                  {formatTime(elapsedSeconds)}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4 border-y border-slate-50 py-6 dark:border-slate-800">
-                <StatItem
-                  label="이동 거리"
-                  value={distanceKm.toFixed(2)}
-                  unit="km"
-                />
-                <StatItem
-                  label="누적 상승"
-                  value={elevGain}
-                  unit="m"
-                  bordered="both"
-                />
-                <StatItem
-                  label="현재 고도"
-                  value={
-                    currentAltitude != null
-                      ? currentAltitude.toLocaleString()
-                      : "—"
-                  }
-                  unit={currentAltitude != null ? "m" : ""}
-                />
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between px-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
-                  <span>고도 변화</span>
-                  {pageState === "hiking" && (
-                    <span className="text-[#89943d]">Live</span>
-                  )}
-                </div>
-                <ElevationChart trail={trail} />
-              </div>
-
-              {summitResult && (
-                <div
-                  className={`rounded-xl px-4 py-3 text-sm font-medium ${
-                    summitResult.verified
-                      ? "bg-green-50 text-green-700"
-                      : "bg-yellow-50 text-yellow-700"
-                  }`}>
-                  {summitResult.verified
-                    ? `🏔 ${summitResult.summitName ?? "정상"} 인증 완료`
-                    : `📍 정상까지 약 ${summitResult.distanceM ?? "—"}m 남음`}
-                </div>
+          <div className="mt-4 space-y-2">
+            <div className="flex items-center justify-between px-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+              <span>고도 변화</span>
+              {pageState === "hiking" && (
+                <span className="text-[#89943d]">Live</span>
               )}
-            </>
-          )}
+            </div>
+            <ElevationChart trail={trail} />
+          </div>
 
-          {error && (
-            <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
-              {error}
+          {summitResult && (
+            <div
+              className={`mt-3 rounded-xl px-4 py-3 text-sm font-medium ${
+                summitResult.verified
+                  ? "bg-green-50 text-green-700"
+                  : "bg-yellow-50 text-yellow-700"
+              }`}>
+              {summitResult.verified
+                ? `🏔 ${summitResult.summitName ?? "정상"} 인증 완료`
+                : `📍 정상까지 약 ${summitResult.distanceM ?? "—"}m 남음`}
             </div>
           )}
+        </div>
+      )}
 
-          {pageState === "idle" && (
+      {error && (
+        <div className="relative z-10 mx-4 mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
+          {error}
+        </div>
+      )}
+
+      {/* ── 플로팅 버튼 영역 ─────────────────────── */}
+      <div className="absolute right-0 bottom-[100px] left-0 z-10 px-6">
+        {pageState === "idle" && (
+          <div className="relative flex flex-col items-center gap-2">
+            {/* [orda/feat/trail-difficulty] 배낭맨 아이콘 - 클릭 시 우상단 대각선으로 날아가며 사라짐 */}
+            <img
+              src={hikingIcon}
+              alt="hiking"
+              className={`h-12 w-12 ${isAnimating ? "animate-diagonal-fly" : ""}`}
+              style={{
+                filter:
+                  "invert(28%) sepia(50%) saturate(500%) hue-rotate(15deg) brightness(70%) contrast(95%)"
+              }}
+            />
             <button
-              onClick={handleStart}
-              disabled={isLoading}
-              className="flex w-full flex-col items-center justify-center gap-1 rounded-2xl bg-[#89943d] px-6 py-4 font-bold text-white shadow-lg shadow-[#89943d]/30 transition-all active:scale-95 disabled:opacity-60">
+              onClick={handleStartWithAnimation}
+              disabled={isLoading || isAnimating}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#89943d] py-4 font-bold text-white shadow-lg shadow-[#89943d]/30 transition-all active:scale-95 disabled:opacity-60">
               <span className="material-symbols-outlined text-3xl">hiking</span>
               <span className="text-xs tracking-widest uppercase">
                 {isLoading ? "연결 중..." : "등산 시작"}
               </span>
             </button>
-          )}
+          </div>
+        )}
 
-          {pageState === "hiking" && (
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={handleVerify}
-                disabled={isVerifying || !currentPos}
-                className="flex flex-1 flex-col items-center justify-center gap-1 rounded-2xl bg-slate-100 px-6 py-4 font-bold text-slate-900 transition-all active:scale-95 disabled:opacity-40 dark:bg-slate-800 dark:text-white">
-                <span className="material-symbols-outlined text-3xl">
-                  {isVerifying ? "autorenew" : "landscape"}
-                </span>
-                <span className="text-xs tracking-widest uppercase">
-                  {isVerifying ? "인증 중..." : "정상 인증"}
-                </span>
-              </button>
-              <button
-                onClick={() => setShowFinishConfirm(true)}
-                className="flex flex-[1.5] flex-col items-center justify-center gap-1 rounded-2xl bg-[#89943d] px-6 py-4 font-bold text-white shadow-lg shadow-[#89943d]/30 transition-all active:scale-95">
-                <span className="material-symbols-outlined text-3xl">stop</span>
-                <span className="text-xs tracking-widest uppercase">
-                  Finish
-                </span>
-              </button>
-            </div>
-          )}
-
-          {pageState === "finished" && (
+        {pageState === "hiking" && (
+          <div className="flex gap-3">
             <button
-              onClick={() => {
-                setPageState("idle");
-                setSummitResult(null);
-              }}
-              className="w-full rounded-2xl bg-slate-900 py-4 font-bold text-white transition-all active:scale-95 dark:bg-slate-100 dark:text-slate-900">
-              홈으로
+              onClick={handleVerify}
+              disabled={isVerifying || !currentPos}
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-white py-4 font-bold text-slate-900 shadow-md transition-all active:scale-95 disabled:opacity-40">
+              <span className="material-symbols-outlined text-xl">
+                {isVerifying ? "autorenew" : "landscape"}
+              </span>
+              <span className="text-xs tracking-widest uppercase">
+                {isVerifying ? "인증 중..." : "정상 인증"}
+              </span>
             </button>
-          )}
-        </div>
+            <button
+              onClick={() => setShowFinishConfirm(true)}
+              className="flex flex-[1.5] items-center justify-center gap-2 rounded-xl bg-[#89943d] py-4 font-bold text-white shadow-lg shadow-[#89943d]/30 transition-all active:scale-95">
+              <span className="material-symbols-outlined text-xl">stop</span>
+              <span className="text-xs tracking-widest uppercase">Finish</span>
+            </button>
+          </div>
+        )}
 
-        <div className="flex h-6 items-center justify-center">
-          <div className="h-1 w-32 rounded-full bg-slate-100 dark:bg-slate-800" />
-        </div>
+        {pageState === "finished" && (
+          <button
+            onClick={() => {
+              setPageState("idle");
+              setSummitResult(null);
+            }}
+            className="w-full rounded-xl bg-slate-900 py-4 font-bold text-white transition-all active:scale-95">
+            홈으로
+          </button>
+        )}
       </div>
+
+      {/* ── BottomNav ────────────────────────────── */}
+      <BottomNav />
 
       {/* ── 종료 확인 바텀시트 ───────────────────── */}
       {showFinishConfirm && (
@@ -342,10 +373,10 @@ const HikingRecordPage = () => {
           className="absolute inset-0 z-20 flex items-end bg-black/50"
           onClick={() => setShowFinishConfirm(false)}>
           <div
-            className="w-full rounded-t-3xl bg-white px-6 pt-5 pb-10 dark:bg-[#1c1d15]"
+            className="w-full rounded-t-3xl bg-white px-6 pt-5 pb-10"
             onClick={(e) => e.stopPropagation()}>
-            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-slate-200 dark:bg-slate-700" />
-            <h2 className="mb-1 text-center text-xl font-bold text-slate-900 dark:text-slate-100">
+            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-slate-200" />
+            <h2 className="mb-1 text-center text-xl font-bold text-slate-900">
               등산을 종료할까요?
             </h2>
             <p className="mb-6 text-center text-sm text-slate-400">
@@ -354,7 +385,7 @@ const HikingRecordPage = () => {
             <div className="flex gap-3">
               <button
                 onClick={() => setShowFinishConfirm(false)}
-                className="flex-1 rounded-2xl border border-slate-200 py-4 text-sm font-medium text-slate-500 dark:border-slate-700">
+                className="flex-1 rounded-2xl border border-slate-200 py-4 text-sm font-medium text-slate-500">
                 계속하기
               </button>
               <button

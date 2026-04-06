@@ -31,9 +31,10 @@ const TRAIL_LAYER_ID = "trail-difficulty-layer";
 interface Props {
   geoJson: FeatureCollection;
   currentPos: GpsPoint | null;
+  onTrailLoaded?: () => void; // [orda/feat/trail-difficulty] 난이도 레이어 로딩 완료 콜백 추가
 }
 
-const GpsTrackingMap = ({ geoJson, currentPos }: Props) => {
+const GpsTrackingMap = ({ geoJson, currentPos, onTrailLoaded }: Props) => {
   // [orda/feat/trail-difficulty] 난이도 데이터 캐시 및 선제 로딩
   const trailGeoJsonRef = useRef<TrailGeoJson | null>(null);
   useEffect(() => {
@@ -71,6 +72,7 @@ const GpsTrackingMap = ({ geoJson, currentPos }: Props) => {
           "line-opacity": 0.85
         }
       });
+      onTrailLoaded?.(); // [orda/feat/trail-difficulty] 레이어 추가 완료 시 콜백 호출
     };
 
     if (trailGeoJsonRef.current) {
@@ -86,6 +88,8 @@ const GpsTrackingMap = ({ geoJson, currentPos }: Props) => {
 
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
+      {/* [orda/feat/trail-difficulty] 나침반 버튼 헤더 아래로 위치 조정 */}
+      <style>{`.maplibregl-ctrl-top-right { top: 60px !important; }`}</style>
       <CommonMap
         geoJsonData={geoJson}
         center={currentPos ? [currentPos.lng, currentPos.lat] : undefined}
