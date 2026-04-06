@@ -39,9 +39,14 @@ const Spinner = () => (
 );
 
 /**
- * ORDA 공통 버튼 컴포넌트
+ * ORDA 공통 가로형 CTA 버튼 컴포넌트
  *
- * - 높이: py-4 (아이콘 유무에 따라 자연스럽게 대응)
+ * 표준 가로형 CTA 버튼을 위한 컴포넌트입니다.
+ * 등산 시작 / 정상 인증처럼 아이콘+텍스트 세로 배열 구조는
+ * 별도 ActionTileButton 컴포넌트를 사용하세요.
+ *
+ * - type: "button" 고정 (form submit 방지)
+ * - 높이: py-4
  * - 너비: 기본 w-full, className으로 오버라이드 가능 (w-fit / flex-1 등)
  * - radius: rounded-xl
  * - variant: primary | secondary | ghost
@@ -77,6 +82,7 @@ const Button = ({
 
   return (
     <button
+      type="button"
       disabled={isDisabled}
       className={[
         "inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-4",
