@@ -20,10 +20,16 @@ type UseReplayPlayerResult = {
   play: () => void;
   pause: () => void;
   reset: () => void;
+  seek: (targetReplaySeconds: number) => void;
+  seekBy: (deltaSeconds: number) => void;
 };
 
 const TICK_MS = 50;
 const EMPTY_TRACK_POINTS: ReplayTrackPoint[] = [];
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
 
 function findCurrentIndex(
   points: ReplayTrackPoint[],
@@ -160,6 +166,26 @@ export const useReplayPlayer = (
     setCurrentReplaySeconds(0);
   };
 
+  const seek = (targetReplaySeconds: number) => {
+    if (durationSeconds <= 0) {
+      setCurrentReplaySeconds(0);
+      return;
+    }
+
+    setCurrentReplaySeconds(clamp(targetReplaySeconds, 0, durationSeconds));
+  };
+
+  const seekBy = (deltaSeconds: number) => {
+    if (durationSeconds <= 0) {
+      setCurrentReplaySeconds(0);
+      return;
+    }
+
+    setCurrentReplaySeconds((prev) =>
+      clamp(prev + deltaSeconds, 0, durationSeconds)
+    );
+  };
+
   return {
     isPlaying,
     currentReplaySeconds,
@@ -170,6 +196,8 @@ export const useReplayPlayer = (
     progress,
     play,
     pause,
-    reset
+    reset,
+    seek,
+    seekBy
   };
 };

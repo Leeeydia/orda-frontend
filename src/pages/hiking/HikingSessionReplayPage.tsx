@@ -7,30 +7,29 @@ import ReplayMapSection, {
 import { useReplayQuery } from "@/features/hiking/hooks/useReplayQuery";
 import { useReplayPlayer } from "@/features/hiking/hooks/useReplayPlayer";
 import { getHikingSession } from "@/features/hiking/api/hikingApi";
-import {
-  getInterpolatedActualElapsedSeconds
-} from "@/features/hiking/mappers/hikingMappers";
+import { getInterpolatedActualElapsedSeconds } from "@/features/hiking/mappers/hikingMappers";
 import type {
   ReplaySessionModel,
   SummitMarkerItem,
   VerifiedSummit
 } from "@/features/hiking/types/hiking.types";
-import {
-  formatDistanceKm,
-  formatDuration,
-  formatMeters
-} from "@/utils/format";
+import { formatDistanceKm, formatDuration, formatMeters } from "@/utils/format";
 
 const INTRO_OVERVIEW_MS = 2200;
 const START_FOCUS_MS = 1200;
 const OUTRO_OVERVIEW_MS = 1800;
 const SEQUENCE_TICK_MS = 50;
+const SEEK_STEP_SECONDS = 5;
 
 type ReplayContentProps = {
   replay: ReplaySessionModel;
   verifiedSummits: VerifiedSummit[];
   onBack: () => void;
 };
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
 
 function formatMsToDisplay(ms: number) {
   const totalSeconds = Math.max(ms / 1000, 0);
@@ -258,7 +257,8 @@ function ReplayPageContent({
     currentReplaySeconds,
     play,
     pause,
-    reset
+    reset,
+    seek
   } = useReplayPlayer(replay);
 
   const replayDurationMs = useMemo(() => {
@@ -291,6 +291,9 @@ function ReplayPageContent({
       currentReplaySeconds
     );
   }, [replay.trackPoints, currentReplaySeconds]);
+
+  const replayStartMs = INTRO_OVERVIEW_MS + START_FOCUS_MS;
+  const replayEndMs = replayStartMs + replayDurationMs;
 
   const visibleSummits: SummitMarkerItem[] = useMemo(() => {
     return verifiedSummits
@@ -351,6 +354,34 @@ function ReplayPageContent({
     pause();
   }, [cameraMode, isSequencePlaying, play, pause, hasReplayPath]);
 
+  useEffect(() => {
+    if (!hasReplayPath) return;
+
+    if (sequenceElapsedMs <= replayStartMs) {
+      seek(0);
+      return;
+    }
+
+    if (sequenceElapsedMs >= replayEndMs) {
+      seek(replay.durationSeconds);
+      return;
+    }
+
+    const replayProgress =
+      (sequenceElapsedMs - replayStartMs) / Math.max(replayDurationMs, 1);
+
+    const targetReplaySeconds = replay.durationSeconds * replayProgress;
+    seek(targetReplaySeconds);
+  }, [
+    hasReplayPath,
+    sequenceElapsedMs,
+    replayStartMs,
+    replayEndMs,
+    replayDurationMs,
+    replay.durationSeconds,
+    seek
+  ]);
+
   const handlePlayPause = () => {
     if (!hasReplayPath) return;
 
@@ -366,6 +397,32 @@ function ReplayPageContent({
     }
 
     setIsSequencePlaying(true);
+  };
+
+  const handleSeekBySequenceMs = (targetSequenceMs: number) => {
+    const clampedSequenceMs = clamp(targetSequenceMs, 0, totalSequenceMs);
+    setSequenceElapsedMs(clampedSequenceMs);
+  };
+
+  const handleSliderChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    handleSeekBySequenceMs(Number(event.target.value));
+  };
+
+  const handleBackward = () => {
+    if (!hasReplayPath) return;
+
+    const nextReplaySeconds = clamp(
+      currentReplaySeconds - SEEK_STEP_SECONDS,
+      0,
+      replay.durationSeconds
+    );
+
+    const nextSequenceMs =
+      replayStartMs +
+      (nextReplaySeconds / Math.max(replay.durationSeconds, 1)) *
+        replayDurationMs;
+
+    setSequenceElapsedMs(clamp(nextSequenceMs, 0, totalSequenceMs));
   };
 
   const handleResetReplay = () => {
@@ -438,9 +495,9 @@ function ReplayPageContent({
           </div>
 
           <div className="bg-white px-4 pt-4 pb-5">
-            <div className="rounded-[28px] border border-[#89943d]/10 bg-[#f7f7f6] px-4 py-4 shadow-sm">
-              <div className="mb-4">
-                <div className="mb-2 flex items-center justify-between">
+            <div className="rounded-[28px] border border-[#89943d]/10 bg-[#f7f7f6] px-4 py-5 shadow-sm">
+              <div className="mb-5">
+                <div className="mb-3 flex items-center justify-between">
                   <p className="text-sm font-bold text-[#2f3415]">
                     {formatMsToDisplay(sequenceElapsedMs)} /{" "}
                     {formatMsToDisplay(totalSequenceMs)}
@@ -450,23 +507,26 @@ function ReplayPageContent({
                   </p>
                 </div>
 
-                <div className="h-2.5 overflow-hidden rounded-full bg-[#89943d]/12">
-                  <div
-                    className="relative h-full rounded-full bg-[#89943d] transition-[width]"
-                    style={{ width: `${sequenceProgress * 100}%` }}>
-                    <div className="absolute top-1/2 right-0 h-4 w-4 -translate-y-1/2 rounded-full border-2 border-[#89943d] bg-white shadow-sm" />
-                  </div>
-                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={totalSequenceMs}
+                  step={SEQUENCE_TICK_MS}
+                  value={sequenceElapsedMs}
+                  onChange={handleSliderChange}
+                  className="h-3 w-full accent-[#89943d]"
+                />
               </div>
 
               <div className="flex items-center justify-center gap-10">
                 <button
                   type="button"
+                  onClick={handleBackward}
                   disabled={!hasReplayPath}
                   className="flex h-11 w-11 items-center justify-center rounded-full text-[#424434]/60 transition enabled:hover:bg-white enabled:hover:text-[#424434] disabled:opacity-30"
-                  aria-label="이전 구간">
+                  aria-label="5초 뒤로">
                   <span className="material-symbols-outlined material-symbols-filled text-[28px]">
-                    skip_previous
+                    replay_5
                   </span>
                 </button>
 
