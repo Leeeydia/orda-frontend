@@ -45,7 +45,7 @@ const Spinner = () => (
  * 등산 시작 / 정상 인증처럼 아이콘+텍스트 세로 배열 구조는
  * 별도 ActionTileButton 컴포넌트를 사용하세요.
  *
- * - type: "button" 고정 (form submit 방지)
+ * - type: 기본값 "button", form submit 시 type="submit" 명시
  * - 높이: py-4
  * - 너비: 기본 w-full, className으로 오버라이드 가능 (w-fit / flex-1 등)
  * - radius: rounded-xl
@@ -54,17 +54,11 @@ const Spinner = () => (
  * - isLoading: true일 때 스피너 표시 + 비활성 처리
  *
  * @example
- * // 아이콘 포함 Primary 버튼
- * <Button variant="primary" icon={<EditIcon />}>개인 정보 수정</Button>
+ * // 일반 CTA 버튼 (기본 type="button")
+ * <Button variant="primary">홈으로</Button>
  *
- * // 아이콘 없는 Secondary 버튼
- * <Button variant="secondary">로그아웃</Button>
- *
- * // 짧은 버튼
- * <Button variant="ghost" className="w-fit">취소</Button>
- *
- * // 반반 버튼 (팝업 내부)
- * <Button variant="secondary" className="flex-1">계속하기</Button>
+ * // form submit 버튼
+ * <Button type="submit" variant="primary">로그인</Button>
  *
  * // 로딩 상태
  * <Button variant="primary" isLoading>저장 중</Button>
@@ -76,13 +70,14 @@ const Button = ({
   icon,
   children,
   className = "",
+  type,
   ...rest
 }: ButtonProps) => {
   const isDisabled = disabled || isLoading;
 
   return (
     <button
-      type="button"
+      type={type ?? "button"}
       disabled={isDisabled}
       className={[
         "inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-4",
