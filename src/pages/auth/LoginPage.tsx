@@ -7,7 +7,7 @@ import { validate } from "../../utils/validate";
 import type { LoginRequest } from "../../features/auth/types/auth.types";
 import Toast from "../../components/ui/Toast";
 import Button from "../../components/ui/Button";
-import Header from "../../components/layout/Header";
+import Header, { HEADER_HEIGHT } from "../../components/layout/Header";
 import AuthField from "../../features/auth/components/AuthField";
 
 const INITIAL_FORM: LoginRequest = { email: "", password: "" };
@@ -58,8 +58,7 @@ const LoginPage = () => {
       <div className="mx-auto min-h-screen w-full max-w-[390px]">
         <Header />
 
-        {/* Header fixed 높이 보정 */}
-        <main className="px-4 pt-[76px] pb-20">
+        <main className="px-4 pb-20" style={{ paddingTop: HEADER_HEIGHT + 12 }}>
           <form onSubmit={handleSubmit} noValidate className="mt-12 space-y-4">
             <AuthField
               label="이메일"
