@@ -263,6 +263,7 @@ export default function ReplayMapSection({
   const mapRef = useRef<maplibregl.Map | null>(null);
   const replayMarkerRef = useRef<maplibregl.Marker | null>(null);
   const summitMarkerRefs = useRef<maplibregl.Marker[]>([]);
+  const previousCameraModeRef = useRef<ReplayCameraMode | null>(null);
   const [isMapReady, setIsMapReady] = useState(false);
 
   const displayGeoJson = useMemo(() => {
@@ -337,12 +338,19 @@ export default function ReplayMapSection({
     if (!isMapReady || !mapRef.current || !currentPosition) return;
     if (cameraMode !== "follow") return;
 
+    const enteredFollow = previousCameraModeRef.current !== "follow";
+
     mapRef.current.easeTo({
       center: [currentPosition.lng, currentPosition.lat],
-      duration: 250,
+      zoom: enteredFollow ? 16 : undefined,
+      duration: enteredFollow ? 450 : 250,
       essential: true
     });
   }, [isMapReady, currentPosition, cameraMode]);
+
+  useEffect(() => {
+    previousCameraModeRef.current = cameraMode;
+  }, [cameraMode]);
 
   useEffect(() => {
     if (!isMapReady || !mapRef.current) return;
@@ -386,7 +394,6 @@ export default function ReplayMapSection({
         className="h-full w-full"
         showNavigationControl={false}
         showAttributionControl={false}
-        compactAttributionControl={true}
         lineColor="#89943d"
         lineWidth={5}
         pointColor="#4a521e"

@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import ReplayMapSection, {
   type ReplayCameraMode
 } from "@/features/hiking/components/ReplayMapSection";
+import ReplayScaffoldState from "@/features/hiking/components/ReplayScaffoldState";
+import ReplaySummarySection from "@/features/hiking/components/ReplaySummarySection";
 import { useReplayQuery } from "@/features/hiking/hooks/useReplayQuery";
 import { useReplayPlayer } from "@/features/hiking/hooks/useReplayPlayer";
 import { getHikingSession } from "@/features/hiking/api/hikingApi";
@@ -62,39 +64,6 @@ function formatDistanceDisplay(distanceMeters: number | null | undefined) {
   return formatMeters(distanceMeters, 0);
 }
 
-function formatPace(
-  distanceMeters: number | null | undefined,
-  totalElapsedSeconds: number | null | undefined
-) {
-  if (
-    distanceMeters == null ||
-    totalElapsedSeconds == null ||
-    Number.isNaN(distanceMeters) ||
-    Number.isNaN(totalElapsedSeconds) ||
-    distanceMeters <= 0 ||
-    totalElapsedSeconds <= 0
-  ) {
-    return "-";
-  }
-
-  const paceSeconds = totalElapsedSeconds / (distanceMeters / 1000);
-  const minutes = Math.floor(paceSeconds / 60);
-  const seconds = Math.floor(paceSeconds % 60);
-
-  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(
-    2,
-    "0"
-  )}`;
-}
-
-function formatElevationDisplay(value: number | null | undefined) {
-  if (value == null || Number.isNaN(value)) {
-    return "-";
-  }
-
-  return `${Math.round(value)}m`;
-}
-
 function getReplayCameraMode(
   sequenceElapsedMs: number,
   replayDurationMs: number
@@ -145,105 +114,6 @@ function getStatusText(
   }
 
   return "재생 준비됨";
-}
-
-function ReplaySummarySection({ replay }: { replay: ReplaySessionModel }) {
-  const pace = formatPace(
-    replay.summary.totalDistanceMeters,
-    replay.summary.totalElapsedSeconds
-  );
-
-  return (
-    <div className="space-y-4 px-4 pt-4">
-      <section className="rounded-3xl border border-[#89943d]/10 bg-white px-4 py-4 shadow-sm">
-        <div className="mb-3">
-          <p className="text-[11px] font-semibold tracking-[0.16em] text-[#89943d] uppercase">
-            기록 요약
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
-            <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
-              거리
-            </p>
-            <p className="mt-1 text-base font-bold text-[#2f3415]">
-              {formatDistanceDisplay(replay.summary.totalDistanceMeters)}
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
-            <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
-              시간
-            </p>
-            <p className="mt-1 text-base font-bold text-[#2f3415]">
-              {formatDuration(replay.summary.totalElapsedSeconds)}
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
-            <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
-              상승
-            </p>
-            <p className="mt-1 text-base font-bold text-[#2f3415]">
-              {formatElevationDisplay(replay.summary.totalElevationGainMeters)}
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
-            <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
-              페이스
-            </p>
-            <p className="mt-1 text-base font-bold text-[#2f3415]">
-              {pace}
-              {pace !== "-" ? (
-                <span className="ml-1 text-xs font-medium text-[#424434]/60">
-                  /km
-                </span>
-              ) : null}
-            </p>
-          </div>
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function ReplayScaffoldState({
-  message,
-  tone = "neutral"
-}: {
-  message: string;
-  tone?: "neutral" | "error";
-}) {
-  const sectionClass =
-    tone === "error"
-      ? "rounded-3xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700 shadow-sm"
-      : "rounded-3xl border border-[#89943d]/10 bg-white px-4 py-4 text-sm text-slate-600 shadow-sm";
-
-  return (
-    <div className="min-h-screen bg-[#f7f7f6] text-slate-900">
-      <div className="mx-auto min-h-screen w-full max-w-md bg-[#f7f7f6]">
-        <header className="sticky top-0 z-30 border-b border-[#89943d]/10 bg-white/90 backdrop-blur">
-          <div className="px-4 py-3">
-            <div className="flex h-10 items-center rounded-2xl border border-dashed border-[#89943d]/20 bg-[#f7f7f6] px-4 text-xs font-medium text-[#89943d]/70">
-              Header Placeholder
-            </div>
-          </div>
-        </header>
-
-        <main className="px-4 pt-4 pb-6">
-          <section className={sectionClass}>{message}</section>
-        </main>
-
-        <div className="sticky bottom-0 border-t border-[#89943d]/10 bg-white/90 px-4 py-3 backdrop-blur">
-          <div className="flex h-14 items-center justify-center rounded-2xl border border-dashed border-[#89943d]/20 bg-[#f7f7f6] text-xs font-medium text-[#89943d]/70">
-            Bottom Tab Placeholder
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 function ReplayPageContent({

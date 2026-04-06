@@ -16,12 +16,10 @@ type UseReplayPlayerResult = {
   currentPoint: ReplayTrackPoint | null;
   currentIndex: number;
   currentPosition: ReplayCurrentPosition | null;
-  progress: number;
   play: () => void;
   pause: () => void;
   reset: () => void;
   seek: (targetReplaySeconds: number) => void;
-  seekBy: (deltaSeconds: number) => void;
 };
 
 const TICK_MS = 50;
@@ -117,11 +115,6 @@ export const useReplayPlayer = (
     return interpolatePosition(currentPoint, nextPoint, currentReplaySeconds);
   }, [currentPoint, nextPoint, currentReplaySeconds]);
 
-  const progress = useMemo(() => {
-    if (durationSeconds <= 0) return 0;
-    return Math.min(currentReplaySeconds / durationSeconds, 1);
-  }, [currentReplaySeconds, durationSeconds]);
-
   useEffect(() => {
     if (!isPlaying) return;
     if (durationSeconds <= 0) return;
@@ -175,17 +168,6 @@ export const useReplayPlayer = (
     setCurrentReplaySeconds(clamp(targetReplaySeconds, 0, durationSeconds));
   };
 
-  const seekBy = (deltaSeconds: number) => {
-    if (durationSeconds <= 0) {
-      setCurrentReplaySeconds(0);
-      return;
-    }
-
-    setCurrentReplaySeconds((prev) =>
-      clamp(prev + deltaSeconds, 0, durationSeconds)
-    );
-  };
-
   return {
     isPlaying,
     currentReplaySeconds,
@@ -193,11 +175,9 @@ export const useReplayPlayer = (
     currentPoint,
     currentIndex,
     currentPosition,
-    progress,
     play,
     pause,
     reset,
-    seek,
-    seekBy
+    seek
   };
 };
