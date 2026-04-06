@@ -2,10 +2,13 @@
 
 import { useState, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useLogin, validate } from "../../features/auth/hooks/useAuth";
+import { useLogin } from "../../features/auth/hooks/useAuth";
+import { validate } from "../../utils/validate";
 import type { LoginRequest } from "../../features/auth/types/auth.types";
 import Toast from "../../components/ui/Toast";
+import Button from "../../components/ui/Button";
 import Header from "../../components/layout/Header";
+import AuthField from "../../features/auth/components/AuthField";
 
 const INITIAL_FORM: LoginRequest = { email: "", password: "" };
 const INITIAL_ERRORS = { email: "", password: "" };
@@ -58,7 +61,7 @@ const LoginPage = () => {
         {/* Header fixed 높이 보정 */}
         <main className="px-4 pt-[76px] pb-20">
           <form onSubmit={handleSubmit} noValidate className="mt-12 space-y-4">
-            <Field
+            <AuthField
               label="이메일"
               name="email"
               type="email"
@@ -68,7 +71,7 @@ const LoginPage = () => {
               onChange={handleChange}
               required
             />
-            <Field
+            <AuthField
               label="비밀번호"
               name="password"
               type="password"
@@ -79,17 +82,9 @@ const LoginPage = () => {
               required
             />
 
-            <button
-              type="submit"
-              disabled={loading}
-              aria-busy={loading}
-              className="bg-primary hover:bg-primary-hover disabled:text-muted mt-2 h-12 w-full rounded-md px-6 text-sm font-semibold text-white transition-colors duration-150 active:opacity-60 disabled:cursor-not-allowed disabled:bg-[#D7DACB]">
-              {loading ? (
-                <span className="mx-auto block h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              ) : (
-                "로그인"
-              )}
-            </button>
+            <Button type="submit" variant="primary" isLoading={loading}>
+              로그인
+            </Button>
           </form>
 
           <p className="text-muted mt-6 text-center text-sm leading-5">
@@ -115,66 +110,3 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
-
-// ─── Field 서브컴포넌트 ────────────────────────────────────────────────────────
-
-interface FieldProps {
-  label: string;
-  name: string;
-  type: string;
-  placeholder: string;
-  value: string;
-  error: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  required?: boolean;
-}
-
-const Field = ({
-  label,
-  name,
-  type,
-  placeholder,
-  value,
-  error,
-  onChange,
-  required
-}: FieldProps) => {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={name} className="text-heading text-sm font-semibold">
-        {label}
-        {required && (
-          <span className="text-primary ml-0.5" aria-hidden="true">
-            *
-          </span>
-        )}
-      </label>
-
-      <input
-        id={name}
-        name={name}
-        type={type}
-        placeholder={placeholder}
-        value={value}
-        onChange={onChange}
-        aria-invalid={!!error}
-        aria-describedby={error ? `${name}-error` : undefined}
-        required={required}
-        className={`bg-secondary text-body placeholder:text-muted h-12 w-full rounded-md border px-4 text-base transition-colors duration-150 outline-none ${
-          error
-            ? "border-error focus:border-error focus:ring-error bg-white focus:ring-1"
-            : "border-border-default focus:border-primary focus:ring-primary focus:bg-white focus:ring-1"
-        }`}
-      />
-
-      {error && (
-        <p
-          id={`${name}-error`}
-          className="text-error pl-1 text-xs leading-4"
-          role="alert">
-          {error}
-        </p>
-      )}
-    </div>
-  );
-};
