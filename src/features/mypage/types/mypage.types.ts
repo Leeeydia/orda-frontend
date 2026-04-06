@@ -25,3 +25,6 @@ export interface HikingRecord {
   totalElevationGainM: number | null;
   totalDurationSec: number | null;
 }
+
+// SettingsProfile / UpdateProfileRequest / ChangePasswordRequest 는
+// features/edit-profile/types/editProfile.types.ts 에서 관리
