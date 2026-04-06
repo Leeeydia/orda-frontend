@@ -6,6 +6,7 @@ import ReplayMapSection, {
 import { useReplayQuery } from "@/features/hiking/hooks/useReplayQuery";
 import { useReplayPlayer } from "@/features/hiking/hooks/useReplayPlayer";
 import type { ReplaySessionModel } from "@/features/hiking/types/hiking.types";
+import { formatDistanceKm, formatDuration, formatMeters } from "@/utils/format";
 
 const INTRO_OVERVIEW_MS = 2200;
 const START_FOCUS_MS = 1200;
@@ -36,34 +37,29 @@ function formatMsToDisplay(ms: number) {
   )}`;
 }
 
-function formatDistanceMeters(distanceMeters: number) {
+function formatDistanceDisplay(distanceMeters: number | null | undefined) {
+  if (distanceMeters == null || Number.isNaN(distanceMeters)) {
+    return "-";
+  }
+
   if (distanceMeters >= 1000) {
-    return `${(distanceMeters / 1000).toFixed(2)}km`;
+    return formatDistanceKm(distanceMeters, 2);
   }
-
-  return `${Math.round(distanceMeters)}m`;
+  return formatMeters(distanceMeters, 0);
 }
 
-function formatDurationSeconds(totalSeconds: number) {
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = Math.floor(totalSeconds % 60);
-
-  if (hours > 0) {
-    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
-      2,
-      "0"
-    )}:${String(seconds).padStart(2, "0")}`;
-  }
-
-  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(
-    2,
-    "0"
-  )}`;
-}
-
-function formatPace(distanceMeters: number, totalElapsedSeconds: number) {
-  if (distanceMeters <= 0 || totalElapsedSeconds <= 0) {
+function formatPace(
+  distanceMeters: number | null | undefined,
+  totalElapsedSeconds: number | null | undefined
+) {
+  if (
+    distanceMeters == null ||
+    totalElapsedSeconds == null ||
+    Number.isNaN(distanceMeters) ||
+    Number.isNaN(totalElapsedSeconds) ||
+    distanceMeters <= 0 ||
+    totalElapsedSeconds <= 0
+  ) {
     return "-";
   }
 
@@ -75,6 +71,14 @@ function formatPace(distanceMeters: number, totalElapsedSeconds: number) {
     2,
     "0"
   )}`;
+}
+
+function formatElevationDisplay(value: number | null | undefined) {
+  if (value == null || Number.isNaN(value)) {
+    return "-";
+  }
+
+  return `${Math.round(value)}m`;
 }
 
 function getReplayCameraMode(
@@ -129,6 +133,105 @@ function getStatusText(
   return "재생 준비됨";
 }
 
+function ReplaySummarySection({ replay }: { replay: ReplaySessionModel }) {
+  const pace = formatPace(
+    replay.summary.totalDistanceMeters,
+    replay.summary.totalElapsedSeconds
+  );
+
+  return (
+    <div className="space-y-4 px-4 pt-4">
+      <section className="rounded-3xl border border-[#89943d]/10 bg-white px-4 py-4 shadow-sm">
+        <div className="mb-3">
+          <p className="text-[11px] font-semibold tracking-[0.16em] text-[#89943d] uppercase">
+            기록 요약
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
+            <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
+              거리
+            </p>
+            <p className="mt-1 text-base font-bold text-[#2f3415]">
+              {formatDistanceDisplay(replay.summary.totalDistanceMeters)}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
+            <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
+              시간
+            </p>
+            <p className="mt-1 text-base font-bold text-[#2f3415]">
+              {formatDuration(replay.summary.totalElapsedSeconds)}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
+            <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
+              상승
+            </p>
+            <p className="mt-1 text-base font-bold text-[#2f3415]">
+              {formatElevationDisplay(replay.summary.totalElevationGainMeters)}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
+            <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
+              페이스
+            </p>
+            <p className="mt-1 text-base font-bold text-[#2f3415]">
+              {pace}
+              {pace !== "-" ? (
+                <span className="ml-1 text-xs font-medium text-[#424434]/60">
+                  /km
+                </span>
+              ) : null}
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function ReplayScaffoldState({
+  message,
+  tone = "neutral"
+}: {
+  message: string;
+  tone?: "neutral" | "error";
+}) {
+  const sectionClass =
+    tone === "error"
+      ? "rounded-3xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700 shadow-sm"
+      : "rounded-3xl border border-[#89943d]/10 bg-white px-4 py-4 text-sm text-slate-600 shadow-sm";
+
+  return (
+    <div className="min-h-screen bg-[#f7f7f6] text-slate-900">
+      <div className="mx-auto min-h-screen w-full max-w-md bg-[#f7f7f6]">
+        <header className="sticky top-0 z-30 border-b border-[#89943d]/10 bg-white/90 backdrop-blur">
+          <div className="px-4 py-3">
+            <div className="flex h-10 items-center rounded-2xl border border-dashed border-[#89943d]/20 bg-[#f7f7f6] px-4 text-xs font-medium text-[#89943d]/70">
+              Header Placeholder
+            </div>
+          </div>
+        </header>
+
+        <main className="px-4 pt-4 pb-6">
+          <section className={sectionClass}>{message}</section>
+        </main>
+
+        <div className="sticky bottom-0 border-t border-[#89943d]/10 bg-white/90 px-4 py-3 backdrop-blur">
+          <div className="flex h-14 items-center justify-center rounded-2xl border border-dashed border-[#89943d]/20 bg-[#f7f7f6] text-xs font-medium text-[#89943d]/70">
+            Bottom Tab Placeholder
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ReplayPageContent({ replay, onBack }: ReplayContentProps) {
   const { currentPosition, currentIndex, play, pause, reset } =
     useReplayPlayer(replay);
@@ -155,9 +258,12 @@ function ReplayPageContent({ replay, onBack }: ReplayContentProps) {
     return Math.min(sequenceElapsedMs / totalSequenceMs, 1);
   }, [sequenceElapsedMs, totalSequenceMs]);
 
+  const hasReplayPath = replay.lineCoordinates.length > 0;
+
   useEffect(() => {
     if (!isSequencePlaying) return;
     if (totalSequenceMs <= 0) return;
+    if (!hasReplayPath) return;
 
     const timer = window.setInterval(() => {
       setSequenceElapsedMs((prev) => {
@@ -175,18 +281,25 @@ function ReplayPageContent({ replay, onBack }: ReplayContentProps) {
     return () => {
       window.clearInterval(timer);
     };
-  }, [isSequencePlaying, totalSequenceMs]);
+  }, [isSequencePlaying, totalSequenceMs, hasReplayPath]);
 
   useEffect(() => {
+    if (!hasReplayPath) {
+      pause();
+      return;
+    }
+
     if (cameraMode === "follow" && isSequencePlaying) {
       play();
       return;
     }
 
     pause();
-  }, [cameraMode, isSequencePlaying, play, pause]);
+  }, [cameraMode, isSequencePlaying, play, pause, hasReplayPath]);
 
   const handlePlayPause = () => {
+    if (!hasReplayPath) return;
+
     if (isSequencePlaying) {
       setIsSequencePlaying(false);
       pause();
@@ -208,12 +321,14 @@ function ReplayPageContent({ replay, onBack }: ReplayContentProps) {
     reset();
   };
 
-  const statusText = getStatusText(
-    isSequencePlaying,
-    cameraMode,
-    sequenceElapsedMs,
-    totalSequenceMs
-  );
+  const statusText = hasReplayPath
+    ? getStatusText(
+        isSequencePlaying,
+        cameraMode,
+        sequenceElapsedMs,
+        totalSequenceMs
+      )
+    : "경로 없음";
 
   return (
     <>
@@ -250,14 +365,11 @@ function ReplayPageContent({ replay, onBack }: ReplayContentProps) {
                       <span className="mx-1.5 font-medium text-slate-400">
                         ·
                       </span>
-                      <span className="font-medium text-xs text-slate-500">
-                        {formatDistanceMeters(
+                      <span className="text-xs font-medium text-slate-500">
+                        {formatDistanceDisplay(
                           replay.summary.totalDistanceMeters
                         )}{" "}
-                        ·{" "}
-                        {formatDurationSeconds(
-                          replay.summary.totalElapsedSeconds
-                        )}
+                        · {formatDuration(replay.summary.totalElapsedSeconds)}
                       </span>
                     </p>
                   </div>
@@ -295,7 +407,8 @@ function ReplayPageContent({ replay, onBack }: ReplayContentProps) {
               <div className="flex items-center justify-center gap-10">
                 <button
                   type="button"
-                  className="flex h-11 w-11 items-center justify-center rounded-full text-[#424434]/60 transition hover:bg-white hover:text-[#424434]"
+                  disabled={!hasReplayPath}
+                  className="flex h-11 w-11 items-center justify-center rounded-full text-[#424434]/60 transition enabled:hover:bg-white enabled:hover:text-[#424434] disabled:opacity-30"
                   aria-label="이전 구간">
                   <span className="material-symbols-outlined material-symbols-filled text-[28px]">
                     skip_previous
@@ -305,9 +418,10 @@ function ReplayPageContent({ replay, onBack }: ReplayContentProps) {
                 <button
                   type="button"
                   onClick={handlePlayPause}
-                  className="flex h-16 w-16 items-center justify-center rounded-full bg-[#89943d] text-white shadow-lg shadow-[#89943d]/30 transition active:scale-95"
+                  disabled={!hasReplayPath}
+                  className="flex h-16 w-16 items-center justify-center rounded-full bg-[#89943d] text-white shadow-lg shadow-[#89943d]/30 transition active:scale-95 disabled:opacity-40"
                   aria-label={isSequencePlaying ? "일시정지" : "재생"}>
-                  <span className="material-symbols-outlined material-symbols-filled fill-1 text-[34px]">
+                  <span className="material-symbols-outlined material-symbols-filled text-[34px]">
                     {isSequencePlaying ? "pause" : "play_arrow"}
                   </span>
                 </button>
@@ -315,7 +429,8 @@ function ReplayPageContent({ replay, onBack }: ReplayContentProps) {
                 <button
                   type="button"
                   onClick={handleResetReplay}
-                  className="flex h-11 w-11 items-center justify-center rounded-full text-[#424434]/60 transition hover:bg-white hover:text-[#424434]"
+                  disabled={!hasReplayPath}
+                  className="flex h-11 w-11 items-center justify-center rounded-full text-[#424434]/60 transition enabled:hover:bg-white enabled:hover:text-[#424434] disabled:opacity-30"
                   aria-label="처음으로">
                   <span className="material-symbols-outlined material-symbols-filled text-[28px]">
                     restart_alt
@@ -326,59 +441,15 @@ function ReplayPageContent({ replay, onBack }: ReplayContentProps) {
           </div>
         </section>
 
-        <div className="space-y-4 px-4 pt-4">
-          <section className="rounded-3xl border border-[#89943d]/10 bg-white px-4 py-4 shadow-sm">
-            <div className="mb-3">
-              <p className="text-[11px] font-semibold tracking-[0.16em] text-[#89943d] uppercase">
-                기록 요약
-              </p>
-            </div>
+        {!hasReplayPath ? (
+          <div className="px-4 pt-4">
+            <section className="rounded-3xl border border-[#89943d]/10 bg-white px-4 py-4 text-sm text-slate-600 shadow-sm">
+              표시할 리플레이 경로가 없어 요약 정보만 확인할 수 있습니다.
+            </section>
+          </div>
+        ) : null}
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
-                <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
-                  거리
-                </p>
-                <p className="mt-1 text-base font-bold text-[#2f3415]">
-                  {formatDistanceMeters(replay.summary.totalDistanceMeters)}
-                </p>
-              </div>
-
-              <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
-                <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
-                  시간
-                </p>
-                <p className="mt-1 text-base font-bold text-[#2f3415]">
-                  {formatDurationSeconds(replay.summary.totalElapsedSeconds)}
-                </p>
-              </div>
-
-              <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
-                <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
-                  상승
-                </p>
-                <p className="mt-1 text-base font-bold text-[#2f3415]">
-                  {Math.round(replay.summary.totalElevationGainMeters)}m
-                </p>
-              </div>
-
-              <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
-                <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
-                  페이스
-                </p>
-                <p className="mt-1 text-base font-bold text-[#2f3415]">
-                  {formatPace(
-                    replay.summary.totalDistanceMeters,
-                    replay.summary.totalElapsedSeconds
-                  )}
-                  <span className="ml-1 text-xs font-medium text-[#424434]/60">
-                    /km
-                  </span>
-                </p>
-              </div>
-            </div>
-          </section>
-        </div>
+        <ReplaySummarySection replay={replay} />
       </main>
 
       <div className="sticky bottom-0 border-t border-[#89943d]/10 bg-white/90 px-4 py-3 backdrop-blur">
@@ -403,87 +474,20 @@ export default function HikingSessionReplayPage() {
   const { replay, isLoading, isError } = useReplayQuery(numericSessionId);
 
   if (numericSessionId == null) {
-    return (
-      <div className="min-h-screen bg-[#f7f7f6] text-slate-900">
-        <div className="mx-auto min-h-screen w-full max-w-md bg-[#f7f7f6]">
-          <header className="sticky top-0 z-30 border-b border-[#89943d]/10 bg-white/90 backdrop-blur">
-            <div className="px-4 py-3">
-              <div className="flex h-10 items-center rounded-2xl border border-dashed border-[#89943d]/20 bg-[#f7f7f6] px-4 text-xs font-medium text-[#89943d]/70">
-                Header Placeholder
-              </div>
-            </div>
-          </header>
-
-          <main className="px-4 pt-4 pb-6">
-            <section className="rounded-3xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700 shadow-sm">
-              잘못된 세션 ID입니다.
-            </section>
-          </main>
-
-          <div className="sticky bottom-0 border-t border-[#89943d]/10 bg-white/90 px-4 py-3 backdrop-blur">
-            <div className="flex h-14 items-center justify-center rounded-2xl border border-dashed border-[#89943d]/20 bg-[#f7f7f6] text-xs font-medium text-[#89943d]/70">
-              Bottom Tab Placeholder
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <ReplayScaffoldState message="잘못된 세션 ID입니다." tone="error" />;
   }
 
   if (isError) {
     return (
-      <div className="min-h-screen bg-[#f7f7f6] text-slate-900">
-        <div className="mx-auto min-h-screen w-full max-w-md bg-[#f7f7f6]">
-          <header className="sticky top-0 z-30 border-b border-[#89943d]/10 bg-white/90 backdrop-blur">
-            <div className="px-4 py-3">
-              <div className="flex h-10 items-center rounded-2xl border border-dashed border-[#89943d]/20 bg-[#f7f7f6] px-4 text-xs font-medium text-[#89943d]/70">
-                Header Placeholder
-              </div>
-            </div>
-          </header>
-
-          <main className="px-4 pt-4 pb-6">
-            <section className="rounded-3xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700 shadow-sm">
-              리플레이 정보를 불러오지 못했습니다.
-            </section>
-          </main>
-
-          <div className="sticky bottom-0 border-t border-[#89943d]/10 bg-white/90 px-4 py-3 backdrop-blur">
-            <div className="flex h-14 items-center justify-center rounded-2xl border border-dashed border-[#89943d]/20 bg-[#f7f7f6] text-xs font-medium text-[#89943d]/70">
-              Bottom Tab Placeholder
-            </div>
-          </div>
-        </div>
-      </div>
+      <ReplayScaffoldState
+        message="리플레이 정보를 불러오지 못했습니다."
+        tone="error"
+      />
     );
   }
 
   if (isLoading && replay.totalPoints === 0) {
-    return (
-      <div className="min-h-screen bg-[#f7f7f6] text-slate-900">
-        <div className="mx-auto min-h-screen w-full max-w-md bg-[#f7f7f6]">
-          <header className="sticky top-0 z-30 border-b border-[#89943d]/10 bg-white/90 backdrop-blur">
-            <div className="px-4 py-3">
-              <div className="flex h-10 items-center rounded-2xl border border-dashed border-[#89943d]/20 bg-[#f7f7f6] px-4 text-xs font-medium text-[#89943d]/70">
-                Header Placeholder
-              </div>
-            </div>
-          </header>
-
-          <main className="px-4 pt-4 pb-6">
-            <section className="rounded-3xl border border-[#89943d]/10 bg-white px-4 py-4 text-sm text-slate-600 shadow-sm">
-              리플레이 정보를 불러오는 중...
-            </section>
-          </main>
-
-          <div className="sticky bottom-0 border-t border-[#89943d]/10 bg-white/90 px-4 py-3 backdrop-blur">
-            <div className="flex h-14 items-center justify-center rounded-2xl border border-dashed border-[#89943d]/20 bg-[#f7f7f6] text-xs font-medium text-[#89943d]/70">
-              Bottom Tab Placeholder
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <ReplayScaffoldState message="리플레이 정보를 불러오는 중..." />;
   }
 
   return (
