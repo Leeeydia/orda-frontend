@@ -20,8 +20,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<MapTestPage />} />
-        <Route path="/hiking" element={<HikingRecordPage />} />
+        <Route path="/test" element={<MapTestPage />} />
+        <Route path="/" element={<HikingRecordPage />} />
         <Route
           path="/hiking/sessions/:sessionId"
           element={<HikingSessionDetailPage />}
