@@ -4,6 +4,7 @@
  * 변경 사항:
  *  - start(): 첫 GPS fix를 firstFixRef에 임시 보관
  *             세션 생성 후 즉시 첫 포인트 저장 보장
+ *  - [orda/feat/trail-difficulty] start(): 이미 GPS가 켜져 있으면 재시작하지 않도록 처리
  */
 
 import { useState, useRef, useEffect } from "react";
@@ -50,32 +51,40 @@ export const useHiking = () => {
       setError(null);
       firstFixRef.current = null;
 
-      // 1. GPS fix 확보 대기
-      //    첫 fix는 sessionId가 없으므로 저장 불가 → firstFixRef에 임시 보관
-      await gps.start((point: GpsPoint) => {
-        const now = Date.now();
+      // [orda/feat/trail-difficulty] 이미 GPS watch 중이면 재시작 생략
+      const alreadyTracking = gps.isTracking;
 
-        // 첫 fix: sessionIdRef가 없으면 임시 보관만 하고 리턴
-        if (firstFixRef.current === null) {
-          firstFixRef.current = point;
+      if (!alreadyTracking) {
+        // 1. GPS fix 확보 대기
+        await gps.start((point: GpsPoint) => {
+          const now = Date.now();
+
+          if (firstFixRef.current === null) {
+            firstFixRef.current = point;
+            lastSavedAt.current = now;
+            return;
+          }
+
+          if (!sessionIdRef.current) return;
+          if (now - lastSavedAt.current < SAVE_INTERVAL_MS) return;
           lastSavedAt.current = now;
-          return;
+
+          saveGpsTrack(sessionIdRef.current, {
+            latitude: point.lat,
+            longitude: point.lng,
+            elevationM: point.altitude ?? null,
+            accuracyM: point.accuracy
+          })
+            .then(() => setSavedPointCount((prev) => prev + 1))
+            .catch((e) => console.error("GPS 저장 실패:", e));
+        });
+      } else {
+        // 이미 추적 중이면 현재 위치를 firstFix로 사용
+        if (gps.currentPos) {
+          firstFixRef.current = gps.currentPos;
+          lastSavedAt.current = Date.now();
         }
-
-        // 이후 포인트: 5초 간격 저장
-        if (!sessionIdRef.current) return;
-        if (now - lastSavedAt.current < SAVE_INTERVAL_MS) return;
-        lastSavedAt.current = now;
-
-        saveGpsTrack(sessionIdRef.current, {
-          latitude: point.lat,
-          longitude: point.lng,
-          elevationM: point.altitude ?? null,
-          accuracyM: point.accuracy
-        })
-          .then(() => setSavedPointCount((prev) => prev + 1))
-          .catch((e) => console.error("GPS 저장 실패:", e));
-      });
+      }
 
       // 2. GPS fix 확보 후 세션 생성
       const res = await startHiking({ userId: 1 }); // TODO: auth 연동 후 교체

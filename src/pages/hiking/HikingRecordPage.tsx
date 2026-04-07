@@ -6,18 +6,22 @@
  *  - [orda/feat/trail-difficulty] 하단 패널 제거, 등산 시작 버튼 플로팅으로 변경
  *  - [orda/feat/trail-difficulty] 등산로 로딩 오버레이 추가, 버튼 위치 조정
  *  - [orda/feat/trail-difficulty] 등산 시작 버튼 위 배낭맨 아이콘 추가 및 대각선 애니메이션
+ *  - [orda/feat/trail-difficulty] idle 상태에서도 내 위치 표시
  */
 
 import { useState, useEffect, useRef } from "react";
 import GpsTrackingMap from "@/features/gps/components/GpsTrackingMap";
 import { useHiking } from "@/features/hiking/hooks/useHiking";
+import { useGPS } from "@/features/gps/hooks/useGPS"; // [orda/feat/trail-difficulty] 추가
 import type { GpsPoint } from "@/features/gps/types/gps.types";
 import Header from "@/components/layout/Header";
 import BackButton from "@/components/layout/BackButton";
 import BottomNav from "@/components/layout/BottomNav";
+import { useNavigate } from "react-router-dom";
+import useMyPage from "@/features/mypage/hooks/useMyPage";
 
 // [orda/feat/trail-difficulty] 배낭맨 아이콘
-import hikingIcon from "@/assets/free-icon-hiking-5064158.png";
+import hikingIcon from "@/assets/hiking-icon.png";
 
 const useElapsedTime = (isRunning: boolean) => {
   const [seconds, setSeconds] = useState(0);
@@ -143,6 +147,9 @@ const HikingRecordPage = () => {
     verify
   } = useHiking();
 
+  const navigate = useNavigate(); // [orda/feat/trail-difficulty] 추가
+  const { profile } = useMyPage(); // [orda/feat/trail-difficulty] 추가
+
   const [pageState, setPageState] = useState<PageState>("idle");
   const [summitResult, setSummitResult] = useState<{
     verified: boolean;
@@ -153,6 +160,17 @@ const HikingRecordPage = () => {
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [trailLoaded, setTrailLoaded] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+
+  // [orda/feat/trail-difficulty] idle 상태에서도 내 위치 표시용 GPS
+  const idleGps = useGPS();
+  useEffect(() => {
+    if (pageState === "idle") {
+      idleGps.start().catch(() => {});
+    }
+    return () => {
+      idleGps.stop();
+    };
+  }, [pageState]);
 
   const elapsedSeconds = useElapsedTime(pageState === "hiking");
 
@@ -217,8 +235,8 @@ const HikingRecordPage = () => {
       {/* ── 지도 배경 ────────────────────────────── */}
       <div className="absolute inset-0 z-0">
         <GpsTrackingMap
-          geoJson={geoJson}
-          currentPos={currentPos}
+          geoJson={pageState === "idle" ? idleGps.geoJson : geoJson}
+          currentPos={pageState === "idle" ? idleGps.currentPos : currentPos}
           onTrailLoaded={() => setTrailLoaded(true)}
         />
       </div>
@@ -237,7 +255,28 @@ const HikingRecordPage = () => {
 
       {/* ── 공통 헤더 ────────────────────────────── */}
       <div className="relative z-10">
-        <Header leftSlot={<BackButton />} title="등산 기록" />
+        <Header
+          leftSlot={<BackButton />}
+          title="등산 기록"
+          rightSlot={
+            // [orda/feat/trail-difficulty] 프로필 버튼 추가
+            <button
+              onClick={() => navigate("/mypage")}
+              className="flex items-center justify-center">
+              {profile?.profileImageUrl ? (
+                <img
+                  src={profile.profileImageUrl}
+                  className="h-8 w-8 rounded-full object-cover"
+                  alt="프로필"
+                />
+              ) : (
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#89943d] text-xs font-bold text-white">
+                  {profile?.nickname?.[0] ?? "?"}
+                </div>
+              )}
+            </button>
+          }
+        />
       </div>
 
       {/* ── hiking 중 정보 패널 ───────────────────── */}
@@ -304,6 +343,31 @@ const HikingRecordPage = () => {
         </div>
       )}
 
+      {/* ── 난이도 범례 ──────────────────────────── */}
+      {/* [orda/feat/trail-difficulty] 난이도 색상 범례 추가 */}
+      {trailLoaded && (
+        <div className="absolute bottom-[180px] left-4 z-10 rounded-xl bg-white/90 px-3 py-2 shadow-md backdrop-blur-sm">
+          <p className="mb-1.5 text-[10px] font-bold text-slate-500 uppercase">
+            난이도
+          </p>
+          {[
+            { label: "쉬움", color: "#22c55e" },
+            { label: "보통", color: "#84cc16" },
+            { label: "어려움", color: "#eab308" },
+            { label: "매우 어려움", color: "#f97316" },
+            { label: "최상급", color: "#ef4444" }
+          ].map((item) => (
+            <div key={item.label} className="flex items-center gap-1.5 py-0.5">
+              <div
+                className="h-2 w-4 rounded-full"
+                style={{ backgroundColor: item.color }}
+              />
+              <span className="text-[10px] text-slate-600">{item.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* ── 플로팅 버튼 영역 ─────────────────────── */}
       <div className="absolute right-0 bottom-[100px] left-0 z-10 px-6">
         {pageState === "idle" && (
@@ -312,11 +376,7 @@ const HikingRecordPage = () => {
             <img
               src={hikingIcon}
               alt="hiking"
-              className={`h-12 w-12 ${isAnimating ? "animate-diagonal-fly" : ""}`}
-              style={{
-                filter:
-                  "invert(28%) sepia(50%) saturate(500%) hue-rotate(15deg) brightness(70%) contrast(95%)"
-              }}
+              className={`h-10 w-10 ${isAnimating ? "animate-diagonal-fly" : ""}`}
             />
             <button
               onClick={handleStartWithAnimation}
