@@ -3,7 +3,7 @@
 
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-type ButtonVariant = "primary" | "secondary" | "ghost";
+type ButtonVariant = "primary" | "secondary" | "ghost" | "kakao";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
@@ -19,7 +19,9 @@ const variantClass: Record<ButtonVariant, string> = {
   secondary:
     "bg-secondary border border-border-default text-heading hover:bg-accent active:opacity-60 transition-colors duration-150",
   ghost:
-    "border border-primary text-primary bg-transparent hover:bg-bg-soft active:opacity-60 transition-colors duration-150"
+    "border border-primary text-primary bg-transparent hover:bg-bg-soft active:opacity-60 transition-colors duration-150",
+  kakao:
+    "bg-[#FEE500] text-[#191919] hover:bg-[#F0D900] active:opacity-60 transition-colors duration-150"
 };
 
 const disabledClass =
@@ -49,7 +51,7 @@ const Spinner = () => (
  * - 높이: py-4
  * - 너비: 기본 w-full, className으로 오버라이드 가능 (w-fit / flex-1 등)
  * - radius: rounded-xl
- * - variant: primary | secondary | ghost
+ * - variant: primary | secondary | ghost | kakao
  * - icon: 선택적으로 왼쪽 아이콘 삽입
  * - isLoading: true일 때 스피너 표시 + 비활성 처리
  *
@@ -62,6 +64,9 @@ const Spinner = () => (
  *
  * // 로딩 상태
  * <Button variant="primary" isLoading>저장 중</Button>
+ *
+ * // 카카오 로그인 버튼
+ * <Button variant="kakao">카카오로 시작하기</Button>
  */
 const Button = ({
   variant = "primary",
