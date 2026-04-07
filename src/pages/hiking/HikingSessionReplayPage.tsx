@@ -435,7 +435,7 @@ export default function HikingSessionReplayPage() {
   const isSummitInfoError = sessionQuery.isError;
 
   if (numericSessionId == null) {
-    return <ReplayScaffoldState message="잘못된 세션 ID입니다." tone="error" />;
+    return <ReplayScaffoldState message="잘못된 세션 ID입니다." tone="error" onBack={() => navigate(-1)} />;
   }
 
   if (isError) {
@@ -443,12 +443,13 @@ export default function HikingSessionReplayPage() {
       <ReplayScaffoldState
         message="리플레이 정보를 불러오지 못했습니다."
         tone="error"
+        onBack={() => navigate(-1)}
       />
     );
   }
 
   if (isLoading && replay.totalPoints === 0) {
-    return <ReplayScaffoldState message="리플레이 정보를 불러오는 중..." />;
+    return <ReplayScaffoldState message="리플레이 정보를 불러오는 중..." onBack={() => navigate(-1)} />;
   }
 
   return (

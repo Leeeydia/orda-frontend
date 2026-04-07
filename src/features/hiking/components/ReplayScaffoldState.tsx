@@ -1,11 +1,13 @@
 type ReplayScaffoldStateProps = {
   message: string;
   tone?: "neutral" | "error";
+  onBack?: () => void;
 };
 
 export default function ReplayScaffoldState({
   message,
-  tone = "neutral"
+  tone = "neutral",
+  onBack
 }: ReplayScaffoldStateProps) {
   const sectionClass =
     tone === "error"
@@ -17,8 +19,17 @@ export default function ReplayScaffoldState({
       <div className="mx-auto min-h-screen w-full max-w-md bg-[#f7f7f6]">
         <header className="sticky top-0 z-30 border-b border-[#89943d]/10 bg-white/90 backdrop-blur">
           <div className="px-4 py-3">
-            <div className="flex h-10 items-center rounded-2xl border border-dashed border-[#89943d]/20 bg-[#f7f7f6] px-4 text-xs font-medium text-[#89943d]/70">
-              Header Placeholder
+            <div className="flex h-10 items-center justify-between rounded-2xl border border-dashed border-[#89943d]/20 bg-[#f7f7f6] px-4 text-xs font-medium text-[#89943d]/70">
+              <span>Header Placeholder</span>
+
+              {onBack && (
+                <button
+                  type="button"
+                  onClick={onBack}
+                  className="rounded-full px-2 py-1 text-[#4a521e] transition hover:bg-[#89943d]/10">
+                  뒤로가기
+                </button>
+              )}
             </div>
           </div>
         </header>
