@@ -6,12 +6,13 @@
  *  - [orda/feat/trail-difficulty] 난이도 레이어 추가, onTrailLoaded prop 추가, 나침반 버튼 위치 조정
  *  - [orda/feat/trail-difficulty] onMapReady prop 추가 (내 위치로 돌아오기 버튼용 map 인스턴스 전달)
  *  - [orda/feat/trail-bbox-filter] 지도 이동/줌 시 bbox 기반 API 재호출로 변경
- *  - [orda/feat/trail-bbox-filter] 디바운스 300ms + bbox 1.5배 여유분 적용
+ *  - [orda/feat/trail-bbox-filter] bbox 1.5배 여유분 적용
+ *  - [orda/feat/trail-bbox-filter] 줌 레벨 8 미만 시 등산로 레이어 숨김
  */
 
 // [orda/feat/trail-difficulty] 추가 import
 import maplibregl from "maplibre-gl";
-import { getTrailDifficultyMapByBbox } from "@/features/trail/api/trailApi"; // [orda/feat/trail-bbox-filter] bbox 함수로 교체
+import { getTrailDifficultyMapByBbox } from "@/features/trail/api/trailApi";
 import type { TrailGeoJson } from "@/features/trail/types/trail.types";
 // [orda/feat/trail-difficulty] 추가 import 끝
 
@@ -29,6 +30,7 @@ const DIFFICULTY_COLOR_MAP: Record<string, string> = {
 };
 const TRAIL_SOURCE_ID = "trail-difficulty-source";
 const TRAIL_LAYER_ID = "trail-difficulty-layer";
+const MIN_ZOOM_FOR_TRAIL = 8; // [orda/feat/trail-bbox-filter] 줌 레벨 8 미만 시 등산로 미표시
 // [orda/feat/trail-difficulty] 상수 끝
 
 interface Props {
@@ -45,68 +47,76 @@ const GpsTrackingMap = ({
   onMapReady
 }: Props) => {
   const handleMapReady = (map: maplibregl.Map) => {
-    // [orda/feat/trail-bbox-filter] bbox 기반으로 난이도 데이터 로드 및 업데이트 (디바운스 + 여유분 적용)
-    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-
-    const loadTrailByBbox = () => {
-      if (debounceTimer) clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(async () => {
-        const bounds = map.getBounds();
-
-        // bbox 1.5배 여유분 적용
-        const lngPad = (bounds.getEast() - bounds.getWest()) * 0.25;
-        const latPad = (bounds.getNorth() - bounds.getSouth()) * 0.25;
-        const minLng = bounds.getWest() - lngPad;
-        const minLat = bounds.getSouth() - latPad;
-        const maxLng = bounds.getEast() + lngPad;
-        const maxLat = bounds.getNorth() + latPad;
-
-        try {
-          const data: TrailGeoJson = await getTrailDifficultyMapByBbox(
-            minLng,
-            minLat,
-            maxLng,
-            maxLat
-          );
-
-          const source = map.getSource(TRAIL_SOURCE_ID) as
-            | maplibregl.GeoJSONSource
-            | undefined;
-          if (source) {
-            source.setData(data);
-          } else {
-            map.addSource(TRAIL_SOURCE_ID, { type: "geojson", data });
-            map.addLayer({
-              id: TRAIL_LAYER_ID,
-              type: "line",
-              source: TRAIL_SOURCE_ID,
-              layout: { "line-join": "round", "line-cap": "round" },
-              paint: {
-                "line-color": [
-                  "match",
-                  ["get", "difficulty"],
-                  "easy",
-                  DIFFICULTY_COLOR_MAP.easy,
-                  "moderate",
-                  DIFFICULTY_COLOR_MAP.moderate,
-                  "hard",
-                  DIFFICULTY_COLOR_MAP.hard,
-                  "very_hard",
-                  DIFFICULTY_COLOR_MAP.very_hard,
-                  "extreme",
-                  DIFFICULTY_COLOR_MAP.extreme,
-                  "#cccccc"
-                ],
-                "line-width": 3,
-                "line-opacity": 0.85
-              }
-            });
-            onTrailLoaded?.();
-          }
-        } catch (e) {
-          console.error("trail bbox load error", e);
+    // [orda/feat/trail-bbox-filter] bbox 기반으로 난이도 데이터 로드 및 업데이트 (여유분 + 줌 제한 적용)
+    const loadTrailByBbox = async () => {
+      // 줌 레벨 8 미만이면 레이어 숨기고 API 호출 안 함
+      if (map.getZoom() < MIN_ZOOM_FOR_TRAIL) {
+        if (map.getLayer(TRAIL_LAYER_ID)) {
+          map.setLayoutProperty(TRAIL_LAYER_ID, "visibility", "none");
         }
-      }, 300);
+        return;
+      }
+
+      // 줌 레벨 8 이상이면 레이어 표시
+      if (map.getLayer(TRAIL_LAYER_ID)) {
+        map.setLayoutProperty(TRAIL_LAYER_ID, "visibility", "visible");
+      }
+
+      const bounds = map.getBounds();
+
+      // bbox 1.5배 여유분 적용
+      const lngPad = (bounds.getEast() - bounds.getWest()) * 0.25;
+      const latPad = (bounds.getNorth() - bounds.getSouth()) * 0.25;
+      const minLng = bounds.getWest() - lngPad;
+      const minLat = bounds.getSouth() - latPad;
+      const maxLng = bounds.getEast() + lngPad;
+      const maxLat = bounds.getNorth() + latPad;
+
+      try {
+        const data: TrailGeoJson = await getTrailDifficultyMapByBbox(
+          minLng,
+          minLat,
+          maxLng,
+          maxLat
+        );
+
+        const source = map.getSource(TRAIL_SOURCE_ID) as
+          | maplibregl.GeoJSONSource
+          | undefined;
+        if (source) {
+          source.setData(data);
+        } else {
+          map.addSource(TRAIL_SOURCE_ID, { type: "geojson", data });
+          map.addLayer({
+            id: TRAIL_LAYER_ID,
+            type: "line",
+            source: TRAIL_SOURCE_ID,
+            layout: { "line-join": "round", "line-cap": "round" },
+            paint: {
+              "line-color": [
+                "match",
+                ["get", "difficulty"],
+                "easy",
+                DIFFICULTY_COLOR_MAP.easy,
+                "moderate",
+                DIFFICULTY_COLOR_MAP.moderate,
+                "hard",
+                DIFFICULTY_COLOR_MAP.hard,
+                "very_hard",
+                DIFFICULTY_COLOR_MAP.very_hard,
+                "extreme",
+                DIFFICULTY_COLOR_MAP.extreme,
+                "#cccccc"
+              ],
+              "line-width": 3,
+              "line-opacity": 0.85
+            }
+          });
+          onTrailLoaded?.();
+        }
+      } catch (e) {
+        console.error("trail bbox load error", e);
+      }
     };
 
     // 최초 로드
