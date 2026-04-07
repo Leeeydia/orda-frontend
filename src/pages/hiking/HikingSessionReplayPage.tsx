@@ -470,8 +470,11 @@ export default function HikingSessionReplayPage() {
     placeholderData: (prev) => prev
   });
 
-  const verifiedSummits: VerifiedSummit[] =
-    sessionQuery.data?.verifiedSummits ?? [];
+  const verifiedSummits: VerifiedSummit[] = useMemo(() => {
+    if (sessionQuery.isError || !sessionQuery.data) return [];
+
+    return sessionQuery.data.verifiedSummits ?? [];
+  }, [sessionQuery.isError, sessionQuery.data]);
 
   const isSummitInfoError = sessionQuery.isError;
 
