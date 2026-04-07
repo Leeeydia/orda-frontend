@@ -5,22 +5,18 @@ import type {
   LoginRequest,
   LoginResponseData
 } from "../types/auth.types";
-import { validate } from "../../../utils/validate";
-
-export { validate };
 
 // ─── useSignup ────────────────────────────────────────────────────────────────
 
-export function useSignup(
+export const useSignup = (
   onSuccess: () => void,
   onError: (msg: string) => void
-) {
+) => {
   const [loading, setLoading] = useState(false);
 
   const signup = async (data: SignupRequest) => {
     setLoading(true);
     try {
-      // 전송 전 전화번호 정규화: 하이픈 제거 후 숫자만 전송
       const normalized: SignupRequest = {
         ...data,
         phone: data.phone.replace(/-/g, "")
@@ -39,14 +35,14 @@ export function useSignup(
   };
 
   return { signup, loading };
-}
+};
 
 // ─── useLogin ─────────────────────────────────────────────────────────────────
 
-export function useLogin(
+export const useLogin = (
   onSuccess: (data: LoginResponseData) => void,
   onError: (msg: string) => void
-) {
+) => {
   const [loading, setLoading] = useState(false);
 
   const login = async (data: LoginRequest) => {
@@ -67,4 +63,4 @@ export function useLogin(
   };
 
   return { login, loading };
-}
+};

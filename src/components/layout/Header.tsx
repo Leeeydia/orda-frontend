@@ -10,6 +10,9 @@ type HeaderProps = {
   title?: string;
 };
 
+/** Header 높이 상수 — py-3(24px) + h-10(40px) = 64px */
+export const HEADER_HEIGHT = 64;
+
 const Header = ({ leftSlot, rightSlot, title }: HeaderProps) => {
   return (
     <header className="fixed top-0 left-1/2 z-50 w-full max-w-[390px] -translate-x-1/2 border-b border-[#89943d]/10 bg-white/90 backdrop-blur">

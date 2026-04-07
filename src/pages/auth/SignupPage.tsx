@@ -1,11 +1,17 @@
+// src/pages/auth/SignupPage.tsx
+
 import { useState, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useSignup } from "../../features/auth/hooks/useAuth";
 import { validate } from "../../utils/validate";
 import type { SignupRequest } from "../../features/auth/types/auth.types";
 import Toast from "../../components/ui/Toast";
+import Button from "../../components/ui/Button";
+import Header, { HEADER_HEIGHT } from "../../components/layout/Header";
+import BackButton from "../../components/layout/BackButton";
+import AuthField from "../../features/auth/components/AuthField";
 
-// ─── 초기값 & 타입 ────────────────────────────────────────────────────────────
+// ─── 타입 ─────────────────────────────────────────────────────────────────────
 
 type FormFields = Omit<SignupRequest, "birthDate"> & { birthDate: string };
 
@@ -27,7 +33,9 @@ const INITIAL_ERRORS: Record<keyof FormFields, string> = {
   birthDate: ""
 };
 
-export default function SignupPage() {
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
+const SignupPage = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState<FormFields>(INITIAL_FORM);
   const [errors, setErrors] = useState(INITIAL_ERRORS);
@@ -45,7 +53,7 @@ export default function SignupPage() {
       showToast("회원가입이 완료되었습니다! 로그인 해주세요.", "success");
       setTimeout(() => navigate("/login"), 1500);
     },
-    (msg) => showToast(msg, "error")
+    (msg: string) => showToast(msg, "error")
   );
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -57,7 +65,6 @@ export default function SignupPage() {
     }
   }, []);
 
-  // 010 고정, 가운데 4자리, 마지막 4자리 자동 포맷
   const handlePhoneChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const raw = e.target.value.replace(/\D/g, "").slice(0, 11);
@@ -105,26 +112,13 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f7f6] text-slate-900">
-      <div className="mx-auto min-h-screen w-full max-w-md bg-[#f7f7f6]">
-        <header className="sticky top-0 z-30 border-b border-[#89943d]/10 bg-white/90 backdrop-blur">
-          <div className="flex items-center justify-between px-4 py-3">
-            <div className="h-10 w-10" />
-            <div className="flex flex-1 flex-col items-center px-2">
-              <p className="text-[11px] font-semibold tracking-[0.18em] text-[#89943d] uppercase">
-                ORDA
-              </p>
-              <h1 className="text-base font-bold tracking-tight text-[#2f3415]">
-                회원가입
-              </h1>
-            </div>
-            <div className="h-10 w-10" />
-          </div>
-        </header>
+    <div className="bg-bg-page min-h-screen">
+      <div className="mx-auto min-h-screen w-full max-w-[390px]">
+        <Header title="회원가입" leftSlot={<BackButton />} />
 
-        <main className="px-4 pt-6 pb-10">
+        <main className="px-4 pb-20" style={{ paddingTop: HEADER_HEIGHT + 12 }}>
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
-            <Field
+            <AuthField
               label="이메일"
               name="email"
               type="email"
@@ -134,7 +128,7 @@ export default function SignupPage() {
               onChange={handleChange}
               required
             />
-            <Field
+            <AuthField
               label="비밀번호"
               name="password"
               type="password"
@@ -145,7 +139,7 @@ export default function SignupPage() {
               required
             />
             <div className="grid grid-cols-2 gap-3">
-              <Field
+              <AuthField
                 label="닉네임"
                 name="nickname"
                 type="text"
@@ -155,7 +149,7 @@ export default function SignupPage() {
                 onChange={handleChange}
                 required
               />
-              <Field
+              <AuthField
                 label="이름"
                 name="name"
                 type="text"
@@ -166,7 +160,7 @@ export default function SignupPage() {
                 required
               />
             </div>
-            <Field
+            <AuthField
               label="전화번호"
               name="phone"
               type="tel"
@@ -176,7 +170,7 @@ export default function SignupPage() {
               onChange={handlePhoneChange}
               required
             />
-            <Field
+            <AuthField
               label="생년월일"
               name="birthDate"
               type="text"
@@ -186,24 +180,16 @@ export default function SignupPage() {
               onChange={handleBirthDateChange}
             />
 
-            <button
-              type="submit"
-              disabled={loading}
-              aria-busy={loading}
-              className="mt-2 flex h-14 w-full items-center justify-center rounded-2xl bg-linear-to-r from-[#4a521e] to-[#89943d] text-[17px] font-bold tracking-wide text-white shadow-md transition active:scale-[0.98] active:opacity-90 disabled:opacity-55">
-              {loading ? (
-                <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              ) : (
-                "가입하기"
-              )}
-            </button>
+            <Button type="submit" variant="primary" isLoading={loading}>
+              가입하기
+            </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-slate-400">
+          <p className="text-muted mt-6 text-center text-sm leading-5">
             이미 계정이 있으신가요?{" "}
             <Link
               to="/login"
-              className="font-semibold text-[#4a521e] active:opacity-70">
+              className="text-primary-dark font-semibold transition-colors duration-150 active:opacity-70">
               로그인
             </Link>
           </p>
@@ -219,67 +205,6 @@ export default function SignupPage() {
       )}
     </div>
   );
-}
+};
 
-// ─── Field 서브컴포넌트 ────────────────────────────────────────────────────────
-
-interface FieldProps {
-  label: string;
-  name: string;
-  type: string;
-  placeholder: string;
-  value: string;
-  error: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  required?: boolean;
-}
-
-function Field({
-  label,
-  name,
-  type,
-  placeholder,
-  value,
-  error,
-  onChange,
-  required
-}: FieldProps) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label
-        htmlFor={name}
-        className="text-[11px] font-semibold tracking-[0.08em] text-[#89943d] uppercase">
-        {label}
-        {required && (
-          <span className="ml-0.5 text-[#4a521e]" aria-hidden="true">
-            *
-          </span>
-        )}
-      </label>
-      <input
-        id={name}
-        name={name}
-        type={type}
-        placeholder={placeholder}
-        value={value}
-        onChange={onChange}
-        aria-invalid={!!error}
-        aria-describedby={error ? `${name}-error` : undefined}
-        required={required}
-        className={`h-[52px] w-full rounded-2xl border bg-white px-4 text-[16px] text-slate-800 transition outline-none placeholder:text-slate-300 ${
-          error
-            ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
-            : "border-[#89943d]/20 focus:border-[#89943d]/60 focus:ring-2 focus:ring-[#89943d]/10"
-        }`}
-      />
-      {error && (
-        <p
-          id={`${name}-error`}
-          className="pl-1 text-[12px] text-red-500"
-          role="alert">
-          {error}
-        </p>
-      )}
-    </div>
-  );
-}
+export default SignupPage;
