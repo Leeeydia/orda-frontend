@@ -96,9 +96,12 @@ const LoginPage = () => {
               <div className="bg-border-default h-px flex-1" />
             </div>
 
-            <Button type="button" variant="kakao" onClick={handleKakaoLogin}>
+            <button
+              type="button"
+              onClick={handleKakaoLogin}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#FEE500] px-6 py-4 text-sm font-semibold text-[#191919] transition-colors duration-150 hover:bg-[#F0D900] active:opacity-60">
               카카오로 시작하기
-            </Button>
+            </button>
           </form>
 
           <p className="text-muted mt-6 text-center text-sm leading-5">
