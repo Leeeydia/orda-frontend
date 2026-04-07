@@ -1,3 +1,5 @@
+// src/components/ui/ElevationChartCard.tsx
+
 type Props = {
   svgPath: string;
   xAxisLabels: string[];
@@ -5,7 +7,7 @@ type Props = {
   isEmpty?: boolean;
 };
 
-const ElevationChart = ({
+const ElevationChartCard = ({
   svgPath,
   xAxisLabels,
   maxElevationMeters,
@@ -97,4 +99,4 @@ const ElevationChart = ({
   );
 };
 
-export default ElevationChart;
+export default ElevationChartCard;
