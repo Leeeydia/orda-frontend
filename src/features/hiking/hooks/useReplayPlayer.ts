@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import type {
   ReplaySessionModel,
   ReplayTrackPoint
@@ -9,25 +9,18 @@ type ReplayCurrentPosition = {
   lng: number;
 };
 
+type UseReplayPlayerParams = {
+  replay: ReplaySessionModel | null;
+  replaySeconds: number;
+};
+
 type UseReplayPlayerResult = {
-  isPlaying: boolean;
-  currentReplaySeconds: number;
-  durationSeconds: number;
   currentPoint: ReplayTrackPoint | null;
   currentIndex: number;
   currentPosition: ReplayCurrentPosition | null;
-  play: () => void;
-  pause: () => void;
-  reset: () => void;
-  seek: (targetReplaySeconds: number) => void;
 };
 
-const TICK_MS = 50;
 const EMPTY_TRACK_POINTS: ReplayTrackPoint[] = [];
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max);
-}
 
 function findCurrentIndex(
   points: ReplayTrackPoint[],
@@ -73,6 +66,7 @@ function interpolatePosition(
   }
 
   const rawRatio = (currentReplaySeconds - startTime) / (endTime - startTime);
+
   const ratio = Math.min(Math.max(rawRatio, 0), 1);
 
   return {
@@ -81,20 +75,15 @@ function interpolatePosition(
   };
 }
 
-export const useReplayPlayer = (
-  replay: ReplaySessionModel | null
-): UseReplayPlayerResult => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentReplaySeconds, setCurrentReplaySeconds] = useState(0);
-
-  const intervalRef = useRef<number | null>(null);
-
-  const durationSeconds = replay?.durationSeconds ?? 0;
+export const useReplayPlayer = ({
+  replay,
+  replaySeconds
+}: UseReplayPlayerParams): UseReplayPlayerResult => {
   const trackPoints = replay?.trackPoints ?? EMPTY_TRACK_POINTS;
 
   const currentIndex = useMemo(() => {
-    return findCurrentIndex(trackPoints, currentReplaySeconds);
-  }, [trackPoints, currentReplaySeconds]);
+    return findCurrentIndex(trackPoints, replaySeconds);
+  }, [trackPoints, replaySeconds]);
 
   const currentPoint = useMemo(() => {
     if (currentIndex < 0 || currentIndex >= trackPoints.length) {
@@ -105,79 +94,19 @@ export const useReplayPlayer = (
 
   const nextPoint = useMemo(() => {
     const nextIndex = currentIndex + 1;
-    if (nextIndex < 0 || nextIndex >= trackPoints.length) {
+    if (nextIndex >= trackPoints.length) {
       return null;
     }
     return trackPoints[nextIndex];
   }, [trackPoints, currentIndex]);
 
   const currentPosition = useMemo(() => {
-    return interpolatePosition(currentPoint, nextPoint, currentReplaySeconds);
-  }, [currentPoint, nextPoint, currentReplaySeconds]);
-
-  useEffect(() => {
-    if (!isPlaying) return;
-    if (durationSeconds <= 0) return;
-
-    intervalRef.current = window.setInterval(() => {
-      setCurrentReplaySeconds((prev) => {
-        const next = prev + TICK_MS / 1000;
-
-        if (next >= durationSeconds) {
-          setIsPlaying(false);
-          return durationSeconds;
-        }
-
-        return next;
-      });
-    }, TICK_MS);
-
-    return () => {
-      if (intervalRef.current != null) {
-        window.clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-  }, [isPlaying, durationSeconds]);
-
-  const play = () => {
-    if (durationSeconds <= 0) return;
-
-    if (currentReplaySeconds >= durationSeconds) {
-      setCurrentReplaySeconds(0);
-    }
-
-    setIsPlaying(true);
-  };
-
-  const pause = () => {
-    setIsPlaying(false);
-  };
-
-  const reset = () => {
-    setIsPlaying(false);
-    setCurrentReplaySeconds(0);
-  };
-
-  const seek = (targetReplaySeconds: number) => {
-    if (durationSeconds <= 0) {
-      setCurrentReplaySeconds(0);
-      return;
-    }
-
-    setCurrentReplaySeconds(clamp(targetReplaySeconds, 0, durationSeconds));
-  };
+    return interpolatePosition(currentPoint, nextPoint, replaySeconds);
+  }, [currentPoint, nextPoint, replaySeconds]);
 
   return {
-    isPlaying,
-    currentReplaySeconds,
-    durationSeconds,
     currentPoint,
     currentIndex,
-    currentPosition,
-    play,
-    pause,
-    reset,
-    seek
+    currentPosition
   };
 };

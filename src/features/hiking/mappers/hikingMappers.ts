@@ -263,3 +263,32 @@ export const getInterpolatedActualElapsedSeconds = (
 
   return lastPoint.actualElapsedSeconds ?? 0;
 };
+
+export const mapSequenceToReplaySeconds = (
+  sequenceMs: number,
+  replayStartMs: number,
+  replayEndMs: number,
+  replayDurationSec: number
+): number => {
+  if (replayDurationSec <= 0) return 0;
+
+  if (sequenceMs <= replayStartMs) return 0;
+  if (sequenceMs >= replayEndMs) return replayDurationSec;
+
+  const progress = (sequenceMs - replayStartMs) / (replayEndMs - replayStartMs);
+
+  return replayDurationSec * progress;
+};
+
+export const mapReplaySecondsToSequenceMs = (
+  replaySeconds: number,
+  replayStartMs: number,
+  replayDurationMs: number,
+  replayDurationSec: number
+): number => {
+  if (replayDurationSec <= 0) return replayStartMs;
+
+  const progress = replaySeconds / replayDurationSec;
+
+  return replayStartMs + progress * replayDurationMs;
+};

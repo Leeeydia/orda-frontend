@@ -9,7 +9,10 @@ import ReplaySummarySection from "@/features/hiking/components/ReplaySummarySect
 import { useReplayQuery } from "@/features/hiking/hooks/useReplayQuery";
 import { useReplayPlayer } from "@/features/hiking/hooks/useReplayPlayer";
 import { getHikingSession } from "@/features/hiking/api/hikingApi";
-import { getInterpolatedActualElapsedSeconds } from "@/features/hiking/mappers/hikingMappers";
+import {
+  getInterpolatedActualElapsedSeconds,
+  mapSequenceToReplaySeconds
+} from "@/features/hiking/mappers/hikingMappers";
 import type {
   ReplaySessionModel,
   SummitMarkerItem,
@@ -123,16 +126,6 @@ function ReplayPageContent({
   isSummitInfoError,
   onBack
 }: ReplayContentProps) {
-  const {
-    currentPosition,
-    currentIndex,
-    currentReplaySeconds,
-    play,
-    pause,
-    reset,
-    seek
-  } = useReplayPlayer(replay);
-
   const replayDurationMs = useMemo(() => {
     return Math.round((replay.durationSeconds ?? 0) * 1000);
   }, [replay.durationSeconds]);
@@ -143,8 +136,28 @@ function ReplayPageContent({
     );
   }, [replayDurationMs]);
 
+  const replayStartMs = INTRO_OVERVIEW_MS + START_FOCUS_MS;
+  const replayEndMs = replayStartMs + replayDurationMs;
+
+  // sequence 기준 elapsed ms 상태
   const [sequenceElapsedMs, setSequenceElapsedMs] = useState(0);
   const [isSequencePlaying, setIsSequencePlaying] = useState(false);
+
+  // sequence → replaySeconds 변환 (hikingMappers 활용)
+  const currentReplaySeconds = useMemo(() => {
+    return mapSequenceToReplaySeconds(
+      sequenceElapsedMs,
+      replayStartMs,
+      replayEndMs,
+      replay.durationSeconds ?? 0
+    );
+  }, [sequenceElapsedMs, replayStartMs, replayEndMs, replay.durationSeconds]);
+
+  // 새 useReplayPlayer: replay + replaySeconds를 받아서 위치 계산만 담당
+  const { currentPosition, currentIndex } = useReplayPlayer({
+    replay,
+    replaySeconds: currentReplaySeconds
+  });
 
   const cameraMode = useMemo(() => {
     return getReplayCameraMode(sequenceElapsedMs, replayDurationMs);
@@ -163,9 +176,6 @@ function ReplayPageContent({
       currentReplaySeconds
     );
   }, [replay.trackPoints, currentReplaySeconds]);
-
-  const replayStartMs = INTRO_OVERVIEW_MS + START_FOCUS_MS;
-  const replayEndMs = replayStartMs + replayDurationMs;
 
   const visibleSummits: SummitMarkerItem[] = useMemo(() => {
     return verifiedSummits
@@ -189,6 +199,7 @@ function ReplayPageContent({
       );
   }, [verifiedSummits, currentActualElapsedSeconds]);
 
+  // 시퀀스 타이머
   useEffect(() => {
     if (!isSequencePlaying) return;
     if (totalSequenceMs <= 0) return;
@@ -212,59 +223,15 @@ function ReplayPageContent({
     };
   }, [isSequencePlaying, totalSequenceMs, hasReplayPath]);
 
-  useEffect(() => {
-    if (!hasReplayPath) {
-      pause();
-      return;
-    }
-
-    if (cameraMode === "follow" && isSequencePlaying) {
-      play();
-      return;
-    }
-
-    pause();
-  }, [cameraMode, isSequencePlaying, play, pause, hasReplayPath]);
-
-  useEffect(() => {
-    if (!hasReplayPath) return;
-
-    if (sequenceElapsedMs <= replayStartMs) {
-      seek(0);
-      return;
-    }
-
-    if (sequenceElapsedMs >= replayEndMs) {
-      seek(replay.durationSeconds);
-      return;
-    }
-
-    const replayProgress =
-      (sequenceElapsedMs - replayStartMs) / Math.max(replayDurationMs, 1);
-
-    const targetReplaySeconds = replay.durationSeconds * replayProgress;
-    seek(targetReplaySeconds);
-  }, [
-    hasReplayPath,
-    sequenceElapsedMs,
-    replayStartMs,
-    replayEndMs,
-    replayDurationMs,
-    replay.durationSeconds,
-    seek
-  ]);
-
   const handlePlayPause = () => {
     if (!hasReplayPath) return;
 
     if (isSequencePlaying) {
       setIsSequencePlaying(false);
-      pause();
       return;
     }
 
     if (sequenceElapsedMs >= totalSequenceMs) {
-      reset();
       setSequenceElapsedMs(0);
     }
 
@@ -283,25 +250,14 @@ function ReplayPageContent({
   const handleBackward = () => {
     if (!hasReplayPath) return;
 
-    const nextReplaySeconds = clamp(
-      currentReplaySeconds - SEEK_STEP_SECONDS,
-      0,
-      replay.durationSeconds
+    setSequenceElapsedMs((prev) =>
+      clamp(prev - SEEK_STEP_SECONDS * 1000, 0, totalSequenceMs)
     );
-
-    const nextSequenceMs =
-      replayStartMs +
-      (nextReplaySeconds / Math.max(replay.durationSeconds, 1)) *
-        replayDurationMs;
-
-    setSequenceElapsedMs(clamp(nextSequenceMs, 0, totalSequenceMs));
   };
 
   const handleResetReplay = () => {
     setIsSequencePlaying(false);
     setSequenceElapsedMs(0);
-    pause();
-    reset();
   };
 
   const statusText = isSummitInfoError
