@@ -3,6 +3,8 @@
  *
  * 변경 사항:
  *  - 사용하지 않는 props 제거 (isTracking, isLoading, error, savedPointCount, onStart, onStop)
+ *  - [orda/feat/trail-difficulty] 난이도 레이어 추가, onTrailLoaded prop 추가, 나침반 버튼 위치 조정
+ *  - [orda/feat/trail-difficulty] onMapReady prop 추가 (내 위치로 돌아오기 버튼용 map 인스턴스 전달)
  */
 
 // [orda/feat/trail-difficulty] 추가 import
@@ -31,10 +33,16 @@ const TRAIL_LAYER_ID = "trail-difficulty-layer";
 interface Props {
   geoJson: FeatureCollection;
   currentPos: GpsPoint | null;
-  onTrailLoaded?: () => void; // [orda/feat/trail-difficulty] 난이도 레이어 로딩 완료 콜백 추가
+  onTrailLoaded?: () => void; // [orda/feat/trail-difficulty] 난이도 레이어 로딩 완료 콜백
+  onMapReady?: (map: maplibregl.Map) => void; // [orda/feat/trail-difficulty] 내 위치로 돌아오기 버튼용 map 인스턴스 전달
 }
 
-const GpsTrackingMap = ({ geoJson, currentPos, onTrailLoaded }: Props) => {
+const GpsTrackingMap = ({
+  geoJson,
+  currentPos,
+  onTrailLoaded,
+  onMapReady
+}: Props) => {
   // [orda/feat/trail-difficulty] 난이도 데이터 캐시 및 선제 로딩
   const trailGeoJsonRef = useRef<TrailGeoJson | null>(null);
   useEffect(() => {
@@ -83,6 +91,9 @@ const GpsTrackingMap = ({ geoJson, currentPos, onTrailLoaded }: Props) => {
         addTrailLayer(data);
       });
     }
+
+    // [orda/feat/trail-difficulty] map 인스턴스를 부모로 전달 (내 위치로 돌아오기 버튼용)
+    onMapReady?.(map);
   };
   // [orda/feat/trail-difficulty] 끝
 

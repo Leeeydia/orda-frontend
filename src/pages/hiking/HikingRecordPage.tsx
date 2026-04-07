@@ -8,9 +8,11 @@
  *  - [orda/feat/trail-difficulty] 등산 시작 버튼 위 배낭맨 아이콘 추가 및 대각선 애니메이션
  *  - [orda/feat/trail-difficulty] idle 상태에서도 내 위치 표시
  *  - [orda/feat/trail-difficulty] 헤더 심플하게 변경 (로고만 표시)
+ *  - [orda/feat/trail-difficulty] 내 위치로 돌아오기 버튼 추가
  */
 
 import { useState, useEffect, useRef } from "react";
+import maplibregl from "maplibre-gl"; // [orda/feat/trail-difficulty] 추가
 import GpsTrackingMap from "@/features/gps/components/GpsTrackingMap";
 import { useHiking } from "@/features/hiking/hooks/useHiking";
 import { useGPS } from "@/features/gps/hooks/useGPS"; // [orda/feat/trail-difficulty] 추가
@@ -167,6 +169,16 @@ const HikingRecordPage = () => {
     };
   }, [pageState]);
 
+  // [orda/feat/trail-difficulty] 내 위치로 돌아오기 버튼용 map 인스턴스
+  const mapRef = useRef<maplibregl.Map | null>(null);
+
+  // [orda/feat/trail-difficulty] 현재 위치로 지도 이동
+  const handleMoveToCurrentPos = () => {
+    const pos = pageState === "idle" ? idleGps.currentPos : currentPos;
+    if (!mapRef.current || !pos) return;
+    mapRef.current.flyTo({ center: [pos.lng, pos.lat], zoom: 15 });
+  };
+
   const elapsedSeconds = useElapsedTime(pageState === "hiking");
 
   const handleStartWithAnimation = () => {
@@ -233,6 +245,9 @@ const HikingRecordPage = () => {
           geoJson={pageState === "idle" ? idleGps.geoJson : geoJson}
           currentPos={pageState === "idle" ? idleGps.currentPos : currentPos}
           onTrailLoaded={() => setTrailLoaded(true)}
+          onMapReady={(map) => {
+            mapRef.current = map;
+          }} // [orda/feat/trail-difficulty] map 인스턴스 저장
         />
       </div>
 
@@ -342,6 +357,54 @@ const HikingRecordPage = () => {
           ))}
         </div>
       )}
+
+      {/* ── 내 위치로 돌아오기 버튼 ─────────────── */}
+      {/* [orda/feat/trail-difficulty] 추가 */}
+      <button
+        onClick={handleMoveToCurrentPos}
+        className="absolute right-4 bottom-[190px] z-20 flex flex-col items-center justify-center gap-0.5 rounded-xl bg-white px-2 py-2 shadow-md active:scale-95">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="#89943d" strokeWidth="1.5" />
+          <circle cx="12" cy="12" r="3" fill="#89943d" />
+          <line
+            x1="12"
+            y1="2"
+            x2="12"
+            y2="6"
+            stroke="#89943d"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+          <line
+            x1="12"
+            y1="18"
+            x2="12"
+            y2="22"
+            stroke="#89943d"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+          <line
+            x1="2"
+            y1="12"
+            x2="6"
+            y2="12"
+            stroke="#89943d"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+          <line
+            x1="18"
+            y1="12"
+            x2="22"
+            y2="12"
+            stroke="#89943d"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
+        <span className="text-[9px] font-medium text-slate-500">현위치</span>
+      </button>
 
       {/* ── 플로팅 버튼 영역 ─────────────────────── */}
       <div className="absolute right-0 bottom-[100px] left-0 z-10 px-6">
