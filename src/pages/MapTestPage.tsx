@@ -3,7 +3,7 @@
 import CommonMap from "../components/map/CommonMap";
 import { sampleGeoJson } from "../mock/sampleGeoJson";
 import Header from "@/components/layout/Header";
-import ElevationChart from "@/components/ui/ElevationChart";
+import ElevationChart from "@/components/ui/ElevationChartCard";
 
 const MOCK_SVG_PATH =
   "M 0 100 C 20 90, 40 60, 80 50 C 120 40, 140 55, 160 45 C 180 35, 200 20, 240 25 C 280 30, 300 40, 320 35";
