@@ -26,6 +26,7 @@ const SEEK_STEP_SECONDS = 5;
 type ReplayContentProps = {
   replay: ReplaySessionModel;
   verifiedSummits: VerifiedSummit[];
+  isSummitInfoError: boolean;
   onBack: () => void;
 };
 
@@ -119,6 +120,7 @@ function getStatusText(
 function ReplayPageContent({
   replay,
   verifiedSummits,
+  isSummitInfoError,
   onBack
 }: ReplayContentProps) {
   const {
@@ -302,14 +304,16 @@ function ReplayPageContent({
     reset();
   };
 
-  const statusText = hasReplayPath
-    ? getStatusText(
-        isSequencePlaying,
-        cameraMode,
-        sequenceElapsedMs,
-        totalSequenceMs
-      )
-    : "경로 없음";
+  const statusText = isSummitInfoError
+    ? "정상 정보 불러오지 못함"
+    : hasReplayPath
+      ? getStatusText(
+          isSequencePlaying,
+          cameraMode,
+          sequenceElapsedMs,
+          totalSequenceMs
+        )
+      : "경로 없음";
 
   return (
     <>
@@ -469,6 +473,8 @@ export default function HikingSessionReplayPage() {
   const verifiedSummits: VerifiedSummit[] =
     sessionQuery.data?.verifiedSummits ?? [];
 
+  const isSummitInfoError = sessionQuery.isError;
+
   if (numericSessionId == null) {
     return <ReplayScaffoldState message="잘못된 세션 ID입니다." tone="error" />;
   }
@@ -493,6 +499,7 @@ export default function HikingSessionReplayPage() {
           key={replay.sessionId}
           replay={replay}
           verifiedSummits={verifiedSummits}
+          isSummitInfoError={isSummitInfoError}
           onBack={() => navigate(-1)}
         />
       </div>
