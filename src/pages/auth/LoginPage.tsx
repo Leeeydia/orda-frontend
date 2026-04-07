@@ -10,10 +10,11 @@ import Button from "../../components/ui/Button";
 import Header, { HEADER_HEIGHT } from "../../components/layout/Header";
 import AuthField from "../../features/auth/components/AuthField";
 
+const KAKAO_CLIENT_ID = import.meta.env.VITE_KAKAO_CLIENT_ID;
+const KAKAO_REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI;
+
 const INITIAL_FORM: LoginRequest = { email: "", password: "" };
 const INITIAL_ERRORS = { email: "", password: "" };
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -53,6 +54,10 @@ const LoginPage = () => {
     await login(form);
   };
 
+  const handleKakaoLogin = () => {
+    window.location.href = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_CLIENT_ID}&redirect_uri=${encodeURIComponent(KAKAO_REDIRECT_URI)}&response_type=code`;
+  };
+
   return (
     <div className="bg-bg-page min-h-screen">
       <div className="mx-auto min-h-screen w-full max-w-[390px]">
@@ -83,6 +88,16 @@ const LoginPage = () => {
 
             <Button type="submit" variant="primary" isLoading={loading}>
               로그인
+            </Button>
+
+            <div className="flex items-center gap-3">
+              <div className="bg-border-default h-px flex-1" />
+              <span className="text-text-muted text-xs">또는</span>
+              <div className="bg-border-default h-px flex-1" />
+            </div>
+
+            <Button type="button" variant="kakao" onClick={handleKakaoLogin}>
+              카카오로 시작하기
             </Button>
           </form>
 
