@@ -15,6 +15,7 @@ import SignupPage from "./pages/auth/SignupPage";
 import LoginPage from "./pages/auth/LoginPage";
 import MyPage from "./pages/mypage/MyPage";
 import EditProfilePage from "./pages/mypage/EditProfilePage";
+import KakaoCallbackPage from "./pages/auth/KakaoCallbackPage";
 
 export default function App() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/mypage" element={<MyPage />} />
         <Route path="/mypage/edit-profile" element={<EditProfilePage />} />
+        <Route path="/auth/kakao/callback" element={<KakaoCallbackPage />} />
       </Routes>
     </BrowserRouter>
   );
