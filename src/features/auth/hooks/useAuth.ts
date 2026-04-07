@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { signupApi, loginApi } from "../api/authApi";
+import { signupApi, loginApi, kakaoLoginApi } from "../api/authApi";
 import type {
   SignupRequest,
   LoginRequest,
@@ -63,4 +63,29 @@ export const useLogin = (
   };
 
   return { login, loading };
+};
+
+// ─── useKakaoLogin ────────────────────────────────────────────────────────────
+
+export const useKakaoLogin = (onSuccess: () => void, onError: () => void) => {
+  const [loading, setLoading] = useState(false);
+
+  const kakaoLogin = async (code: string) => {
+    setLoading(true);
+    try {
+      const res = await kakaoLoginApi(code);
+      if (res.success && res.data) {
+        localStorage.setItem("accessToken", res.data.accessToken);
+        onSuccess();
+      } else {
+        onError();
+      }
+    } catch {
+      onError();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { kakaoLogin, loading };
 };
