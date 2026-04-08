@@ -3,10 +3,10 @@
  *
  * 변경 사항:
  *  - [orda/feat/trail-difficulty] idle 상태에서 내 위치 표시, 현위치 버튼, 헤더 심플화, 난이도 범례 추가
- *  - [orda/feat/trail-bbox-filter] 배낭맨이 빨간 점(지도 중앙)으로 날아가며 합쳐지는 애니메이션 추가
  *  - [orda/feat/trail-bbox-filter] 페이지 진입 시 단발성 위치 조회 (현위치 버튼용)
  *  - [orda/feat/trail-difficulty] BottomNav 추가
  *  - [orda/feat/trail-difficulty] 등산 중 TIME/거리/고도 카드, 정상 인증, 종료 기능 추가
+ *  - [orda/feat/trail-difficulty] 배낭맨 하단 대기 → 마커로 이동 애니메이션 추가
  */
 import { useState, useRef, useEffect } from "react";
 import maplibregl from "maplibre-gl";
@@ -17,7 +17,6 @@ import BottomNav from "@/components/layout/BottomNav";
 import Button from "@/components/ui/Button";
 import type { GpsPoint } from "@/features/gps/types/gps.types";
 
-// [orda/feat/trail-difficulty] 배낭맨 아이콘 import
 import hikerIcon from "@/assets/hiking-icon.png";
 
 const DIFFICULTY_LABELS: Record<string, string> = {
@@ -169,7 +168,6 @@ export default function HikingRecordPage() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
 
-  // [orda/feat/trail-bbox-filter] 페이지 진입 시 단발성 위치 조회
   const [idlePos, setIdlePos] = useState<{ lng: number; lat: number } | null>(
     null
   );
@@ -186,31 +184,44 @@ export default function HikingRecordPage() {
   const elapsedSeconds = useElapsedTime(pageState === "hiking");
 
   const handleStart = async () => {
-    if (!hikerRef.current) {
+    const pos = currentPos ?? idlePos;
+
+    // 마커 픽셀 위치 계산
+    if (hikerRef.current && mapRef.current && pos) {
+      const markerPixel = mapRef.current.project([pos.lng, pos.lat]);
+      const hikerRect = hikerRef.current.getBoundingClientRect();
+      const hikerCenterX = hikerRect.left + hikerRect.width / 2;
+      const hikerCenterY = hikerRect.top + hikerRect.height / 2;
+
+      // 지도 컨테이너 offset 보정
+      const mapContainer = mapRef.current.getContainer();
+      const mapRect = mapContainer.getBoundingClientRect();
+      const targetX = mapRect.left + markerPixel.x;
+      const targetY = mapRect.top + markerPixel.y;
+
+      const dx = targetX - hikerCenterX;
+      const dy = targetY - hikerCenterY;
+
+      setHikerAnimating(true);
+      setHikerStyle({
+        transform: `translate(${dx}px, ${dy}px)`,
+        transition: "transform 1.2s cubic-bezier(0.4, 0, 0.2, 1)",
+        opacity: 1
+      });
+
+      setTimeout(async () => {
+        setHikerStyle({ opacity: 0, transition: "opacity 0.2s" });
+        setTimeout(async () => {
+          setHikerAnimating(false);
+          setHikerStyle({});
+          const success = await start();
+          if (success) setPageState("hiking");
+        }, 200);
+      }, 1200);
+    } else {
       const success = await start();
       if (success) setPageState("hiking");
-      return;
     }
-
-    const hikerRect = hikerRef.current.getBoundingClientRect();
-    const hikerCenterX = hikerRect.left + hikerRect.width / 2;
-    const hikerCenterY = hikerRect.top + hikerRect.height / 2;
-    const dx = window.innerWidth / 2 - hikerCenterX;
-    const dy = window.innerHeight / 2 - hikerCenterY;
-
-    setHikerAnimating(true);
-    setHikerStyle({
-      transform: `translate(${dx}px, ${dy}px) scale(0.3)`,
-      opacity: 0,
-      transition: "transform 0.7s ease-in, opacity 0.7s ease-in"
-    });
-
-    setTimeout(async () => {
-      setHikerAnimating(false);
-      setHikerStyle({});
-      const success = await start();
-      if (success) setPageState("hiking");
-    }, 750);
   };
 
   const handleVerify = async () => {
@@ -259,14 +270,19 @@ export default function HikingRecordPage() {
         margin: "0 auto",
         background: "#f7f7f6"
       }}>
-      {/* 헤더 */}
       <Header title="등산 지도" />
 
-      {/* 지도 영역 */}
       <div className="relative flex-1 overflow-hidden">
         <GpsTrackingMap
           geoJson={geoJson}
-          currentPos={currentPos}
+          currentPos={
+            currentPos ??
+            (idlePos
+              ? { ...idlePos, altitude: null, accuracy: 0, timestamp: 0 }
+              : null)
+          }
+          isTracking={pageState === "hiking"}
+          hikerIconUrl={hikerIcon}
           onTrailLoaded={() => setTrailLoaded(true)}
           onMapReady={(map) => {
             mapRef.current = map;
@@ -357,7 +373,7 @@ export default function HikingRecordPage() {
           </div>
         )}
 
-        {/* [orda/feat/trail-difficulty] 등산 중 통계 카드 */}
+        {/* 등산 중 통계 카드 */}
         {(pageState === "hiking" || pageState === "finished") && (
           <div
             style={{
@@ -523,7 +539,7 @@ export default function HikingRecordPage() {
         )}
       </div>
 
-      {/* [orda/feat/trail-bbox-filter] 하단 등산 시작 버튼 + 배낭맨 */}
+      {/* 배낭맨 + 등산 시작 버튼 */}
       {pageState === "idle" && (
         <div
           style={{
@@ -537,13 +553,14 @@ export default function HikingRecordPage() {
             paddingBottom: 24,
             zIndex: 30
           }}>
+          {/* [orda/feat/trail-difficulty] 배낭맨 아이콘 */}
           <img
             ref={hikerRef}
             src={hikerIcon}
             alt="hiker"
             style={{
-              width: 37,
-              height: 37,
+              width: 42,
+              height: 42,
               marginBottom: 8,
               transition: hikerAnimating ? undefined : "none",
               ...hikerStyle
