@@ -55,7 +55,15 @@ const LoginPage = () => {
   };
 
   const handleKakaoLogin = () => {
-    window.location.href = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_CLIENT_ID}&redirect_uri=${encodeURIComponent(KAKAO_REDIRECT_URI)}&response_type=code`;
+    const state = crypto.randomUUID();
+    sessionStorage.setItem("kakao_oauth_state", state);
+
+    window.location.href =
+      `https://kauth.kakao.com/oauth/authorize` +
+      `?client_id=${KAKAO_CLIENT_ID}` +
+      `&redirect_uri=${encodeURIComponent(KAKAO_REDIRECT_URI)}` +
+      `&response_type=code` +
+      `&state=${state}`;
   };
 
   return (
