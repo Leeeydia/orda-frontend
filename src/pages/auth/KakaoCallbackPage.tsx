@@ -9,7 +9,7 @@ export default function KakaoCallbackPage() {
 
   const { kakaoLogin } = useKakaoLogin(
     () => navigate("/"),
-    () => navigate("/login")
+    (_msg: string) => navigate("/login")
   );
 
   useEffect(() => {

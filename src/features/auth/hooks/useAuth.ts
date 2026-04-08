@@ -67,7 +67,10 @@ export const useLogin = (
 
 // ─── useKakaoLogin ────────────────────────────────────────────────────────────
 
-export const useKakaoLogin = (onSuccess: () => void, onError: () => void) => {
+export const useKakaoLogin = (
+  onSuccess: () => void,
+  onError: (msg: string) => void
+) => {
   const [loading, setLoading] = useState(false);
 
   const kakaoLogin = async (code: string) => {
@@ -78,10 +81,10 @@ export const useKakaoLogin = (onSuccess: () => void, onError: () => void) => {
         localStorage.setItem("accessToken", res.data.accessToken);
         onSuccess();
       } else {
-        onError();
+        onError(res.message ?? "카카오 로그인에 실패했습니다.");
       }
     } catch {
-      onError();
+      onError("네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
     } finally {
       setLoading(false);
     }
