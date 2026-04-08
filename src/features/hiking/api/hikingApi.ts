@@ -10,7 +10,8 @@ import type {
   HikingSessionResponse,
   HikingTrackFeatureCollection,
   ElevationProfileResponse,
-  ReplayResponse
+  ReplayResponse,
+  ReplayQueryParams
 } from "../types/hiking.types";
 
 export const startHiking = async (
@@ -78,10 +79,7 @@ export const getElevationProfile = async (
 
 export const getReplay = async (
   sessionId: number,
-  params?: {
-    maxPoints?: number;
-    targetDurationSeconds?: number;
-  }
+  params?: ReplayQueryParams
 ): Promise<ReplayResponse> => {
   const res = await axios.get<ApiResponse<ReplayResponse>>(
     `/api/hiking/${sessionId}/replay`,
