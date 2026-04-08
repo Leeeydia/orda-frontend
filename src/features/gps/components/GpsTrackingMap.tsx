@@ -7,10 +7,11 @@
  *  - [orda/feat/trail-difficulty] onMapReady prop 추가 (내 위치로 돌아오기 버튼용 map 인스턴스 전달)
  *  - [orda/feat/trail-bbox-filter] 지도 이동/줌 시 bbox 기반 API 재호출로 변경
  *  - [orda/feat/trail-bbox-filter] bbox 1.5배 여유분 적용
- *  - [orda/feat/trail-bbox-filter] 줌 레벨 8 미만 시 등산로 레이어 숨김
+ *  - [orda/feat/trail-bbox-filter] 줌 레벨 8 미만 시 등산로 레이어 숨김 + 안내 메시지 표시
  */
 
 // [orda/feat/trail-difficulty] 추가 import
+import { useState } from "react";
 import maplibregl from "maplibre-gl";
 import { getTrailDifficultyMapByBbox } from "@/features/trail/api/trailApi";
 import type { TrailGeoJson } from "@/features/trail/types/trail.types";
@@ -46,18 +47,23 @@ const GpsTrackingMap = ({
   onTrailLoaded,
   onMapReady
 }: Props) => {
+  // [orda/feat/trail-bbox-filter] 줌 레벨 안내 메시지 표시용 state
+  const [isTooFar, setIsTooFar] = useState(false);
+
   const handleMapReady = (map: maplibregl.Map) => {
     // [orda/feat/trail-bbox-filter] bbox 기반으로 난이도 데이터 로드 및 업데이트 (여유분 + 줌 제한 적용)
     const loadTrailByBbox = async () => {
-      // 줌 레벨 8 미만이면 레이어 숨기고 API 호출 안 함
+      // 줌 레벨 8 미만이면 레이어 숨기고 안내 메시지 표시
       if (map.getZoom() < MIN_ZOOM_FOR_TRAIL) {
         if (map.getLayer(TRAIL_LAYER_ID)) {
           map.setLayoutProperty(TRAIL_LAYER_ID, "visibility", "none");
         }
+        setIsTooFar(true);
         return;
       }
 
-      // 줌 레벨 8 이상이면 레이어 표시
+      // 줌 레벨 8 이상이면 레이어 표시, 안내 메시지 숨김
+      setIsTooFar(false);
       if (map.getLayer(TRAIL_LAYER_ID)) {
         map.setLayoutProperty(TRAIL_LAYER_ID, "visibility", "visible");
       }
@@ -140,6 +146,25 @@ const GpsTrackingMap = ({
         className="h-full w-full"
         onMapReady={handleMapReady}
       />
+      {/* [orda/feat/trail-bbox-filter] 줌 레벨 8 미만 시 안내 메시지 */}
+      {isTooFar && (
+        <div
+          style={{
+            position: "absolute",
+            top: "70px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            backgroundColor: "rgba(0,0,0,0.6)",
+            color: "white",
+            padding: "8px 16px",
+            borderRadius: "20px",
+            fontSize: "13px",
+            whiteSpace: "nowrap",
+            pointerEvents: "none"
+          }}>
+          등산로를 보려면 지도를 확대하세요
+        </div>
+      )}
     </div>
   );
 };
