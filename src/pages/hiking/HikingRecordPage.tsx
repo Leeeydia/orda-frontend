@@ -6,14 +6,16 @@
  *  - [orda/feat/trail-bbox-filter] 배낭맨이 빨간 점(지도 중앙)으로 날아가며 합쳐지는 애니메이션 추가
  *  - [orda/feat/trail-bbox-filter] 페이지 진입 시 단발성 위치 조회 (현위치 버튼용)
  *  - [orda/feat/trail-difficulty] BottomNav 추가
+ *  - [orda/feat/trail-difficulty] 등산 중 TIME/거리/고도 카드, 정상 인증, 종료 기능 추가
  */
 import { useState, useRef, useEffect } from "react";
 import maplibregl from "maplibre-gl";
 import { useHiking } from "@/features/hiking/hooks/useHiking";
 import GpsTrackingMap from "@/features/gps/components/GpsTrackingMap";
-import HikingSessionHeader from "@/features/hiking/components/HikingSessionHeader";
 import Header from "@/components/layout/Header";
 import BottomNav from "@/components/layout/BottomNav";
+import Button from "@/components/ui/Button";
+import type { GpsPoint } from "@/features/gps/types/gps.types";
 
 // [orda/feat/trail-difficulty] 배낭맨 아이콘 import
 import hikerIcon from "@/assets/hiking-icon.png";
@@ -34,46 +36,167 @@ const DIFFICULTY_COLORS: Record<string, string> = {
   extreme: "#ef4444"
 };
 
+const useElapsedTime = (isRunning: boolean) => {
+  const [seconds, setSeconds] = useState(0);
+  const [lastSeconds, setLastSeconds] = useState(0);
+  const startTimeRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!isRunning) {
+      startTimeRef.current = null;
+      return;
+    }
+    startTimeRef.current = Date.now();
+    const id = setInterval(() => {
+      const elapsed = Math.floor(
+        (Date.now() - (startTimeRef.current ?? Date.now())) / 1000
+      );
+      setSeconds(elapsed);
+      setLastSeconds(elapsed);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [isRunning]);
+
+  return isRunning ? seconds : lastSeconds;
+};
+
+const formatTime = (totalSeconds: number): string => {
+  const h = Math.floor(totalSeconds / 3600)
+    .toString()
+    .padStart(2, "0");
+  const m = Math.floor((totalSeconds % 3600) / 60)
+    .toString()
+    .padStart(2, "0");
+  const s = (totalSeconds % 60).toString().padStart(2, "0");
+  return `${h}:${m}:${s}`;
+};
+
+const ElevationChart = ({ trail }: { trail: GpsPoint[] }) => {
+  const elevations = trail
+    .map((p) => p.altitude)
+    .filter((a): a is number => a != null);
+  if (elevations.length < 2) {
+    return (
+      <div className="relative flex h-20 w-full items-center justify-center overflow-hidden rounded-xl bg-slate-50">
+        <span className="text-xs text-slate-400">고도 데이터 수집 중...</span>
+      </div>
+    );
+  }
+  const min = Math.min(...elevations);
+  const max = Math.max(...elevations);
+  const range = max - min || 1;
+  const w = 100,
+    h = 80;
+  const points = elevations.map((e, i) => ({
+    x: (i / (elevations.length - 1)) * w,
+    y: h - ((e - min) / range) * (h - 10) - 5
+  }));
+  const pathD = points
+    .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`)
+    .join(" ");
+  const fillD = `${pathD} L ${w} ${h} L 0 ${h} Z`;
+  return (
+    <div className="relative h-20 w-full overflow-hidden rounded-xl bg-slate-50">
+      <svg
+        viewBox={`0 0 ${w} ${h}`}
+        preserveAspectRatio="none"
+        className="absolute inset-0 h-full w-full">
+        <path d={fillD} fill="rgba(137,148,61,0.2)" />
+        <path
+          d={pathD}
+          fill="none"
+          stroke="#89943d"
+          strokeWidth="1.5"
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
+    </div>
+  );
+};
+
+const StatItem = ({
+  label,
+  value,
+  unit,
+  bordered
+}: {
+  label: string;
+  value: string | number;
+  unit: string;
+  bordered?: "both";
+}) => (
+  <div
+    className={`flex flex-col items-center ${bordered === "both" ? "border-x border-slate-100" : ""}`}>
+    <span className="mb-1 text-[10px] font-bold text-[#89943d] uppercase">
+      {label}
+    </span>
+    <div className="flex items-baseline gap-0.5">
+      <span className="text-2xl font-bold text-slate-900">{value}</span>
+      <span className="text-xs font-medium text-slate-400">{unit}</span>
+    </div>
+  </div>
+);
+
+type PageState = "idle" | "hiking" | "finished";
+
 export default function HikingRecordPage() {
-  const { geoJson, currentPos, isTracking, start } = useHiking();
+  const {
+    geoJson,
+    currentPos,
+    isLoading,
+    error,
+    trail,
+    distanceKm,
+    elevGain,
+    currentAltitude,
+    start,
+    end,
+    verify
+  } = useHiking();
+
   const mapRef = useRef<maplibregl.Map | null>(null);
   const hikerRef = useRef<HTMLImageElement | null>(null);
 
+  const [pageState, setPageState] = useState<PageState>("idle");
   const [trailLoaded, setTrailLoaded] = useState(false);
   const [hikerAnimating, setHikerAnimating] = useState(false);
   const [hikerStyle, setHikerStyle] = useState<React.CSSProperties>({});
+  const [summitResult, setSummitResult] = useState<{
+    verified: boolean;
+    summitName?: string;
+    distanceM?: number;
+  } | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [showFinishConfirm, setShowFinishConfirm] = useState(false);
 
-  // [orda/feat/trail-bbox-filter] 페이지 진입 시 단발성 위치 조회 (현위치 버튼용)
+  // [orda/feat/trail-bbox-filter] 페이지 진입 시 단발성 위치 조회
   const [idlePos, setIdlePos] = useState<{ lng: number; lat: number } | null>(
     null
   );
   useEffect(() => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setIdlePos({ lng: pos.coords.longitude, lat: pos.coords.latitude });
-      },
+      (pos) =>
+        setIdlePos({ lng: pos.coords.longitude, lat: pos.coords.latitude }),
       () => {},
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   }, []);
 
-  const handleStart = () => {
+  const elapsedSeconds = useElapsedTime(pageState === "hiking");
+
+  const handleStart = async () => {
     if (!hikerRef.current) {
-      start();
+      const success = await start();
+      if (success) setPageState("hiking");
       return;
     }
 
-    // [orda/feat/trail-bbox-filter] 배낭맨 현재 위치 계산
     const hikerRect = hikerRef.current.getBoundingClientRect();
     const hikerCenterX = hikerRect.left + hikerRect.width / 2;
     const hikerCenterY = hikerRect.top + hikerRect.height / 2;
-
-    const targetX = window.innerWidth / 2;
-    const targetY = window.innerHeight / 2;
-
-    const dx = targetX - hikerCenterX;
-    const dy = targetY - hikerCenterY;
+    const dx = window.innerWidth / 2 - hikerCenterX;
+    const dy = window.innerHeight / 2 - hikerCenterY;
 
     setHikerAnimating(true);
     setHikerStyle({
@@ -82,15 +205,38 @@ export default function HikingRecordPage() {
       transition: "transform 0.7s ease-in, opacity 0.7s ease-in"
     });
 
-    setTimeout(() => {
+    setTimeout(async () => {
       setHikerAnimating(false);
       setHikerStyle({});
-      start();
+      const success = await start();
+      if (success) setPageState("hiking");
     }, 750);
   };
 
-  const handleMapReady = (map: maplibregl.Map) => {
-    mapRef.current = map;
+  const handleVerify = async () => {
+    setIsVerifying(true);
+    try {
+      const result = await verify();
+      if (result) {
+        setSummitResult({
+          verified: result.verified,
+          summitName: result.summitName,
+          distanceM: result.distanceM
+        });
+      }
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleEnd = async () => {
+    try {
+      await end();
+      setPageState("finished");
+      setShowFinishConfirm(false);
+    } catch {
+      setShowFinishConfirm(false);
+    }
   };
 
   const handleMoveToCurrentPos = () => {
@@ -114,11 +260,7 @@ export default function HikingRecordPage() {
         background: "#f7f7f6"
       }}>
       {/* 헤더 */}
-      {!isTracking ? (
-        <Header title="등산 지도" />
-      ) : (
-        <HikingSessionHeader session={null} />
-      )}
+      <Header title="등산 지도" />
 
       {/* 지도 영역 */}
       <div className="relative flex-1 overflow-hidden">
@@ -126,11 +268,13 @@ export default function HikingRecordPage() {
           geoJson={geoJson}
           currentPos={currentPos}
           onTrailLoaded={() => setTrailLoaded(true)}
-          onMapReady={handleMapReady}
+          onMapReady={(map) => {
+            mapRef.current = map;
+          }}
         />
 
         {/* [orda/feat/trail-difficulty] 현위치 버튼 */}
-        {!isTracking && (
+        {pageState === "idle" && (
           <button
             onClick={handleMoveToCurrentPos}
             style={{
@@ -147,7 +291,7 @@ export default function HikingRecordPage() {
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              zIndex: 20,
+              zIndex: 50,
               cursor: "pointer",
               gap: 2
             }}>
@@ -174,7 +318,7 @@ export default function HikingRecordPage() {
         )}
 
         {/* [orda/feat/trail-difficulty] 난이도 범례 */}
-        {trailLoaded && (
+        {trailLoaded && pageState === "idle" && (
           <div
             style={{
               position: "absolute",
@@ -212,10 +356,175 @@ export default function HikingRecordPage() {
             ))}
           </div>
         )}
+
+        {/* [orda/feat/trail-difficulty] 등산 중 통계 카드 */}
+        {(pageState === "hiking" || pageState === "finished") && (
+          <div
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              background: "white",
+              borderRadius: "24px 24px 0 0",
+              padding: "12px 24px 24px",
+              zIndex: 20,
+              boxShadow: "0 -4px 20px rgba(0,0,0,0.1)"
+            }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                marginBottom: 16
+              }}>
+              <div
+                style={{
+                  width: 40,
+                  height: 4,
+                  borderRadius: 2,
+                  background: "#e2e8f0"
+                }}
+              />
+            </div>
+
+            <div style={{ textAlign: "center", marginBottom: 16 }}>
+              <div
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: "#94a3b8",
+                  letterSpacing: "0.2em",
+                  marginBottom: 4
+                }}>
+                TIME
+              </div>
+              <div
+                style={{
+                  fontSize: 40,
+                  fontWeight: 700,
+                  color: "#0f172a",
+                  fontVariantNumeric: "tabular-nums"
+                }}>
+                {formatTime(elapsedSeconds)}
+              </div>
+            </div>
+
+            <div
+              className="grid grid-cols-3 gap-4"
+              style={{
+                borderTop: "1px solid #f1f5f9",
+                borderBottom: "1px solid #f1f5f9",
+                padding: "16px 0",
+                marginBottom: 16
+              }}>
+              <StatItem
+                label="이동 거리"
+                value={distanceKm.toFixed(2)}
+                unit="km"
+              />
+              <StatItem
+                label="누적 상승"
+                value={elevGain}
+                unit="m"
+                bordered="both"
+              />
+              <StatItem
+                label="현재 고도"
+                value={
+                  currentAltitude != null
+                    ? currentAltitude.toLocaleString()
+                    : "—"
+                }
+                unit={currentAltitude != null ? "m" : ""}
+              />
+            </div>
+
+            <ElevationChart trail={trail ?? []} />
+
+            {summitResult && (
+              <div
+                style={{
+                  marginTop: 12,
+                  padding: "10px 16px",
+                  borderRadius: 12,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  background: summitResult.verified ? "#f0fdf4" : "#fefce8",
+                  color: summitResult.verified ? "#15803d" : "#a16207"
+                }}>
+                {summitResult.verified
+                  ? `🏔 ${summitResult.summitName ?? "정상"} 인증 완료`
+                  : `📍 정상까지 약 ${summitResult.distanceM ?? "—"}m 남음`}
+              </div>
+            )}
+
+            {error && (
+              <div
+                style={{
+                  marginTop: 12,
+                  padding: "10px 16px",
+                  borderRadius: 12,
+                  fontSize: 14,
+                  background: "#fef2f2",
+                  color: "#dc2626"
+                }}>
+                {error}
+              </div>
+            )}
+
+            {pageState === "hiking" && (
+              <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
+                <button
+                  onClick={handleVerify}
+                  disabled={isVerifying || !currentPos}
+                  style={{
+                    flex: 1,
+                    padding: "16px 0",
+                    borderRadius: 16,
+                    background: "#f1f5f9",
+                    border: "none",
+                    cursor: "pointer",
+                    fontWeight: 700,
+                    fontSize: 14,
+                    color: "#0f172a",
+                    opacity: isVerifying || !currentPos ? 0.4 : 1
+                  }}>
+                  {isVerifying ? "인증 중..." : "정상 인증"}
+                </button>
+                <button
+                  onClick={() => setShowFinishConfirm(true)}
+                  style={{
+                    flex: 1.5,
+                    padding: "16px 0",
+                    borderRadius: 16,
+                    background: "#89943d",
+                    border: "none",
+                    cursor: "pointer",
+                    fontWeight: 700,
+                    fontSize: 14,
+                    color: "white"
+                  }}>
+                  stop FINISH
+                </button>
+              </div>
+            )}
+
+            {pageState === "finished" && (
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setPageState("idle");
+                  setSummitResult(null);
+                }}>
+                홈으로
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* [orda/feat/trail-difficulty] 하단 등산 시작 버튼 + 배낭맨 */}
-      {!isTracking && (
+      {/* [orda/feat/trail-bbox-filter] 하단 등산 시작 버튼 + 배낭맨 */}
+      {pageState === "idle" && (
         <div
           style={{
             position: "absolute",
@@ -228,24 +537,21 @@ export default function HikingRecordPage() {
             paddingBottom: 24,
             zIndex: 30
           }}>
-          {/* [orda/feat/trail-bbox-filter] 배낭맨 아이콘 - 빨간 점으로 날아가는 애니메이션 */}
           <img
             ref={hikerRef}
             src={hikerIcon}
             alt="hiker"
             style={{
-              width: 56,
-              height: 56,
+              width: 37,
+              height: 37,
               marginBottom: 8,
               transition: hikerAnimating ? undefined : "none",
               ...hikerStyle
             }}
           />
-
-          {/* 등산 시작 버튼 */}
           <button
             onClick={handleStart}
-            disabled={hikerAnimating}
+            disabled={hikerAnimating || isLoading}
             style={{
               width: "calc(100% - 32px)",
               padding: "16px 0",
@@ -256,16 +562,60 @@ export default function HikingRecordPage() {
               fontSize: 18,
               border: "none",
               cursor: "pointer",
-              boxShadow: "0 4px 12px rgba(137,148,61,0.3)"
+              boxShadow: "0 4px 12px rgba(137,148,61,0.3)",
+              opacity: hikerAnimating || isLoading ? 0.6 : 1
             }}>
             <span style={{ fontStyle: "italic", marginRight: 6 }}>hiking</span>
-            등산 시작
+            {isLoading ? "연결 중..." : "등산 시작"}
           </button>
         </div>
       )}
 
       {/* [orda/feat/trail-difficulty] BottomNav */}
-      {!isTracking && <BottomNav />}
+      {pageState === "idle" && <BottomNav />}
+
+      {/* 종료 확인 바텀시트 */}
+      {showFinishConfirm && (
+        <div
+          className="absolute inset-0 z-20 flex items-end bg-black/50"
+          onClick={() => setShowFinishConfirm(false)}>
+          <div
+            className="w-full rounded-t-3xl bg-white px-6 pt-5 pb-10"
+            onClick={(e) => e.stopPropagation()}>
+            <div
+              style={{
+                width: 40,
+                height: 4,
+                borderRadius: 2,
+                background: "#e2e8f0",
+                margin: "0 auto 16px"
+              }}
+            />
+            <h2 className="mb-1 text-center text-xl font-bold text-slate-900">
+              등산을 종료할까요?
+            </h2>
+            <p className="mb-6 text-center text-sm text-slate-400">
+              {formatTime(elapsedSeconds)} 동안 {distanceKm.toFixed(2)}km 이동
+            </p>
+            <div className="flex gap-3">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => setShowFinishConfirm(false)}>
+                계속하기
+              </Button>
+              <Button
+                variant="primary"
+                className="flex-1"
+                onClick={handleEnd}
+                isLoading={isLoading}
+                disabled={isLoading}>
+                기록 저장
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
