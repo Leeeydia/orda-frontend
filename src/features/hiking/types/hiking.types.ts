@@ -101,9 +101,9 @@ export interface ReplaySummaryResponse {
 export interface ReplayPointResponse {
   latitude: number;
   longitude: number;
-  elevationM: number;
+  elevationM: number | null;
   distanceFromStartM: number;
-  actualElapsedSeconds: number;
+  actualElapsedSeconds: number | null;
   replayElapsedSeconds: number;
 }
 
@@ -111,6 +111,31 @@ export interface ReplayResponse {
   sessionId: number;
   summary: ReplaySummaryResponse;
   points: ReplayPointResponse[];
+}
+
+export interface ReplayQueryParams {
+  maxPoints?: number;
+  targetDurationSeconds?: number;
+}
+
+export interface ReplayTrackPoint {
+  lat: number;
+  lng: number;
+  elevationM: number | null;
+  distanceFromStartM: number;
+  actualElapsedSeconds: number | null;
+  replayElapsedSeconds: number;
+}
+
+export type ReplayLineCoordinate = [number, number];
+
+export interface ReplaySessionModel {
+  sessionId: number;
+  summary: ReplaySummaryResponse;
+  trackPoints: ReplayTrackPoint[];
+  lineCoordinates: ReplayLineCoordinate[];
+  durationSeconds: number;
+  totalPoints: number;
 }
 
 export interface VerifiedSummit {

@@ -5,17 +5,18 @@
  *  - /hiking → HikingRecordPage로 교체 (HikingPage 제거)
  *  - /hiking/record 라우터 제거 (중복)
  *  - /edit-profile → /mypage/edit-profile 경로 수정
- *  - /guide 라우터 추가 (GuidePage)
+ *  - /guide 라우터 추가 (GuidePage) [orda/feat/trail-difficulty]
  */
-
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MapTestPage from "./pages/MapTestPage";
 import HikingRecordPage from "./pages/hiking/HikingRecordPage";
 import HikingSessionDetailPage from "./pages/hiking/HikingSessionDetailPage";
+import HikingSessionReplayPage from "./pages/hiking/HikingSessionReplayPage";
 import SignupPage from "./pages/auth/SignupPage";
 import LoginPage from "./pages/auth/LoginPage";
 import MyPage from "./pages/mypage/MyPage";
 import EditProfilePage from "./pages/mypage/EditProfilePage";
+// [orda/feat/trail-difficulty] GuidePage 추가
 import GuidePage from "./pages/guide/GuidePage";
 
 export default function App() {
@@ -24,10 +25,15 @@ export default function App() {
       <Routes>
         <Route path="/test" element={<MapTestPage />} />
         <Route path="/" element={<HikingRecordPage />} />
+        {/* [orda/feat/trail-difficulty] GuidePage 라우터 추가 */}
         <Route path="/guide" element={<GuidePage />} />
         <Route
           path="/hiking/sessions/:sessionId"
           element={<HikingSessionDetailPage />}
+        />
+        <Route
+          path="/hiking/sessions/:sessionId/replay"
+          element={<HikingSessionReplayPage />}
         />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />

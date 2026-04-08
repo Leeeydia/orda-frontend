@@ -5,7 +5,7 @@ import HikingSessionHeader from "@/features/hiking/components/HikingSessionHeade
 import HikingSummaryCards from "@/features/hiking/components/HikingSummaryCards";
 import HikingTrackSection from "@/features/hiking/components/HikingTrackSection";
 import ReplayEntryCard from "@/features/hiking/components/ReplayEntryCard";
-import { useHikingSessionDetail } from "@/features/hiking/hooks/useHiking";
+import { useHikingSessionDetail } from "@/features/hiking/hooks/useHikingSessionDetail";
 
 export default function HikingSessionDetailPage() {
   const navigate = useNavigate();

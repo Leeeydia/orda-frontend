@@ -4,20 +4,15 @@
  * 변경 사항:
  *  - start(): 첫 GPS fix를 firstFixRef에 임시 보관
  *             세션 생성 후 즉시 첫 포인트 저장 보장
- *  - [orda/feat/trail-difficulty] start(): 이미 GPS가 켜져 있으면 재시작하지 않도록 처리
  */
 
 import { useState, useRef, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { useGPS } from "@/features/gps/hooks/useGPS";
 import {
   startHiking,
   endHiking,
   verifySummit,
-  saveGpsTrack,
-  getHikingSession,
-  getHikingTracks,
-  getElevationProfile
+  saveGpsTrack
 } from "../api/hikingApi";
 import type { GpsPoint } from "@/features/gps/types/gps.types";
 
@@ -32,9 +27,8 @@ export const useHiking = () => {
 
   const lastSavedAt = useRef<number>(0);
   const sessionIdRef = useRef<number | null>(null);
-  const firstFixRef = useRef<GpsPoint | null>(null); // 첫 GPS fix 임시 보관
+  const firstFixRef = useRef<GpsPoint | null>(null);
 
-  // 페이지 닫기 시 자동 종료 (beforeunload만 적용)
   useEffect(() => {
     const sendEndBeacon = () => {
       if (sessionIdRef.current) {
@@ -51,48 +45,36 @@ export const useHiking = () => {
       setError(null);
       firstFixRef.current = null;
 
-      // [orda/feat/trail-difficulty] 이미 GPS watch 중이면 재시작 생략
-      const alreadyTracking = gps.isTracking;
+      // 1. GPS fix 확보 대기
+      //    첫 fix는 sessionId가 없으므로 저장 불가 → firstFixRef에 임시 보관
+      await gps.start((point: GpsPoint) => {
+        const now = Date.now();
 
-      if (!alreadyTracking) {
-        // 1. GPS fix 확보 대기
-        await gps.start((point: GpsPoint) => {
-          const now = Date.now();
-
-          if (firstFixRef.current === null) {
-            firstFixRef.current = point;
-            lastSavedAt.current = now;
-            return;
-          }
-
-          if (!sessionIdRef.current) return;
-          if (now - lastSavedAt.current < SAVE_INTERVAL_MS) return;
+        if (firstFixRef.current === null) {
+          firstFixRef.current = point;
           lastSavedAt.current = now;
-
-          saveGpsTrack(sessionIdRef.current, {
-            latitude: point.lat,
-            longitude: point.lng,
-            elevationM: point.altitude ?? null,
-            accuracyM: point.accuracy
-          })
-            .then(() => setSavedPointCount((prev) => prev + 1))
-            .catch((e) => console.error("GPS 저장 실패:", e));
-        });
-      } else {
-        // 이미 추적 중이면 현재 위치를 firstFix로 사용
-        if (gps.currentPos) {
-          firstFixRef.current = gps.currentPos;
-          lastSavedAt.current = Date.now();
+          return;
         }
-      }
 
-      // 2. GPS fix 확보 후 세션 생성
+        if (!sessionIdRef.current) return;
+        if (now - lastSavedAt.current < SAVE_INTERVAL_MS) return;
+        lastSavedAt.current = now;
+
+        saveGpsTrack(sessionIdRef.current, {
+          latitude: point.lat,
+          longitude: point.lng,
+          elevationM: point.altitude ?? null,
+          accuracyM: point.accuracy
+        })
+          .then(() => setSavedPointCount((prev) => prev + 1))
+          .catch((e) => console.error("GPS 저장 실패:", e));
+      });
+
       const res = await startHiking({ userId: 1 }); // TODO: auth 연동 후 교체
       const newSessionId = res.sessionId;
       setSessionId(newSessionId);
       sessionIdRef.current = newSessionId;
 
-      // 3. 임시 보관해둔 첫 fix 즉시 저장 (start_point)
       const firstFix = firstFixRef.current as GpsPoint | null;
       if (firstFix) {
         await saveGpsTrack(newSessionId, {
@@ -125,7 +107,6 @@ export const useHiking = () => {
       setIsLoading(true);
       setError(null);
 
-      // 마지막 포인트 무조건 저장
       if (gps.currentPos) {
         await saveGpsTrack(currentSessionId, {
           latitude: gps.currentPos.lat,
@@ -145,7 +126,6 @@ export const useHiking = () => {
 
       return true;
     } catch {
-      // 실패 시 ref 복구 → beforeunload fallback 및 재시도 가능
       sessionIdRef.current = currentSessionId;
       setError("등산 종료에 실패했습니다.");
       throw new Error("등산 종료에 실패했습니다.");
@@ -183,52 +163,5 @@ export const useHiking = () => {
     start,
     end,
     verify
-  };
-};
-
-export const useHikingSessionDetail = (sessionId: number | null) => {
-  const sessionQuery = useQuery({
-    queryKey: ["hiking", "session", sessionId],
-    queryFn: () => getHikingSession(sessionId as number),
-    enabled: sessionId != null,
-    staleTime: 1000 * 60,
-    placeholderData: (prev) => prev
-  });
-
-  const tracksQuery = useQuery({
-    queryKey: ["hiking", "tracks", sessionId],
-    queryFn: () => getHikingTracks(sessionId as number),
-    enabled: sessionId != null,
-    staleTime: 1000 * 60,
-    placeholderData: (prev) => prev
-  });
-
-  const elevationProfileQuery = useQuery({
-    queryKey: ["hiking", "elevation-profile", sessionId],
-    queryFn: () => getElevationProfile(sessionId as number),
-    enabled: sessionId != null,
-    staleTime: 1000 * 60,
-    placeholderData: (prev) => prev
-  });
-
-  return {
-    session: sessionQuery.data ?? null,
-    tracks: tracksQuery.data ?? null,
-    elevationProfile: elevationProfileQuery.data ?? null,
-    sessionQuery,
-    tracksQuery,
-    elevationProfileQuery,
-    isLoading:
-      sessionQuery.isLoading ||
-      tracksQuery.isLoading ||
-      elevationProfileQuery.isLoading,
-    isFetching:
-      sessionQuery.isFetching ||
-      tracksQuery.isFetching ||
-      elevationProfileQuery.isFetching,
-    isError:
-      sessionQuery.isError ||
-      tracksQuery.isError ||
-      elevationProfileQuery.isError
   };
 };
