@@ -84,13 +84,15 @@ const LoginPage = () => {
       <div className="mx-auto min-h-screen w-full max-w-[390px]">
         <Header />
 
-        <main className="px-4 pb-20" style={{ paddingTop: HEADER_HEIGHT + 12 }}>
+        <main
+          className="px-10 pb-20"
+          style={{ paddingTop: HEADER_HEIGHT + 50 }}>
           <form onSubmit={handleSubmit} noValidate className="mt-12 space-y-4">
             <AuthField
               label="이메일"
               name="email"
               type="email"
-              placeholder="example@orda.com"
+              placeholder="이메일"
               value={form.email}
               error={errors.email}
               onChange={handleChange}
@@ -100,7 +102,7 @@ const LoginPage = () => {
               label="비밀번호"
               name="password"
               type="password"
-              placeholder="비밀번호를 입력해주세요"
+              placeholder="비밀번호"
               value={form.password}
               error={errors.password}
               onChange={handleChange}
