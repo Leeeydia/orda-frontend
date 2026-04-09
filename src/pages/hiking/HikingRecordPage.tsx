@@ -210,13 +210,11 @@ export default function HikingRecordPage() {
       });
 
       setTimeout(async () => {
-        setHikerStyle({ opacity: 0, transition: "opacity 0.2s" });
-        setTimeout(async () => {
-          setHikerAnimating(false);
-          setHikerStyle({});
-          const success = await start();
-          if (success) setPageState("hiking");
-        }, 200);
+        // fade out 제거 → 마커 위치에 그대로 유지
+        const success = await start();
+        setHikerAnimating(false);
+        setHikerStyle({});
+        if (success) setPageState("hiking");
       }, 1200);
     } else {
       const success = await start();
