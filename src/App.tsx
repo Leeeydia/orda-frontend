@@ -21,7 +21,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/hiking" element={<HikingRecordPage />} />
+        <Route path="/" element={<HikingRecordPage />} />
         <Route
           path="/hiking/sessions/:sessionId"
           element={<HikingSessionDetailPage />}
