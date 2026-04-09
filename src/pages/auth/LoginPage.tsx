@@ -29,11 +29,18 @@ const LoginPage = () => {
   };
 
   useEffect(() => {
-    const errorMessage = location.state?.errorMessage;
-    if (errorMessage) {
-      setToast({ message: errorMessage, type: "error" });
-    }
-  }, [location.state]);
+    const errorMessage = (location.state as { errorMessage?: string } | null)
+      ?.errorMessage;
+
+    if (!errorMessage) return;
+
+    setToast({ message: errorMessage, type: "error" });
+
+    navigate(location.pathname, {
+      replace: true,
+      state: null
+    });
+  }, [location.state, location.pathname, navigate]);
 
   const { login, loading } = useLogin(
     () => navigate("/"),
