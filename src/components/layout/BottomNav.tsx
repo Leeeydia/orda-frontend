@@ -70,7 +70,11 @@ const BottomNav = () => {
     <nav className="fixed bottom-0 left-1/2 z-50 w-full max-w-[390px] -translate-x-1/2 border-t border-[#D7DACB] bg-white">
       <div className="flex items-center justify-around pt-3 pb-[34px]">
         {NAV_ITEMS.map((item) => {
-          const active = location.pathname === item.path;
+          // 변경: exact match → startsWith 기반 하위 경로 active 처리
+          const active =
+            item.path === "/"
+              ? location.pathname === "/"
+              : location.pathname.startsWith(item.path);
           return (
             <button
               key={item.path}
