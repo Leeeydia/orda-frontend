@@ -1,7 +1,5 @@
-// src/pages/auth/LoginPage.tsx
-
-import { useState, useCallback } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useCallback, useEffect } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useLogin } from "../../features/auth/hooks/useAuth";
 import { validate } from "../../utils/validate";
 import type { LoginRequest } from "../../features/auth/types/auth.types";
@@ -18,6 +16,7 @@ const INITIAL_ERRORS = { email: "", password: "" };
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [form, setForm] = useState<LoginRequest>(INITIAL_FORM);
   const [errors, setErrors] = useState(INITIAL_ERRORS);
   const [toast, setToast] = useState<{
@@ -28,6 +27,13 @@ const LoginPage = () => {
   const showToast = (message: string, type: "success" | "error") => {
     setToast({ message, type });
   };
+
+  useEffect(() => {
+    const errorMessage = location.state?.errorMessage;
+    if (errorMessage) {
+      setToast({ message: errorMessage, type: "error" });
+    }
+  }, [location.state]);
 
   const { login, loading } = useLogin(
     () => navigate("/"),
