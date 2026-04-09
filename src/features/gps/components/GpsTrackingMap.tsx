@@ -11,6 +11,7 @@
  *  - currentPos 마커 추가
  *  - isTracking 시 배낭맨+마커 합성 엘리먼트로 교체
  *  - 줌 레벨 기반 배낭맨 크기 동적 조정
+ *  - moveend 요청 경쟁 조건 방어 (AbortController)
  */
 
 import { useState, useRef, useEffect } from "react";
@@ -178,7 +179,16 @@ const GpsTrackingMap = ({
   const handleMapReady = (map: maplibregl.Map) => {
     mapInstanceRef.current = map;
 
+    // moveend 요청 경쟁 조건 방어: 이전 요청 취소
+    let abortController: AbortController | null = null;
+
     const loadTrailByBbox = async () => {
+      if (abortController) {
+        abortController.abort();
+      }
+      abortController = new AbortController();
+      const signal = abortController.signal;
+
       if (map.getZoom() < MIN_ZOOM_FOR_TRAIL) {
         if (map.getLayer(TRAIL_LAYER_ID)) {
           map.setLayoutProperty(TRAIL_LAYER_ID, "visibility", "none");
@@ -205,8 +215,11 @@ const GpsTrackingMap = ({
           minLng,
           minLat,
           maxLng,
-          maxLat
+          maxLat,
+          signal
         );
+
+        if (signal.aborted) return;
 
         const source = map.getSource(TRAIL_SOURCE_ID) as
           | maplibregl.GeoJSONSource
@@ -243,6 +256,7 @@ const GpsTrackingMap = ({
           onTrailLoaded?.();
         }
       } catch (e) {
+        if (signal.aborted) return;
         console.error("trail bbox load error", e);
       }
     };

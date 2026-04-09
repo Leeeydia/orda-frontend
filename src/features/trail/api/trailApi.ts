@@ -22,10 +22,12 @@ export const getTrailDifficultyMapByBbox = async (
   minLng: number,
   minLat: number,
   maxLng: number,
-  maxLat: number
+  maxLat: number,
+  signal?: AbortSignal
 ): Promise<TrailGeoJson> => {
   const { data } = await axios.get(`${BASE_URL}/map/bbox`, {
-    params: { minLng, minLat, maxLng, maxLat }
+    params: { minLng, minLat, maxLng, maxLat },
+    signal
   });
   return data.data;
 };
