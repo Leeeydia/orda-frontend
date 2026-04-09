@@ -5,7 +5,13 @@ import type {
   ApiResponse
 } from "../types/auth.types";
 
-const BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/auth`;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+if (!API_BASE_URL) {
+  throw new Error("VITE_API_BASE_URL 환경변수가 설정되지 않았습니다.");
+}
+
+const BASE_URL = `${API_BASE_URL}/auth`;
 
 export const signupApi = async (
   body: SignupRequest
