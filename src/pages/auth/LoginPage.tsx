@@ -34,7 +34,9 @@ const LoginPage = () => {
 
     if (!errorMessage) return;
 
-    setToast({ message: errorMessage, type: "error" });
+    setTimeout(() => {
+      setToast({ message: errorMessage, type: "error" });
+    }, 0);
 
     navigate(location.pathname, {
       replace: true,
