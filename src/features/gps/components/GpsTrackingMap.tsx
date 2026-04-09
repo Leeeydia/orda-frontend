@@ -3,14 +3,14 @@
  *
  * 변경 사항:
  *  - 사용하지 않는 props 제거 (isTracking, isLoading, error, savedPointCount, onStart, onStop)
- *  - [orda/feat/trail-difficulty] 난이도 레이어 추가, onTrailLoaded prop 추가, 나침반 버튼 위치 조정
- *  - [orda/feat/trail-difficulty] onMapReady prop 추가 (내 위치로 돌아오기 버튼용 map 인스턴스 전달)
- *  - [orda/feat/trail-bbox-filter] 지도 이동/줌 시 bbox 기반 API 재호출로 변경
- *  - [orda/feat/trail-bbox-filter] bbox 1.5배 여유분 적용
- *  - [orda/feat/trail-bbox-filter] 줌 레벨 8 미만 시 등산로 레이어 숨김 + 안내 메시지 표시
- *  - [orda/feat/trail-difficulty] currentPos 마커 추가
- *  - [orda/feat/trail-difficulty] isTracking 시 배낭맨+마커 합성 엘리먼트로 교체
- *  - [orda/feat/trail-difficulty] 줌 레벨 기반 배낭맨 크기 동적 조정
+ *  -  난이도 레이어 추가, onTrailLoaded prop 추가, 나침반 버튼 위치 조정
+ *  -  onMapReady prop 추가 (내 위치로 돌아오기 버튼용 map 인스턴스 전달)
+ *  -  지도 이동/줌 시 bbox 기반 API 재호출로 변경
+ *  -  bbox 1.5배 여유분 적용
+ *  -  줌 레벨 8 미만 시 등산로 레이어 숨김 + 안내 메시지 표시
+ *  -  currentPos 마커 추가
+ *  -  isTracking 시 배낭맨+마커 합성 엘리먼트로 교체
+ *  -  줌 레벨 기반 배낭맨 크기 동적 조정
  */
 
 import { useState, useRef, useEffect } from "react";
@@ -33,7 +33,7 @@ const TRAIL_SOURCE_ID = "trail-difficulty-source";
 const TRAIL_LAYER_ID = "trail-difficulty-layer";
 const MIN_ZOOM_FOR_TRAIL = 8;
 
-// [orda/feat/trail-difficulty] idle 상태 원형 마커
+// idle 상태 원형 마커
 function createCurrentPosMarkerElement() {
   const wrapper = document.createElement("div");
   wrapper.style.width = "24px";
@@ -67,7 +67,7 @@ function createCurrentPosMarkerElement() {
   return wrapper;
 }
 
-// [orda/feat/trail-difficulty] 줌 레벨 기반 배낭맨 크기 계산
+//  줌 레벨 기반 배낭맨 크기 계산
 function getHikerSize(zoom: number): number {
   if (zoom < 10) return 24;
   if (zoom < 12) return 32;
@@ -75,7 +75,7 @@ function getHikerSize(zoom: number): number {
   return 48;
 }
 
-// [orda/feat/trail-difficulty] 등산 중 배낭맨+마커 합성 엘리먼트
+//  등산 중 배낭맨+마커 합성 엘리먼트
 function createHikingMarkerElement(hikerIconUrl: string, size: number = 48) {
   const wrapper = document.createElement("div");
   wrapper.style.width = `${size}px`;
@@ -250,7 +250,7 @@ const GpsTrackingMap = ({
     loadTrailByBbox();
     map.on("moveend", loadTrailByBbox);
 
-    // [orda/feat/trail-difficulty] 줌 시 배낭맨 크기 동적 조정
+    //  줌 시 배낭맨 크기 동적 조정
     map.on("zoom", () => {
       if (
         !isTrackingRef.current ||
