@@ -17,7 +17,7 @@ export const getTrailDifficultyMapBySummit = async (
   return data.data;
 };
 
-// [feat/trail-bbox-filter] bbox 기반 난이도 지도 조회 함수 추가
+// bbox 기반 난이도 지도 조회 함수 추가
 export const getTrailDifficultyMapByBbox = async (
   minLng: number,
   minLat: number,

@@ -2,11 +2,11 @@
  * 📄 src/pages/hiking/HikingRecordPage.tsx
  *
  * 변경 사항:
- *  - [orda/feat/trail-difficulty] idle 상태에서 내 위치 표시, 현위치 버튼, 헤더 심플화, 난이도 범례 추가
- *  - [orda/feat/trail-bbox-filter] 페이지 진입 시 단발성 위치 조회 (현위치 버튼용)
- *  - [orda/feat/trail-difficulty] BottomNav 추가
- *  - [orda/feat/trail-difficulty] 등산 중 TIME/거리/고도 카드, 정상 인증, 종료 기능 추가
- *  - [orda/feat/trail-difficulty] 배낭맨 하단 대기 → 마커로 이동 애니메이션 추가
+ *  - idle 상태에서 내 위치 표시, 현위치 버튼, 헤더 심플화, 난이도 범례 추가
+ *  - 페이지 진입 시 단발성 위치 조회 (현위치 버튼용)
+ *  - BottomNav 추가
+ *  - 등산 중 TIME/거리/고도 카드, 정상 인증, 종료 기능 추가
+ *  - 배낭맨 하단 대기 → 마커로 이동 애니메이션 추가
  */
 import { useState, useRef, useEffect } from "react";
 import maplibregl from "maplibre-gl";
@@ -289,7 +289,7 @@ export default function HikingRecordPage() {
           }}
         />
 
-        {/* [orda/feat/trail-difficulty] 현위치 버튼 */}
+        {/* 현위치 버튼 */}
         {pageState === "idle" && (
           <button
             onClick={handleMoveToCurrentPos}
@@ -333,7 +333,7 @@ export default function HikingRecordPage() {
           </button>
         )}
 
-        {/* [orda/feat/trail-difficulty] 난이도 범례 */}
+        {/* 난이도 범례 */}
         {trailLoaded && pageState === "idle" && (
           <div
             style={{
@@ -553,7 +553,7 @@ export default function HikingRecordPage() {
             paddingBottom: 24,
             zIndex: 30
           }}>
-          {/* [orda/feat/trail-difficulty] 배낭맨 아이콘 */}
+          {/* 배낭맨 아이콘 */}
           <img
             ref={hikerRef}
             src={hikerIcon}
@@ -588,7 +588,7 @@ export default function HikingRecordPage() {
         </div>
       )}
 
-      {/* [orda/feat/trail-difficulty] BottomNav */}
+      {/* BottomNav */}
       {pageState === "idle" && <BottomNav />}
 
       {/* 종료 확인 바텀시트 */}
