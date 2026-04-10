@@ -156,13 +156,10 @@ const GuidePage = () => {
         {/* 스탯 카드 */}
         <div className="mb-2 grid grid-cols-2 gap-2 px-5">
           <div className="rounded-2xl bg-[#4A521E] p-5">
-            <p className="text-[36px] leading-none font-black tracking-[-0.04em] text-[#89943d]">
-              30
-              <span className="text-[13px] font-bold text-[#89943d]/70">
-                분
-              </span>
+            <p className="text-[36px] leading-none font-black tracking-[-0.04em] text-white">
+              30<span className="text-[13px] font-bold text-white/70">분</span>
             </p>
-            <p className="mt-2 text-[11px] leading-relaxed text-white/50">
+            <p className="mt-2 text-[11px] leading-relaxed text-white/80">
               걷고 5-10분
               <br />
               휴식 권장
