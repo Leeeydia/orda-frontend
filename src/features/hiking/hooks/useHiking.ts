@@ -1,3 +1,11 @@
+/**
+ * 📄 src/features/hiking/hooks/useHiking.ts
+ *
+ * 변경 사항:
+ *  - start(): 첫 GPS fix를 firstFixRef에 임시 보관
+ *             세션 생성 후 즉시 첫 포인트 저장 보장
+ */
+
 import { useState, useRef, useEffect } from "react";
 import { useGPS } from "@/features/gps/hooks/useGPS";
 import {
@@ -37,6 +45,8 @@ export const useHiking = () => {
       setError(null);
       firstFixRef.current = null;
 
+      // 1. GPS fix 확보 대기
+      //    첫 fix는 sessionId가 없으므로 저장 불가 → firstFixRef에 임시 보관
       await gps.start((point: GpsPoint) => {
         const now = Date.now();
 
