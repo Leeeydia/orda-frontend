@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { signupApi, loginApi } from "../api/authApi";
+import { signupApi, loginApi, kakaoLoginApi } from "../api/authApi";
 import type {
   SignupRequest,
   LoginRequest,
@@ -63,4 +63,32 @@ export const useLogin = (
   };
 
   return { login, loading };
+};
+
+// ─── useKakaoLogin ────────────────────────────────────────────────────────────
+
+export const useKakaoLogin = (
+  onSuccess: () => void,
+  onError: (msg: string) => void
+) => {
+  const [loading, setLoading] = useState(false);
+
+  const kakaoLogin = async (code: string) => {
+    setLoading(true);
+    try {
+      const res = await kakaoLoginApi(code);
+      if (res.success && res.data) {
+        localStorage.setItem("accessToken", res.data.accessToken);
+        onSuccess();
+      } else {
+        onError(res.message ?? "카카오 로그인에 실패했습니다.");
+      }
+    } catch {
+      onError("네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { kakaoLogin, loading };
 };

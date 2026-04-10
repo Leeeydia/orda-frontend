@@ -116,13 +116,15 @@ const SignupPage = () => {
       <div className="mx-auto min-h-screen w-full max-w-[390px]">
         <Header title="회원가입" leftSlot={<BackButton />} />
 
-        <main className="px-4 pb-20" style={{ paddingTop: HEADER_HEIGHT + 12 }}>
+        <main
+          className="px-10 pb-20"
+          style={{ paddingTop: HEADER_HEIGHT + 80 }}>
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
             <AuthField
               label="이메일"
               name="email"
               type="email"
-              placeholder=""
+              placeholder="example@orda.com"
               value={form.email}
               error={errors.email}
               onChange={handleChange}

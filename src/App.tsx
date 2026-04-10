@@ -8,7 +8,6 @@
  *  - /guide 라우터 추가 (GuidePage)
  */
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import MapTestPage from "./pages/MapTestPage";
 import HikingRecordPage from "./pages/hiking/HikingRecordPage";
 import HikingSessionDetailPage from "./pages/hiking/HikingSessionDetailPage";
 import HikingSessionReplayPage from "./pages/hiking/HikingSessionReplayPage";
@@ -16,6 +15,7 @@ import SignupPage from "./pages/auth/SignupPage";
 import LoginPage from "./pages/auth/LoginPage";
 import MyPage from "./pages/mypage/MyPage";
 import EditProfilePage from "./pages/mypage/EditProfilePage";
+import KakaoCallbackPage from "./pages/auth/KakaoCallbackPage";
 // GuidePage 추가
 import GuidePage from "./pages/guide/GuidePage";
 
@@ -23,9 +23,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/test" element={<MapTestPage />} />
         <Route path="/" element={<HikingRecordPage />} />
-        {/*  GuidePage 라우터 추가 */}
+        {/* GuidePage 라우터 추가 */}
         <Route path="/guide" element={<GuidePage />} />
         <Route
           path="/hiking/sessions/:sessionId"
@@ -39,6 +38,7 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/mypage" element={<MyPage />} />
         <Route path="/mypage/edit-profile" element={<EditProfilePage />} />
+        <Route path="/auth/kakao/callback" element={<KakaoCallbackPage />} />
       </Routes>
     </BrowserRouter>
   );
