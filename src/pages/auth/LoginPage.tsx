@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useLogin } from "../../features/auth/hooks/useAuth";
 import { validate } from "../../utils/validate";
@@ -22,25 +22,15 @@ const LoginPage = () => {
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
-  } | null>(null);
+  } | null>(() => {
+    const errorMessage = (location.state as { errorMessage?: string } | null)
+      ?.errorMessage;
+    return errorMessage ? { message: errorMessage, type: "error" } : null;
+  });
 
   const showToast = (message: string, type: "success" | "error") => {
     setToast({ message, type });
   };
-
-  useEffect(() => {
-    const errorMessage = (location.state as { errorMessage?: string } | null)
-      ?.errorMessage;
-
-    if (!errorMessage) return;
-
-    setToast({ message: errorMessage, type: "error" });
-
-    navigate(location.pathname, {
-      replace: true,
-      state: null
-    });
-  }, [location.state, location.pathname, navigate]);
 
   const { login, loading } = useLogin(
     () => navigate("/"),
@@ -142,7 +132,10 @@ const LoginPage = () => {
         <Toast
           message={toast.message}
           type={toast.type}
-          onClose={() => setToast(null)}
+          onClose={() => {
+            setToast(null);
+            navigate(location.pathname, { replace: true, state: null });
+          }}
         />
       )}
     </div>
