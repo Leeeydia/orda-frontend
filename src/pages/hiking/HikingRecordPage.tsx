@@ -151,6 +151,7 @@ export default function HikingRecordPage() {
     distanceKm,
     elevGain,
     currentAltitude,
+    nearbySummits,
     start,
     end,
     verify
@@ -308,6 +309,7 @@ export default function HikingRecordPage() {
           }
           isTracking={pageState === "hiking"}
           hikerIconUrl={hikerIcon}
+          nearbySummits={nearbySummits}
           onTrailLoaded={() => setTrailLoaded(true)}
           onMapReady={(map) => {
             mapRef.current = map;
