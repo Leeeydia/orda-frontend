@@ -7,6 +7,7 @@
  *  - BottomNav 추가
  *  - 등산 중 TIME/거리/고도 카드, 정상 인증, 종료 기능 추가
  *  - 배낭맨 하단 대기 → 마커로 이동 애니메이션 추가
+ *  - 등산로 근접 여부 사전 체크 + 토스트 안내 추가
  */
 import { useState, useRef, useEffect } from "react";
 import maplibregl from "maplibre-gl";
@@ -15,6 +16,8 @@ import GpsTrackingMap from "@/features/gps/components/GpsTrackingMap";
 import Header from "@/components/layout/Header";
 import BottomNav from "@/components/layout/BottomNav";
 import Button from "@/components/ui/Button";
+import Toast from "@/components/ui/Toast";
+import { checkNearbyTrail } from "@/features/trail/api/trailApi";
 import type { GpsPoint } from "@/features/gps/types/gps.types";
 
 import hikerIcon from "@/assets/hiking-icon.png";
@@ -171,6 +174,12 @@ export default function HikingRecordPage() {
   const [idlePos, setIdlePos] = useState<{ lng: number; lat: number } | null>(
     null
   );
+
+  // 등산로 근접 여부
+  const [isNearTrail, setIsNearTrail] = useState<boolean | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<"success" | "error">("error");
+
   useEffect(() => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
@@ -180,6 +189,24 @@ export default function HikingRecordPage() {
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   }, []);
+
+  // 위치 확보 후 등산로 근접 여부 체크
+  useEffect(() => {
+    if (!idlePos || pageState !== "idle") return;
+
+    checkNearbyTrail(idlePos.lat, idlePos.lng)
+      .then((result) => {
+        setIsNearTrail(result.nearTrail);
+        if (!result.nearTrail) {
+          setToastType("error");
+          setToastMessage("등산로 근처에서만 등산을 시작할 수 있어요");
+        }
+      })
+      .catch(() => {
+        // 체크 실패 시 차단하지 않음 (백엔드 trail-guard에서 최종 검증)
+        setIsNearTrail(null);
+      });
+  }, [idlePos, pageState]);
 
   const elapsedSeconds = useElapsedTime(pageState === "hiking");
 
@@ -566,22 +593,29 @@ export default function HikingRecordPage() {
           />
           <button
             onClick={handleStart}
-            disabled={hikerAnimating || isLoading}
+            disabled={hikerAnimating || isLoading || isNearTrail === false}
             style={{
               width: "calc(100% - 32px)",
               padding: "16px 0",
               borderRadius: 16,
-              background: "#89943d",
-              color: "white",
+              background: isNearTrail === false ? "#D7DACB" : "#89943d",
+              color: isNearTrail === false ? "#7A8070" : "white",
               fontWeight: 700,
               fontSize: 18,
               border: "none",
-              cursor: "pointer",
-              boxShadow: "0 4px 12px rgba(137,148,61,0.3)",
+              cursor: isNearTrail === false ? "not-allowed" : "pointer",
+              boxShadow:
+                isNearTrail === false
+                  ? "none"
+                  : "0 4px 12px rgba(137,148,61,0.3)",
               opacity: hikerAnimating || isLoading ? 0.6 : 1
             }}>
             <span style={{ fontStyle: "italic", marginRight: 6 }}>hiking</span>
-            {isLoading ? "연결 중..." : "등산 시작"}
+            {isLoading
+              ? "연결 중..."
+              : isNearTrail === false
+                ? "등산로 근처로 이동하세요"
+                : "등산 시작"}
           </button>
         </div>
       )}
@@ -630,6 +664,16 @@ export default function HikingRecordPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 등산로 근접 안내 토스트 */}
+      {toastMessage && (
+        <Toast
+          message={toastMessage}
+          type={toastType}
+          onClose={() => setToastMessage(null)}
+          duration={4000}
+        />
       )}
     </div>
   );
