@@ -25,7 +25,7 @@ const getSummaryMessage = (
   }
 
   if (status === "UNAVAILABLE") {
-    return "일부 구간의 고도 데이터가 부족해 요약 수치를 계산하지 못했습니다.";
+    return "확인 가능한 구간만 그래프로 표시합니다.";
   }
 
   return null;
