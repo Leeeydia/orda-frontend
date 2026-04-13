@@ -1,5 +1,7 @@
 import BottomNav from "@/components/layout/BottomNav";
-import Header from "@/components/layout/Header";
+import Header, { HEADER_HEIGHT } from "@/components/layout/Header";
+
+const BOTTOM_NAV_HEIGHT = 82;
 
 const QUOTES = [
   { text: "내려갈 때 보았네, 올라갈 때 못 본 그 꽃을.", author: "고은" },
@@ -105,20 +107,20 @@ const GUIDE_CARDS = [
 
 const variantStyles = {
   white: {
-    card: "bg-white border border-[#D7DACB]",
-    index: "text-[#B8BAA8]",
-    title: "text-[#4A521E]",
-    tag: "bg-[#F4F5EF] text-[#3D3D2E] border border-[#D7DACB]"
+    card: "bg-white border border-border-default",
+    index: "text-border-strong",
+    title: "text-primary-dark",
+    tag: "bg-secondary text-text-body border border-border-default"
   },
   accent: {
-    card: "bg-[#DFE6BA]",
-    index: "text-[#89943d]",
-    title: "text-[#4A521E]",
-    tag: "bg-white/60 text-[#4A521E]"
+    card: "bg-bg-accent",
+    index: "text-primary",
+    title: "text-primary-dark",
+    tag: "bg-white/60 text-primary-dark"
   },
   primary: {
-    card: "bg-[#4A521E]",
-    index: "text-[#89943d]/70",
+    card: "bg-primary-dark",
+    index: "text-primary/70",
     title: "text-white",
     tag: "bg-white/10 text-white/85"
   }
@@ -129,56 +131,57 @@ const GuidePage = () => {
 
   return (
     <div
-      className="mx-auto min-h-screen w-full bg-[#F7F7F6]"
+      className="bg-bg-page mx-auto min-h-screen w-full"
       style={{ maxWidth: 390 }}>
       <Header title="등산 가이드" />
 
-      <div className="pt-16 pb-24">
+      <div
+        style={{ paddingTop: HEADER_HEIGHT, paddingBottom: BOTTOM_NAV_HEIGHT }}>
         {/* Hero */}
         <div className="px-6 pt-9 pb-7">
           <div className="mb-4 flex items-center gap-2">
-            <div className="h-1.5 w-1.5 rounded-full bg-[#89943d]" />
-            <span className="text-[11px] font-semibold tracking-[0.18em] text-[#89943d] uppercase">
+            <div className="bg-primary h-1.5 w-1.5 rounded-full" />
+            <span className="text-primary text-[11px] font-semibold tracking-[0.18em] uppercase">
               Trail Guide
             </span>
           </div>
-          <h2 className="text-[48px] leading-[0.92] font-black tracking-[-0.04em] text-[#4A521E]">
+          <h2 className="text-primary-dark text-[48px] leading-[0.92] font-black tracking-[-0.04em]">
             등산
             <br />
-            <span className="text-[#89943d]">가이드</span>
+            <span className="text-primary">가이드</span>
           </h2>
-          <p className="mt-3.5 text-[13px] leading-relaxed text-[#7A8070]">
+          <p className="text-text-muted mt-3.5 text-[13px] leading-relaxed">
             산행 전 꼭 알아야 할 것들을 정리했습니다
           </p>
-          <div className="mt-4 h-[3px] w-9 rounded-full bg-[#89943d]" />
+          <div className="bg-primary mt-4 h-[3px] w-9 rounded-full" />
         </div>
 
         {/* 스탯 카드 */}
         <div className="mb-2 grid grid-cols-2 gap-2 px-5">
-          <div className="rounded-2xl bg-[#4A521E] p-5">
+          <div className="bg-primary-dark rounded-2xl p-5">
             <p className="text-[36px] leading-none font-black tracking-[-0.04em] text-white">
               30<span className="text-[13px] font-bold text-white/70">분</span>
             </p>
             <p className="mt-2 text-[11px] leading-relaxed text-white/80">
-              걷고 5-10분
+              걷고 나면 5-10분
               <br />
-              휴식 권장
+              쉬어가세요
             </p>
           </div>
-          <div className="rounded-2xl border border-[#D7DACB] bg-white p-5">
-            <p className="text-[36px] leading-none font-black tracking-[-0.04em] text-[#4A521E]">
-              30<span className="text-[13px] font-bold text-[#89943d]">%</span>
+          <div className="border-border-default rounded-2xl border bg-white p-5">
+            <p className="text-primary-dark text-[36px] leading-none font-black tracking-[-0.04em]">
+              30<span className="text-primary text-[13px] font-bold">%</span>
             </p>
-            <p className="mt-2 text-[11px] leading-relaxed text-[#7A8070]">
-              체력 하산용
+            <p className="text-text-muted mt-2 text-[11px] leading-relaxed">
+              하산을 위해
               <br />
-              반드시 비축
+              여유를 남겨두세요
             </p>
           </div>
         </div>
 
         {/* 오늘의 명언 */}
-        <div className="mx-5 mb-2 flex gap-3 rounded-2xl bg-[#89943d] px-[18px] py-4">
+        <div className="bg-primary mx-5 mb-2 flex gap-3 rounded-2xl px-[18px] py-4">
           <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white/15">
             <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
               <circle cx="8" cy="8" r="6" stroke="white" strokeWidth="1.4" />
