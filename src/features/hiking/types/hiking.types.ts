@@ -1,3 +1,9 @@
+export type ElevationStatus = "DEM" | "INTERPOLATED" | "MISSING" | "GAP";
+export type ElevationSummaryStatus =
+  | "COMPLETE"
+  | "ESTIMATED"
+  | "UNAVAILABLE";
+
 export interface HikingStartRequest {
   userId: number;
 }
@@ -47,9 +53,6 @@ export interface HikingSessionResponse {
 export interface HikingTrackFeatureProperties {
   trackId: number;
   sequenceNum: number;
-  elevationM: number | null;
-  accuracyM: number | null;
-  recordedAt: string;
 }
 
 export interface HikingTrackFeature {
@@ -70,8 +73,9 @@ export interface ElevationProfileSummaryResponse {
   totalDistanceMeters: number;
   minElevationMeters: number | null;
   maxElevationMeters: number | null;
-  totalElevationGainMeters: number;
-  totalElevationLossMeters: number;
+  totalElevationGainMeters: number | null;
+  totalElevationLossMeters: number | null;
+  elevationSummaryStatus: ElevationSummaryStatus;
   pointCount: number;
 }
 
@@ -79,10 +83,11 @@ export interface ElevationProfilePointResponse {
   sequenceNum: number;
   latitude: number;
   longitude: number;
-  elevationMeters: number;
+  elevationMeters: number | null;
+  elevationStatus: ElevationStatus;
   segmentDistanceMeters: number;
   cumulativeDistanceMeters: number;
-  elevationDiffMeters: number;
+  elevationDiffMeters: number | null;
 }
 
 export interface ElevationProfileResponse {
@@ -93,9 +98,10 @@ export interface ElevationProfileResponse {
 
 export interface ReplaySummaryResponse {
   totalDistanceMeters: number;
-  totalElevationGainMeters: number;
-  totalElevationLossMeters: number;
+  totalElevationGainMeters: number | null;
+  totalElevationLossMeters: number | null;
   totalElapsedSeconds: number;
+  elevationSummaryStatus: ElevationSummaryStatus;
 }
 
 export interface ReplayPointResponse {

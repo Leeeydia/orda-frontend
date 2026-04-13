@@ -1,11 +1,12 @@
 import type { FeatureCollection, LineString, Point } from "geojson";
 import type {
   ElevationProfilePointResponse,
-  HikingTrackFeature,
-  HikingTrackFeatureCollection,
   ReplayResponse,
   ReplaySessionModel,
-  ReplayTrackPoint
+  ReplaySummaryResponse,
+  ReplayTrackPoint,
+  HikingTrackFeature,
+  HikingTrackFeatureCollection
 } from "../types/hiking.types";
 
 const EMPTY_FEATURE_COLLECTION: FeatureCollection = {
@@ -111,6 +112,16 @@ export const getTrackBounds = (
   ];
 };
 
+const isRenderableElevationPoint = (
+  point: ElevationProfilePointResponse
+): boolean => {
+  return (
+    typeof point.elevationMeters === "number" &&
+    (point.elevationStatus === "DEM" ||
+      point.elevationStatus === "INTERPOLATED")
+  );
+};
+
 export const mapElevationPointsToSvgPath = (
   points: ElevationProfilePointResponse[],
   width = 320,
@@ -118,14 +129,11 @@ export const mapElevationPointsToSvgPath = (
 ): string => {
   if (!points || points.length === 0) return "";
 
-  if (points.length === 1) {
-    const x = 0;
-    const y = height / 2;
-    return `M ${x} ${y}`;
-  }
+  const renderablePoints = points.filter(isRenderableElevationPoint);
+  if (renderablePoints.length === 0) return "";
 
   const distances = points.map((point) => point.cumulativeDistanceMeters);
-  const elevations = points.map((point) => point.elevationMeters);
+  const elevations = renderablePoints.map((point) => point.elevationMeters as number);
 
   const minDistance = Math.min(...distances);
   const maxDistance = Math.max(...distances);
@@ -135,18 +143,27 @@ export const mapElevationPointsToSvgPath = (
   const distanceRange = maxDistance - minDistance || 1;
   const elevationRange = maxElevation - minElevation || 1;
 
-  return points
-    .map((point, index) => {
-      const x =
-        ((point.cumulativeDistanceMeters - minDistance) / distanceRange) *
-        width;
-      const y =
-        height -
-        ((point.elevationMeters - minElevation) / elevationRange) * height;
+  const pathCommands: string[] = [];
+  let isDrawing = false;
 
-      return `${index === 0 ? "M" : "L"} ${x} ${y}`;
-    })
-    .join(" ");
+  for (const point of points) {
+    if (!isRenderableElevationPoint(point)) {
+      isDrawing = false;
+      continue;
+    }
+
+    const x =
+      ((point.cumulativeDistanceMeters - minDistance) / distanceRange) * width;
+    const y =
+      height -
+      (((point.elevationMeters as number) - minElevation) / elevationRange) *
+        height;
+
+    pathCommands.push(`${isDrawing ? "L" : "M"} ${x} ${y}`);
+    isDrawing = true;
+  }
+
+  return pathCommands.join(" ");
 };
 
 export const getElevationProfileSummary = (
@@ -160,21 +177,32 @@ export const getElevationProfileSummary = (
     };
   }
 
-  const elevations = points.map((point) => point.elevationMeters);
+  const renderablePoints = points.filter(isRenderableElevationPoint);
   const distances = points.map((point) => point.cumulativeDistanceMeters);
 
   return {
-    minElevation: Math.min(...elevations),
-    maxElevation: Math.max(...elevations),
-    totalDistance: Math.max(...distances)
+    minElevation:
+      renderablePoints.length > 0
+        ? Math.min(
+            ...renderablePoints.map((point) => point.elevationMeters as number)
+          )
+        : null,
+    maxElevation:
+      renderablePoints.length > 0
+        ? Math.max(
+            ...renderablePoints.map((point) => point.elevationMeters as number)
+          )
+        : null,
+    totalDistance: distances.length > 0 ? Math.max(...distances) : 0
   };
 };
 
-const EMPTY_REPLAY_SUMMARY = {
+const EMPTY_REPLAY_SUMMARY: ReplaySummaryResponse = {
   totalDistanceMeters: 0,
-  totalElevationGainMeters: 0,
-  totalElevationLossMeters: 0,
-  totalElapsedSeconds: 0
+  totalElevationGainMeters: null,
+  totalElevationLossMeters: null,
+  totalElapsedSeconds: 0,
+  elevationSummaryStatus: "UNAVAILABLE"
 };
 
 export const mapReplayResponseToReplaySessionModel = (

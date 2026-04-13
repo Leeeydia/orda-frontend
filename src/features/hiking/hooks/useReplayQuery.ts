@@ -15,9 +15,10 @@ const EMPTY_REPLAY_SESSION_MODEL: ReplaySessionModel = {
   sessionId: 0,
   summary: {
     totalDistanceMeters: 0,
-    totalElevationGainMeters: 0,
-    totalElevationLossMeters: 0,
-    totalElapsedSeconds: 0
+    totalElevationGainMeters: null,
+    totalElevationLossMeters: null,
+    totalElapsedSeconds: 0,
+    elevationSummaryStatus: "UNAVAILABLE"
   },
   trackPoints: [],
   lineCoordinates: [],
