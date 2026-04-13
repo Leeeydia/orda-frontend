@@ -1,7 +1,5 @@
-import BottomNav from "@/components/layout/BottomNav";
+import BottomNav, { BOTTOM_NAV_HEIGHT } from "@/components/layout/BottomNav";
 import Header, { HEADER_HEIGHT } from "@/components/layout/Header";
-
-const BOTTOM_NAV_HEIGHT = 82;
 
 const QUOTES = [
   { text: "내려갈 때 보았네, 올라갈 때 못 본 그 꽃을.", author: "고은" },
