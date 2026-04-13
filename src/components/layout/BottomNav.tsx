@@ -4,6 +4,9 @@
 
 import { useLocation, useNavigate } from "react-router-dom";
 
+// 추가: 하단 여백 계산에 사용
+export const BOTTOM_NAV_HEIGHT = 82;
+
 const NAV_ITEMS = [
   {
     label: "Guide",
