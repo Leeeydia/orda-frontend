@@ -4,9 +4,18 @@ export interface HikingStartRequest {
   longitude: number;
 }
 
+export interface NearbySummitItem {
+  summitId: string;
+  summitName: string;
+  latitude: number;
+  longitude: number;
+  elevationM: number | null;
+}
+
 export interface HikingStartResponse {
   sessionId: number;
   startedAt: string;
+  nearbySummits: NearbySummitItem[];
 }
 
 export interface HikingEndResponse {

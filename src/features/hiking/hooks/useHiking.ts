@@ -18,6 +18,7 @@ import {
   saveGpsTrack
 } from "../api/hikingApi";
 import type { GpsPoint } from "@/features/gps/types/gps.types";
+import type { NearbySummitItem } from "../types/hiking.types";
 
 const SAVE_INTERVAL_MS = 5000;
 
@@ -27,6 +28,7 @@ export const useHiking = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedPointCount, setSavedPointCount] = useState(0);
+  const [nearbySummits, setNearbySummits] = useState<NearbySummitItem[]>([]);
 
   const lastSavedAt = useRef<number>(0);
   const sessionIdRef = useRef<number | null>(null);
@@ -87,6 +89,7 @@ export const useHiking = () => {
       const newSessionId = res.sessionId;
       setSessionId(newSessionId);
       sessionIdRef.current = newSessionId;
+      setNearbySummits(res.nearbySummits ?? []);
 
       // 3. 첫 GPS 포인트 저장
       await saveGpsTrack(newSessionId, {
@@ -138,6 +141,7 @@ export const useHiking = () => {
       lastSavedAt.current = 0;
       firstFixRef.current = null;
       setSavedPointCount(0);
+      setNearbySummits([]);
 
       return true;
     } catch {
@@ -175,6 +179,7 @@ export const useHiking = () => {
     isLoading,
     error: error ?? gps.error,
     savedPointCount,
+    nearbySummits,
     start,
     end,
     verify
