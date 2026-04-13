@@ -1,5 +1,7 @@
 export interface HikingStartRequest {
   userId: number;
+  latitude: number;
+  longitude: number;
 }
 
 export interface HikingStartResponse {
