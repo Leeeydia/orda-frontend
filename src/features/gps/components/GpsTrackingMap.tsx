@@ -22,6 +22,7 @@ import type { TrailGeoJson } from "@/features/trail/types/trail.types";
 import CommonMap from "@/components/map/CommonMap";
 import type { FeatureCollection } from "geojson";
 import type { GpsPoint } from "../types/gps.types";
+import type { NearbySummitItem } from "@/features/hiking/types/hiking.types";
 
 const DIFFICULTY_COLOR_MAP: Record<string, string> = {
   easy: "#22c55e",
@@ -128,6 +129,7 @@ interface Props {
   currentPos: GpsPoint | null;
   isTracking?: boolean;
   hikerIconUrl?: string;
+  nearbySummits?: NearbySummitItem[];
   onTrailLoaded?: () => void;
   onMapReady?: (map: maplibregl.Map) => void;
 }
@@ -137,12 +139,14 @@ const GpsTrackingMap = ({
   currentPos,
   isTracking = false,
   hikerIconUrl,
+  nearbySummits = [],
   onTrailLoaded,
   onMapReady
 }: Props) => {
   const [isTooFar, setIsTooFar] = useState(false);
   const mapInstanceRef = useRef<maplibregl.Map | null>(null);
   const markerRef = useRef<maplibregl.Marker | null>(null);
+  const summitMarkerRefs = useRef<maplibregl.Marker[]>([]);
   const isTrackingRef = useRef(isTracking);
   const hikerIconUrlRef = useRef(hikerIconUrl);
 
@@ -175,6 +179,50 @@ const GpsTrackingMap = ({
       .setLngLat([currentPos.lng, currentPos.lat])
       .addTo(mapInstanceRef.current);
   }, [currentPos, isTracking, hikerIconUrl]);
+
+  // nearbySummits 변경 시 정상 마커 렌더링
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    const map = mapInstanceRef.current;
+
+    // 기존 마커 제거
+    summitMarkerRefs.current.forEach((m) => m.remove());
+    summitMarkerRefs.current = [];
+
+    nearbySummits.forEach((summit) => {
+      if (typeof summit.longitude !== "number" || typeof summit.latitude !== "number") return;
+
+      const el = document.createElement("button");
+      el.type = "button";
+      el.style.cssText =
+        "width:26px;height:22px;padding:0;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 2px 4px rgba(47,52,21,0.28))";
+      el.innerHTML = `
+        <svg width="26" height="22" viewBox="0 0 26 22" fill="none" aria-hidden="true">
+          <path d="M13 2L24 20H2L13 2Z" fill="#BCB88A" stroke="#F7F7F6" stroke-width="1.8" stroke-linejoin="round"/>
+          <path d="M9.2 14.6L10.8 12.3L12.1 13.9L14.1 11.1L16.8 14.6" stroke="#F7F7F6" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>`;
+
+      const popupHtml = `
+        <div style="font-size:12px;line-height:1.4;">
+          <div style="font-weight:600;color:#2f3415;">${summit.summitName}</div>
+          ${summit.elevationM != null ? `<div style="margin-top:4px;color:#64748b;">해발 ${summit.elevationM}m</div>` : ""}
+        </div>`;
+
+      const popup = new maplibregl.Popup({ offset: 14 }).setHTML(popupHtml);
+
+      const marker = new maplibregl.Marker({ element: el, anchor: "bottom", offset: [0, 2] })
+        .setLngLat([summit.longitude, summit.latitude])
+        .setPopup(popup)
+        .addTo(map);
+
+      summitMarkerRefs.current.push(marker);
+    });
+
+    return () => {
+      summitMarkerRefs.current.forEach((m) => m.remove());
+      summitMarkerRefs.current = [];
+    };
+  }, [nearbySummits]);
 
   const handleMapReady = (map: maplibregl.Map) => {
     mapInstanceRef.current = map;
