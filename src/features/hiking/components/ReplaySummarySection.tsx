@@ -88,7 +88,7 @@ export default function ReplaySummarySection({
               거리
             </p>
             <p className="mt-1 text-base font-bold text-[#2f3415]">
-              {formatDistanceDisplay(summary.totalDistanceMeters, 2)}
+              {formatDistanceDisplay(summary.totalDistanceMeters)}
             </p>
           </div>
 
