@@ -1,28 +1,12 @@
-import { formatDistanceKm, formatDuration, formatMeters } from "@/utils/format";
 import type {
   ElevationSummaryStatus,
   ReplaySessionModel
 } from "../types/hiking.types";
-
-function formatDistanceDisplay(distanceMeters: number | null | undefined) {
-  if (distanceMeters == null || Number.isNaN(distanceMeters)) {
-    return "-";
-  }
-
-  if (distanceMeters >= 1000) {
-    return formatDistanceKm(distanceMeters, 2);
-  }
-
-  return formatMeters(distanceMeters, 0);
-}
-
-function formatDurationDisplay(totalElapsedSeconds: number | null | undefined) {
-  if (totalElapsedSeconds == null || Number.isNaN(totalElapsedSeconds)) {
-    return "-";
-  }
-
-  return formatDuration(totalElapsedSeconds);
-}
+import {
+  formatDistanceDisplay,
+  formatDurationDisplay,
+  formatElevationDisplay
+} from "../mappers/hikingMappers";
 
 function formatPace(
   distanceMeters: number | null | undefined,
@@ -47,17 +31,6 @@ function formatPace(
     2,
     "0"
   )}`;
-}
-
-function formatElevationDisplay(
-  value: number | null | undefined,
-  status: ElevationSummaryStatus | undefined
-) {
-  if (value == null || Number.isNaN(value)) {
-    return status === "UNAVAILABLE" ? "계산 불가" : "-";
-  }
-
-  return formatMeters(value, 0);
 }
 
 function getSummaryMessage(
@@ -115,7 +88,7 @@ export default function ReplaySummarySection({
               거리
             </p>
             <p className="mt-1 text-base font-bold text-[#2f3415]">
-              {formatDistanceDisplay(summary.totalDistanceMeters)}
+              {formatDistanceDisplay(summary.totalDistanceMeters, 2)}
             </p>
           </div>
 

@@ -1,5 +1,8 @@
 import { formatDistanceKm } from "@/utils/format";
-import { mapElevationPointsToSvgPath } from "../mappers/hikingMappers";
+import {
+  isRenderableElevationPoint,
+  mapElevationPointsToSvgPath
+} from "../mappers/hikingMappers";
 import type {
   ElevationProfileResponse,
   ElevationSummaryStatus
@@ -7,14 +10,6 @@ import type {
 
 type Props = {
   elevationProfile: ElevationProfileResponse | null;
-};
-
-const isRenderablePoint = (point: ElevationProfileResponse["points"][number]) => {
-  return (
-    typeof point.elevationMeters === "number" &&
-    (point.elevationStatus === "DEM" ||
-      point.elevationStatus === "INTERPOLATED")
-  );
 };
 
 const getSummaryMessage = (
@@ -40,11 +35,11 @@ export default function ElevationProfileCard({ elevationProfile }: Props) {
   const maxElevation = summary?.maxElevationMeters ?? null;
   const totalDistanceMeters = summary?.totalDistanceMeters ?? null;
 
-  const hasRenderablePoints = points.some(isRenderablePoint);
+  const hasRenderablePoints = points.some(isRenderableElevationPoint);
   const hasPath = path.trim().length > 0;
 
   const isContinuousProfile =
-    points.length > 0 && points.every(isRenderablePoint);
+    points.length > 0 && points.every(isRenderableElevationPoint);
 
   const summaryMessage = getSummaryMessage(summaryStatus);
 

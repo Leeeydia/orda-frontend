@@ -1,12 +1,18 @@
 import type { FeatureCollection, LineString, Point } from "geojson";
+import {
+  formatDistanceKm,
+  formatDuration,
+  formatMeters
+} from "@/utils/format";
 import type {
   ElevationProfilePointResponse,
+  ElevationSummaryStatus,
+  HikingTrackFeature,
+  HikingTrackFeatureCollection,
   ReplayResponse,
   ReplaySessionModel,
   ReplaySummaryResponse,
-  ReplayTrackPoint,
-  HikingTrackFeature,
-  HikingTrackFeatureCollection
+  ReplayTrackPoint
 } from "../types/hiking.types";
 
 const EMPTY_FEATURE_COLLECTION: FeatureCollection = {
@@ -112,7 +118,7 @@ export const getTrackBounds = (
   ];
 };
 
-const isRenderableElevationPoint = (
+export const isRenderableElevationPoint = (
   point: ElevationProfilePointResponse
 ): boolean => {
   return (
@@ -132,8 +138,11 @@ export const mapElevationPointsToSvgPath = (
   const renderablePoints = points.filter(isRenderableElevationPoint);
   if (renderablePoints.length === 0) return "";
 
+  // x축은 전체 points 거리 기준을 유지해 결손 구간 위치가 보이도록 한다.
   const distances = points.map((point) => point.cumulativeDistanceMeters);
-  const elevations = renderablePoints.map((point) => point.elevationMeters as number);
+  const elevations = renderablePoints.map(
+    (point) => point.elevationMeters as number
+  );
 
   const minDistance = Math.min(...distances);
   const maxDistance = Math.max(...distances);
@@ -168,7 +177,11 @@ export const mapElevationPointsToSvgPath = (
 
 export const getElevationProfileSummary = (
   points: ElevationProfilePointResponse[]
-) => {
+): {
+  minElevation: number | null;
+  maxElevation: number | null;
+  totalDistance: number;
+} => {
   if (!points || points.length === 0) {
     return {
       minElevation: null,
@@ -195,6 +208,44 @@ export const getElevationProfileSummary = (
         : null,
     totalDistance: distances.length > 0 ? Math.max(...distances) : 0
   };
+};
+
+export const formatDistanceDisplay = (
+  distanceMeters: number | null | undefined,
+  kmDecimals?: number
+) => {
+  if (distanceMeters == null || Number.isNaN(distanceMeters)) {
+    return "-";
+  }
+
+  if (distanceMeters >= 1000) {
+    return kmDecimals != null
+      ? formatDistanceKm(distanceMeters, kmDecimals)
+      : formatDistanceKm(distanceMeters);
+  }
+
+  return formatMeters(distanceMeters, 0);
+};
+
+export const formatDurationDisplay = (
+  totalElapsedSeconds: number | null | undefined
+) => {
+  if (totalElapsedSeconds == null || Number.isNaN(totalElapsedSeconds)) {
+    return "-";
+  }
+
+  return formatDuration(totalElapsedSeconds);
+};
+
+export const formatElevationDisplay = (
+  value: number | null | undefined,
+  status: ElevationSummaryStatus | undefined
+) => {
+  if (value == null || Number.isNaN(value)) {
+    return status === "UNAVAILABLE" ? "계산 불가" : "-";
+  }
+
+  return formatMeters(value, 0);
 };
 
 const EMPTY_REPLAY_SUMMARY: ReplaySummaryResponse = {

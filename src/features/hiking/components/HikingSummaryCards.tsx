@@ -1,49 +1,18 @@
-import {
-  formatDistanceKm,
-  formatDuration,
-  formatMeters
-} from "@/utils/format";
 import type {
   ElevationProfileResponse,
   ElevationSummaryStatus,
   HikingSessionResponse
 } from "../types/hiking.types";
+import {
+  formatDistanceDisplay,
+  formatDurationDisplay,
+  formatElevationDisplay
+} from "../mappers/hikingMappers";
 
 type HikingSummaryCardsProps = {
   session: HikingSessionResponse | null;
   elevationProfile: ElevationProfileResponse | null;
 };
-
-function formatDistanceDisplay(value: number | null | undefined) {
-  if (value == null || Number.isNaN(value)) {
-    return "-";
-  }
-
-  if (value >= 1000) {
-    return formatDistanceKm(value);
-  }
-
-  return formatMeters(value, 0);
-}
-
-function formatDurationDisplay(value: number | null | undefined) {
-  if (value == null || Number.isNaN(value)) {
-    return "-";
-  }
-
-  return formatDuration(value);
-}
-
-function formatElevationDisplay(
-  value: number | null | undefined,
-  status: ElevationSummaryStatus | undefined
-) {
-  if (value == null || Number.isNaN(value)) {
-    return status === "UNAVAILABLE" ? "계산 불가" : "-";
-  }
-
-  return formatMeters(value, 0);
-}
 
 function getSummaryMessage(
   status: ElevationSummaryStatus | undefined
