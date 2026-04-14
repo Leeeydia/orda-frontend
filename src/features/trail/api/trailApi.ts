@@ -36,7 +36,7 @@ export const getTrailDifficultyMapByBbox = async (
 // 등산로 근접 여부 확인
 export interface TrailNearbyResult {
   nearTrail: boolean;
-  distanceM: number;
+  distanceM: number | null;
 }
 
 export const checkNearbyTrail = async (
