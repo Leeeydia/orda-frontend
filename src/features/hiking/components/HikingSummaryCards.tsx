@@ -39,9 +39,14 @@ export default function HikingSummaryCards({
     session?.totalDistanceM ?? summary?.totalDistanceMeters ?? null;
   const totalDuration = session?.totalDurationSec ?? null;
   const totalGain =
-    session?.totalElevationGainM ?? summary?.totalElevationGainMeters ?? null;
+    summary != null
+      ? summary.totalElevationGainMeters
+      : (session?.totalElevationGainM ?? null);
+
   const totalLoss =
-    session?.totalElevationLossM ?? summary?.totalElevationLossMeters ?? null;
+    summary != null
+      ? summary.totalElevationLossMeters
+      : (session?.totalElevationLossM ?? null);
 
   const items = [
     {
@@ -79,8 +84,7 @@ export default function HikingSummaryCards({
               elevationSummaryStatus === "UNAVAILABLE"
                 ? "border border-amber-200 bg-amber-50 text-amber-700"
                 : "border border-[#89943d]/10 bg-[#f7f7f6] text-slate-600"
-            }`}
-          >
+            }`}>
             {summaryMessage}
           </div>
         )}
@@ -89,8 +93,7 @@ export default function HikingSummaryCards({
           {items.map((item) => (
             <div
               key={item.label}
-              className="rounded-2xl bg-[#f7f7f6] px-3 py-3"
-            >
+              className="rounded-2xl bg-[#f7f7f6] px-3 py-3">
               <p className="text-[11px] font-semibold text-[#89943d]">
                 {item.label}
               </p>

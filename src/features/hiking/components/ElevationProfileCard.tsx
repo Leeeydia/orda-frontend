@@ -35,8 +35,9 @@ export default function ElevationProfileCard({ elevationProfile }: Props) {
   const maxElevation = summary?.maxElevationMeters ?? null;
   const totalDistanceMeters = summary?.totalDistanceMeters ?? null;
 
-  const hasRenderablePoints = points.some(isRenderableElevationPoint);
+  const renderablePointCount = points.filter(isRenderableElevationPoint).length;
   const hasPath = path.trim().length > 0;
+  const canRenderChart = renderablePointCount >= 2 && hasPath;
 
   const isContinuousProfile =
     points.length > 0 && points.every(isRenderableElevationPoint);
@@ -80,14 +81,13 @@ export default function ElevationProfileCard({ elevationProfile }: Props) {
                 summaryStatus === "UNAVAILABLE"
                   ? "border border-amber-200 bg-amber-50 text-amber-700"
                   : "border border-[#89943d]/10 bg-white text-slate-600"
-              }`}
-            >
+              }`}>
               {summaryMessage}
             </div>
           )}
 
           <div className="mt-2 rounded-2xl bg-white px-3 py-3">
-            {!points.length || !hasRenderablePoints || !hasPath ? (
+            {!points.length || !canRenderChart ? (
               <div className="flex h-28 items-center justify-center text-xs text-slate-400">
                 표시할 고도 데이터가 없습니다
               </div>
@@ -97,16 +97,14 @@ export default function ElevationProfileCard({ elevationProfile }: Props) {
                   <svg
                     viewBox="0 0 320 120"
                     className="h-full w-full"
-                    preserveAspectRatio="none"
-                  >
+                    preserveAspectRatio="none">
                     <defs>
                       <linearGradient
                         id="elevationGradient"
                         x1="0%"
                         y1="0%"
                         x2="0%"
-                        y2="100%"
-                      >
+                        y2="100%">
                         <stop
                           offset="0%"
                           stopColor="#89943d"
@@ -142,8 +140,7 @@ export default function ElevationProfileCard({ elevationProfile }: Props) {
                   {xAxisLabels.map((label, index) => (
                     <span
                       key={`${label}-${index}`}
-                      className="text-[10px] font-semibold text-[#89943d]/70"
-                    >
+                      className="text-[10px] font-semibold text-[#89943d]/70">
                       {label}
                     </span>
                   ))}
