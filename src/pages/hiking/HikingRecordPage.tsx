@@ -7,6 +7,7 @@
  *  - BottomNav 추가
  *  - 등산 중 TIME/거리/고도 카드, 정상 인증, 종료 기능 추가
  *  - 배낭맨 하단 대기 → 마커로 이동 애니메이션 추가
+ *  - 100대 명산 모드 토글, 마커 표시, 바텀시트 연결
  */
 import { useState, useRef, useEffect } from "react";
 import maplibregl from "maplibre-gl";
@@ -16,6 +17,9 @@ import Header from "@/components/layout/Header";
 import BottomNav from "@/components/layout/BottomNav";
 import Button from "@/components/ui/Button";
 import type { GpsPoint } from "@/features/gps/types/gps.types";
+import { getTop100Mountains } from "@/features/mountain/api/mountainApi";
+import type { Top100Mountain } from "@/features/mountain/types/mountainTypes";
+import Top100MountainBottomSheet from "@/features/mountain/components/Top100MountainBottomSheet";
 
 import hikerIcon from "@/assets/hiking-icon.png";
 
@@ -181,19 +185,42 @@ export default function HikingRecordPage() {
     );
   }, []);
 
+  // 100대 명산 모드 상태
+  const [isMountainMode, setIsMountainMode] = useState(false);
+  const [mountains, setMountains] = useState<Top100Mountain[]>([]);
+  const [selectedMountain, setSelectedMountain] =
+    useState<Top100Mountain | null>(null);
+  const [isMountainLoading, setIsMountainLoading] = useState(false);
+
+  // 100대 명산 모드 토글
+  const handleMountainModeToggle = async () => {
+    if (isMountainMode) {
+      setIsMountainMode(false);
+      setMountains([]);
+      setSelectedMountain(null);
+      return;
+    }
+    setIsMountainLoading(true);
+    try {
+      const data = await getTop100Mountains();
+      setMountains(data);
+      setIsMountainMode(true);
+    } finally {
+      setIsMountainLoading(false);
+    }
+  };
+
   const elapsedSeconds = useElapsedTime(pageState === "hiking");
 
   const handleStart = async () => {
     const pos = currentPos ?? idlePos;
 
-    // 마커 픽셀 위치 계산
     if (hikerRef.current && mapRef.current && pos) {
       const markerPixel = mapRef.current.project([pos.lng, pos.lat]);
       const hikerRect = hikerRef.current.getBoundingClientRect();
       const hikerCenterX = hikerRect.left + hikerRect.width / 2;
       const hikerCenterY = hikerRect.top + hikerRect.height / 2;
 
-      // 지도 컨테이너 offset 보정
       const mapContainer = mapRef.current.getContainer();
       const mapRect = mapContainer.getBoundingClientRect();
       const targetX = mapRect.left + markerPixel.x;
@@ -210,7 +237,6 @@ export default function HikingRecordPage() {
       });
 
       setTimeout(async () => {
-        // fade out 제거 → 마커 위치에 그대로 유지
         const success = await start();
         setHikerAnimating(false);
         setHikerStyle({});
@@ -285,7 +311,34 @@ export default function HikingRecordPage() {
           onMapReady={(map) => {
             mapRef.current = map;
           }}
+          mountains={isMountainMode ? mountains : []}
+          onMountainClick={(mountain) => setSelectedMountain(mountain)}
         />
+
+        {/* 100대 명산 모드 토글 버튼 */}
+        {pageState === "idle" && (
+          <button
+            onClick={handleMountainModeToggle}
+            disabled={isMountainLoading}
+            style={{
+              position: "absolute",
+              top: 16,
+              right: 16,
+              padding: "6px 12px",
+              borderRadius: 20,
+              background: isMountainMode ? "#89943d" : "white",
+              color: isMountainMode ? "white" : "#4A521E",
+              border: `1px solid ${isMountainMode ? "#89943d" : "#D7DACB"}`,
+              fontWeight: 700,
+              fontSize: 12,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+              cursor: "pointer",
+              zIndex: 50,
+              opacity: isMountainLoading ? 0.6 : 1
+            }}>
+            {isMountainLoading ? "불러오는 중..." : "🏔 100대 명산"}
+          </button>
+        )}
 
         {/* 현위치 버튼 */}
         {pageState === "idle" && (
@@ -535,6 +588,14 @@ export default function HikingRecordPage() {
             )}
           </div>
         )}
+
+        {/* 100대 명산 바텀시트 */}
+        {selectedMountain && (
+          <Top100MountainBottomSheet
+            mountain={selectedMountain}
+            onClose={() => setSelectedMountain(null)}
+          />
+        )}
       </div>
 
       {/* 배낭맨 + 등산 시작 버튼 */}
@@ -551,7 +612,6 @@ export default function HikingRecordPage() {
             paddingBottom: 24,
             zIndex: 30
           }}>
-          {/* 배낭맨 아이콘 */}
           <img
             ref={hikerRef}
             src={hikerIcon}

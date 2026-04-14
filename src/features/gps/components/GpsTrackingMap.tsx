@@ -12,6 +12,7 @@
  *  - isTracking 시 배낭맨+마커 합성 엘리먼트로 교체
  *  - 줌 레벨 기반 배낭맨 크기 동적 조정
  *  - moveend 요청 경쟁 조건 방어 (AbortController)
+ *  - 100대 명산 마커 표시 기능 추가 (mountains prop, onMountainClick prop)
  */
 
 import { useState, useRef, useEffect } from "react";
@@ -22,6 +23,7 @@ import type { TrailGeoJson } from "@/features/trail/types/trail.types";
 import CommonMap from "@/components/map/CommonMap";
 import type { FeatureCollection } from "geojson";
 import type { GpsPoint } from "../types/gps.types";
+import type { Top100Mountain } from "@/features/mountain/types/mountainTypes";
 
 const DIFFICULTY_COLOR_MAP: Record<string, string> = {
   easy: "#22c55e",
@@ -33,6 +35,7 @@ const DIFFICULTY_COLOR_MAP: Record<string, string> = {
 const TRAIL_SOURCE_ID = "trail-difficulty-source";
 const TRAIL_LAYER_ID = "trail-difficulty-layer";
 const MIN_ZOOM_FOR_TRAIL = 8;
+const MIN_ZOOM_FOR_MOUNTAINS = 6;
 
 // idle 상태 원형 마커
 function createCurrentPosMarkerElement() {
@@ -123,6 +126,40 @@ function createHikingMarkerElement(hikerIconUrl: string, size: number = 48) {
   return wrapper;
 }
 
+// 100대 명산 이름표 마커 엘리먼트 생성
+function createMountainMarkerElement(name: string) {
+  const wrapper = document.createElement("div");
+  wrapper.style.display = "flex";
+  wrapper.style.flexDirection = "column";
+  wrapper.style.alignItems = "center";
+  wrapper.style.cursor = "pointer";
+  wrapper.style.pointerEvents = "auto";
+
+  const dot = document.createElement("div");
+  dot.style.width = "10px";
+  dot.style.height = "10px";
+  dot.style.borderRadius = "9999px";
+  dot.style.background = "#89943d";
+  dot.style.border = "2px solid white";
+  dot.style.boxShadow = "0 2px 6px rgba(0,0,0,0.25)";
+
+  const label = document.createElement("div");
+  label.innerText = name;
+  label.style.marginTop = "3px";
+  label.style.fontSize = "11px";
+  label.style.fontWeight = "700";
+  label.style.color = "#4A521E";
+  label.style.background = "white";
+  label.style.borderRadius = "6px";
+  label.style.padding = "2px 6px";
+  label.style.boxShadow = "0 1px 4px rgba(0,0,0,0.15)";
+  label.style.whiteSpace = "nowrap";
+
+  wrapper.appendChild(dot);
+  wrapper.appendChild(label);
+  return wrapper;
+}
+
 interface Props {
   geoJson: FeatureCollection;
   currentPos: GpsPoint | null;
@@ -130,6 +167,8 @@ interface Props {
   hikerIconUrl?: string;
   onTrailLoaded?: () => void;
   onMapReady?: (map: maplibregl.Map) => void;
+  mountains?: Top100Mountain[];
+  onMountainClick?: (mountain: Top100Mountain) => void;
 }
 
 const GpsTrackingMap = ({
@@ -138,13 +177,16 @@ const GpsTrackingMap = ({
   isTracking = false,
   hikerIconUrl,
   onTrailLoaded,
-  onMapReady
+  onMapReady,
+  mountains,
+  onMountainClick
 }: Props) => {
   const [isTooFar, setIsTooFar] = useState(false);
   const mapInstanceRef = useRef<maplibregl.Map | null>(null);
   const markerRef = useRef<maplibregl.Marker | null>(null);
   const isTrackingRef = useRef(isTracking);
   const hikerIconUrlRef = useRef(hikerIconUrl);
+  const mountainMarkersRef = useRef<maplibregl.Marker[]>([]);
 
   useEffect(() => {
     isTrackingRef.current = isTracking;
@@ -176,10 +218,32 @@ const GpsTrackingMap = ({
       .addTo(mapInstanceRef.current);
   }, [currentPos, isTracking, hikerIconUrl]);
 
+  // mountains prop 변경 시 마커 갱신
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    mountainMarkersRef.current.forEach((m) => m.remove());
+    mountainMarkersRef.current = [];
+
+    if (!mountains || mountains.length === 0) return;
+
+    const zoom = map.getZoom();
+    if (zoom < MIN_ZOOM_FOR_MOUNTAINS) return;
+
+    mountains.forEach((mountain) => {
+      const el = createMountainMarkerElement(mountain.name);
+      const marker = new maplibregl.Marker({ element: el, anchor: "bottom" })
+        .setLngLat([mountain.longitude, mountain.latitude])
+        .addTo(map);
+      el.addEventListener("click", () => onMountainClick?.(mountain));
+      mountainMarkersRef.current.push(marker);
+    });
+  }, [mountains, onMountainClick]);
+
   const handleMapReady = (map: maplibregl.Map) => {
     mapInstanceRef.current = map;
 
-    // moveend 요청 경쟁 조건 방어: 이전 요청 취소
     let abortController: AbortController | null = null;
 
     const loadTrailByBbox = async () => {
@@ -261,8 +325,17 @@ const GpsTrackingMap = ({
       }
     };
 
+    const handleZoomForMountains = () => {
+      const zoom = map.getZoom();
+      mountainMarkersRef.current.forEach((m) => {
+        const el = m.getElement();
+        el.style.display = zoom >= MIN_ZOOM_FOR_MOUNTAINS ? "flex" : "none";
+      });
+    };
+
     loadTrailByBbox();
     map.on("moveend", loadTrailByBbox);
+    map.on("zoom", handleZoomForMountains);
 
     // 줌 시 배낭맨 크기 동적 조정
     map.on("zoom", () => {
