@@ -4,9 +4,14 @@
  * 변경 사항:
  *  - start(): 첫 GPS fix를 firstFixRef에 임시 보관
  *             세션 생성 후 즉시 첫 포인트 저장 보장
+ *  - start(): startHiking 호출 시 GPS 좌표(latitude, longitude) 포함
+ *             백엔드 등산로 근접 검증 에러 메시지 표시
+ *  - start(): 반환 타입을 { success, errorMessage }로 변경
+ *             호출 측에서 에러 메시지를 즉시 사용 가능
  */
 
 import { useState, useRef, useEffect } from "react";
+import axios from "axios";
 import { useGPS } from "@/features/gps/hooks/useGPS";
 import {
   startHiking,
@@ -15,8 +20,14 @@ import {
   saveGpsTrack
 } from "../api/hikingApi";
 import type { GpsPoint } from "@/features/gps/types/gps.types";
+import type { NearbySummitItem } from "../types/hiking.types";
 
 const SAVE_INTERVAL_MS = 5000;
+
+interface StartResult {
+  success: boolean;
+  errorMessage: string | null;
+}
 
 export const useHiking = () => {
   const gps = useGPS();
@@ -24,6 +35,7 @@ export const useHiking = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedPointCount, setSavedPointCount] = useState(0);
+  const [nearbySummits, setNearbySummits] = useState<NearbySummitItem[]>([]);
 
   const lastSavedAt = useRef<number>(0);
   const sessionIdRef = useRef<number | null>(null);
@@ -39,7 +51,7 @@ export const useHiking = () => {
     return () => window.removeEventListener("beforeunload", sendEndBeacon);
   }, []);
 
-  const start = async (): Promise<boolean> => {
+  const start = async (): Promise<StartResult> => {
     try {
       setIsLoading(true);
       setError(null);
@@ -70,28 +82,41 @@ export const useHiking = () => {
           .catch((e) => console.error("GPS 저장 실패:", e));
       });
 
-      const res = await startHiking({ userId: 1 }); // TODO: auth 연동 후 교체
+      // 2. 등산 시작 요청 (GPS 좌표 포함 → 백엔드에서 등산로 근접 검증)
+      const firstFix = firstFixRef.current as GpsPoint | null;
+      if (!firstFix) {
+        throw new Error("GPS 위치를 확인할 수 없습니다.");
+      }
+
+      const res = await startHiking({
+        userId: 1, // TODO: auth 연동 후 교체
+        latitude: firstFix.lat,
+        longitude: firstFix.lng
+      });
       const newSessionId = res.sessionId;
       setSessionId(newSessionId);
       sessionIdRef.current = newSessionId;
+      setNearbySummits(res.nearbySummits ?? []);
 
-      const firstFix = firstFixRef.current as GpsPoint | null;
-      if (firstFix) {
-        await saveGpsTrack(newSessionId, {
-          latitude: firstFix.lat,
-          longitude: firstFix.lng,
-          elevationM: firstFix.altitude ?? null,
-          accuracyM: firstFix.accuracy
-        });
-        setSavedPointCount(1);
-        firstFixRef.current = null;
-      }
+      // 3. 첫 GPS 포인트 저장
+      await saveGpsTrack(newSessionId, {
+        latitude: firstFix.lat,
+        longitude: firstFix.lng,
+        elevationM: firstFix.altitude ?? null,
+        accuracyM: firstFix.accuracy
+      });
+      setSavedPointCount(1);
+      firstFixRef.current = null;
 
-      return true;
-    } catch {
-      setError("등산 시작에 실패했습니다. GPS 권한을 확인해주세요.");
+      return { success: true, errorMessage: null };
+    } catch (e) {
+      const message =
+        axios.isAxiosError(e) && e.response?.data?.message
+          ? e.response.data.message
+          : "등산 시작에 실패했습니다. GPS 권한을 확인해주세요.";
+      setError(message);
       gps.stop();
-      return false;
+      return { success: false, errorMessage: message };
     } finally {
       setIsLoading(false);
     }
@@ -123,6 +148,7 @@ export const useHiking = () => {
       lastSavedAt.current = 0;
       firstFixRef.current = null;
       setSavedPointCount(0);
+      setNearbySummits([]);
 
       return true;
     } catch {
@@ -160,6 +186,7 @@ export const useHiking = () => {
     isLoading,
     error: error ?? gps.error,
     savedPointCount,
+    nearbySummits,
     start,
     end,
     verify
