@@ -6,6 +6,8 @@
  *             세션 생성 후 즉시 첫 포인트 저장 보장
  *  - start(): startHiking 호출 시 GPS 좌표(latitude, longitude) 포함
  *             백엔드 등산로 근접 검증 에러 메시지 표시
+ *  - start(): 반환 타입을 { success, errorMessage }로 변경
+ *             호출 측에서 에러 메시지를 즉시 사용 가능
  */
 
 import { useState, useRef, useEffect } from "react";
@@ -21,6 +23,11 @@ import type { GpsPoint } from "@/features/gps/types/gps.types";
 import type { NearbySummitItem } from "../types/hiking.types";
 
 const SAVE_INTERVAL_MS = 5000;
+
+interface StartResult {
+  success: boolean;
+  errorMessage: string | null;
+}
 
 export const useHiking = () => {
   const gps = useGPS();
@@ -44,7 +51,7 @@ export const useHiking = () => {
     return () => window.removeEventListener("beforeunload", sendEndBeacon);
   }, []);
 
-  const start = async (): Promise<boolean> => {
+  const start = async (): Promise<StartResult> => {
     try {
       setIsLoading(true);
       setError(null);
@@ -101,7 +108,7 @@ export const useHiking = () => {
       setSavedPointCount(1);
       firstFixRef.current = null;
 
-      return true;
+      return { success: true, errorMessage: null };
     } catch (e) {
       const message =
         axios.isAxiosError(e) && e.response?.data?.message
@@ -109,7 +116,7 @@ export const useHiking = () => {
           : "등산 시작에 실패했습니다. GPS 권한을 확인해주세요.";
       setError(message);
       gps.stop();
-      return false;
+      return { success: false, errorMessage: message };
     } finally {
       setIsLoading(false);
     }

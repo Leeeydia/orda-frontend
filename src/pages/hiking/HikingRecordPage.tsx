@@ -254,23 +254,23 @@ export default function HikingRecordPage() {
       });
 
       setTimeout(async () => {
-        const success = await start();
+        const result = await start();
         setHikerAnimating(false);
         setHikerStyle({});
-        if (success) {
+        if (result.success) {
           setPageState("hiking");
-        } else if (error) {
+        } else if (result.errorMessage) {
           setToastType("error");
-          setToastMessage(error);
+          setToastMessage(result.errorMessage);
         }
       }, 1200);
     } else {
-      const success = await start();
-      if (success) {
+      const result = await start();
+      if (result.success) {
         setPageState("hiking");
-      } else if (error) {
+      } else if (result.errorMessage) {
         setToastType("error");
-        setToastMessage(error);
+        setToastMessage(result.errorMessage);
       }
     }
   };
