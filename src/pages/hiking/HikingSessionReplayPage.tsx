@@ -271,7 +271,7 @@ function ReplayPageContent({
   return (
     <main className="pb-24">
       <section className="relative">
-        <div className="relative h-[56dvh] max-h-[560px] min-h-[380px] overflow-hidden bg-bg-page">
+        <div className="bg-bg-page relative h-[56dvh] max-h-[560px] min-h-[380px] overflow-hidden">
           <ReplayMapSection
             replay={replay}
             currentPosition={currentPosition}
@@ -284,10 +284,10 @@ function ReplayPageContent({
             <div className="rounded-3xl border border-white/50 bg-white/88 px-4 py-3 shadow-sm backdrop-blur">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0 truncate">
-                  <p className="truncate text-sm tracking-tight text-heading">
-                    <span className="font-bold text-heading">리플레이</span>
-                    <span className="mx-1.5 font-medium text-body/40">·</span>
-                    <span className="text-xs font-medium text-body/70">
+                  <p className="text-heading truncate text-sm tracking-tight">
+                    <span className="text-heading font-bold">리플레이</span>
+                    <span className="text-body/40 mx-1.5 font-medium">·</span>
+                    <span className="text-body/70 text-xs font-medium">
                       {formatDistanceDisplay(
                         replay.summary.totalDistanceMeters
                       )}{" "}
@@ -296,25 +296,25 @@ function ReplayPageContent({
                   </p>
                 </div>
 
-                <div className="shrink-0 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-medium text-heading">
+                <div className="bg-primary/10 text-heading shrink-0 rounded-full px-3 py-1 text-[11px] font-medium">
                   {statusText}
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-bg-page via-bg-page/75 to-transparent" />
+          <div className="from-bg-page via-bg-page/75 absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t to-transparent" />
         </div>
 
-        <div className="bg-bg-page px-4 pt-4 pb-5">
-          <div className="rounded-3xl border border-primary/10 bg-white px-4 py-5 shadow-sm">
+        <div className="bg-bg-page px-4 pt-3 pb-4">
+          <div className="border-primary/10 rounded-3xl border bg-white px-4 py-5 shadow-sm">
             <div className="mb-5">
               <div className="mb-3 flex items-center justify-between">
-                <p className="text-sm font-bold text-heading">
+                <p className="text-heading text-sm font-bold">
                   {formatMsToDisplay(sequenceElapsedMs)} /{" "}
                   {formatMsToDisplay(totalSequenceMs)}
                 </p>
-                <p className="text-xs font-medium text-body/70">
+                <p className="text-body/70 text-xs font-medium">
                   {Math.round(sequenceProgress * 100)}%
                 </p>
               </div>
@@ -326,7 +326,7 @@ function ReplayPageContent({
                 step={SEQUENCE_TICK_MS}
                 value={sequenceElapsedMs}
                 onChange={handleSliderChange}
-                className="h-3 w-full accent-primary"
+                className="accent-primary h-3 w-full"
               />
             </div>
 
@@ -335,7 +335,7 @@ function ReplayPageContent({
                 type="button"
                 onClick={handleBackward}
                 disabled={!hasReplayPath}
-                className="flex h-11 w-11 items-center justify-center rounded-full text-body/60 transition-colors duration-150 enabled:hover:bg-bg-page enabled:hover:text-body disabled:opacity-30"
+                className="text-body/60 enabled:hover:bg-bg-page enabled:hover:text-body flex h-11 w-11 items-center justify-center rounded-full transition-colors duration-150 disabled:opacity-30"
                 aria-label="5초 뒤로">
                 <span className="material-symbols-outlined material-symbols-filled text-[28px]">
                   replay_5
@@ -346,7 +346,7 @@ function ReplayPageContent({
                 type="button"
                 onClick={handlePlayPause}
                 disabled={!hasReplayPath}
-                className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/30 transition active:scale-95 disabled:opacity-40"
+                className="bg-primary shadow-primary/30 flex h-16 w-16 items-center justify-center rounded-full text-white shadow-lg transition active:scale-95 disabled:opacity-40"
                 aria-label={isSequencePlaying ? "일시정지" : "재생"}>
                 <span className="material-symbols-outlined material-symbols-filled text-[34px]">
                   {isSequencePlaying ? "pause" : "play_arrow"}
@@ -357,7 +357,7 @@ function ReplayPageContent({
                 type="button"
                 onClick={handleResetReplay}
                 disabled={!hasReplayPath}
-                className="flex h-11 w-11 items-center justify-center rounded-full text-body/60 transition-colors duration-150 enabled:hover:bg-bg-page enabled:hover:text-body disabled:opacity-30"
+                className="text-body/60 enabled:hover:bg-bg-page enabled:hover:text-body flex h-11 w-11 items-center justify-center rounded-full transition-colors duration-150 disabled:opacity-30"
                 aria-label="처음으로">
                 <span className="material-symbols-outlined material-symbols-filled text-[28px]">
                   restart_alt
@@ -368,15 +368,15 @@ function ReplayPageContent({
         </div>
       </section>
 
-      {!hasReplayPath ? (
-        <div className="px-4 pt-4">
-          <section className="rounded-3xl border border-primary/10 bg-white px-4 py-4 text-sm text-body/80 shadow-sm">
+      <div className="space-y-5 px-4 pt-5">
+        {!hasReplayPath ? (
+          <section className="border-primary/10 text-body/80 rounded-3xl border bg-white px-4 py-4 text-sm shadow-sm">
             표시할 리플레이 경로가 없어 요약 정보만 확인할 수 있습니다.
           </section>
-        </div>
-      ) : null}
+        ) : null}
 
-      <ReplaySummarySection replay={replay} />
+        <ReplaySummarySection replay={replay} />
+      </div>
     </main>
   );
 }
@@ -426,10 +426,10 @@ export default function HikingSessionReplayPage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg-page text-body">
+    <div className="bg-bg-page text-body min-h-screen">
       <Header leftSlot={<BackButton />} title="리플레이" />
 
-      <div className="mx-auto min-h-screen w-full max-w-[390px] bg-bg-page pt-[68px]">
+      <div className="bg-bg-page mx-auto min-h-screen w-full max-w-[390px] pt-[68px]">
         <ReplayPageContent
           key={replay.sessionId}
           replay={replay}

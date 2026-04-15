@@ -10,7 +10,11 @@ import HikingTrackSection from "@/features/hiking/components/HikingTrackSection"
 import ReplayEntryCard from "@/features/hiking/components/ReplayEntryCard";
 import { useHikingSessionDetail } from "@/features/hiking/hooks/useHikingSessionDetail";
 
-const SessionDetailState = ({ message }: { message: string }) => {
+type SessionDetailStateProps = {
+  message: string;
+};
+
+const SessionDetailState = ({ message }: SessionDetailStateProps) => {
   return (
     <main className="mx-auto min-h-screen w-full max-w-[390px] bg-bg-page px-4 pt-[68px] pb-24">
       <section className="rounded-3xl border border-error/20 bg-error/10 px-4 py-4 text-sm text-error shadow-sm">
@@ -78,7 +82,7 @@ export default function HikingSessionDetailPage() {
                 </div>
               ) : null}
 
-              <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-bg-page via-bg-page/70 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-bg-page via-bg-page/70 to-transparent" />
             </div>
 
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-4 pb-4">
@@ -91,7 +95,7 @@ export default function HikingSessionDetailPage() {
             </div>
           </section>
 
-          <div className="space-y-4 px-4 pt-4">
+          <div className="space-y-9 px-4 pt-5">
             <ElevationProfileCard elevationProfile={elevationProfile} />
             <ReplayEntryCard sessionId={numericSessionId} />
           </div>
