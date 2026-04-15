@@ -15,11 +15,15 @@ const parseDifficulty = (raw: string) => {
 interface Props {
   mountain: Top100Mountain;
   onClose: () => void;
+  isTrailLoading: boolean;
+  hasTrailData: boolean;
 }
 
 export default function Top100MountainBottomSheet({
   mountain,
-  onClose
+  onClose,
+  isTrailLoading,
+  hasTrailData
 }: Props) {
   const [expanded, setExpanded] = useState(false);
   const dragStartY = useRef<number | null>(null);
@@ -60,7 +64,7 @@ export default function Top100MountainBottomSheet({
           transition: "height 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
         }}
         onClick={(e) => e.stopPropagation()}>
-        {/* 핸들 영역 — 카드 상단 전체를 드래그 영역으로 */}
+        {/* 핸들 영역 */}
         <div
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
@@ -129,6 +133,17 @@ export default function Top100MountainBottomSheet({
                 </p>
               ))}
           </div>
+
+          {/* 등산로 데이터 상태 */}
+          {!isTrailLoading && !hasTrailData && (
+            <div
+              className="mt-3 rounded-xl border border-[#D7DACB] bg-[#F4F5EF] p-3"
+              style={{ textAlign: "center" }}>
+              <p className="text-xs text-[#7A8070]">
+                🚧 등산로 데이터를 준비 중입니다
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
