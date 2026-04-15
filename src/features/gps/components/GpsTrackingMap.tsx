@@ -13,6 +13,7 @@
  *  - 줌 레벨 기반 배낭맨 크기 동적 조정
  *  - moveend 요청 경쟁 조건 방어 (AbortController)
  *  - 100대 명산 마커 표시 기능 추가 (mountains prop, onMountainClick prop)
+ *  - 100대 명산 모드 시 bbox 등산로 대신 산 반경 등산로 표시 (mountainTrailGeoJson prop)
  */
 
 import { useState, useRef, useEffect } from "react";
@@ -169,6 +170,7 @@ interface Props {
   onMapReady?: (map: maplibregl.Map) => void;
   mountains?: Top100Mountain[];
   onMountainClick?: (mountain: Top100Mountain) => void;
+  mountainTrailGeoJson?: TrailGeoJson | null;
 }
 
 const GpsTrackingMap = ({
@@ -179,7 +181,8 @@ const GpsTrackingMap = ({
   onTrailLoaded,
   onMapReady,
   mountains,
-  onMountainClick
+  onMountainClick,
+  mountainTrailGeoJson
 }: Props) => {
   const [isTooFar, setIsTooFar] = useState(false);
   const mapInstanceRef = useRef<maplibregl.Map | null>(null);
@@ -187,6 +190,7 @@ const GpsTrackingMap = ({
   const isTrackingRef = useRef(isTracking);
   const hikerIconUrlRef = useRef(hikerIconUrl);
   const mountainMarkersRef = useRef<maplibregl.Marker[]>([]);
+  const isMountainModeRef = useRef(false);
 
   useEffect(() => {
     isTrackingRef.current = isTracking;
@@ -226,6 +230,8 @@ const GpsTrackingMap = ({
     mountainMarkersRef.current.forEach((m) => m.remove());
     mountainMarkersRef.current = [];
 
+    isMountainModeRef.current = !!(mountains && mountains.length > 0);
+
     if (!mountains || mountains.length === 0) return;
 
     const zoom = map.getZoom();
@@ -241,12 +247,32 @@ const GpsTrackingMap = ({
     });
   }, [mountains, onMountainClick]);
 
+  // 100대 명산 모드 시 등산로 레이어 데이터 교체
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    const source = map.getSource(TRAIL_SOURCE_ID) as
+      | maplibregl.GeoJSONSource
+      | undefined;
+    if (!source) return;
+
+    if (mountainTrailGeoJson) {
+      source.setData(mountainTrailGeoJson);
+      if (map.getLayer(TRAIL_LAYER_ID)) {
+        map.setLayoutProperty(TRAIL_LAYER_ID, "visibility", "visible");
+      }
+    }
+  }, [mountainTrailGeoJson]);
+
   const handleMapReady = (map: maplibregl.Map) => {
     mapInstanceRef.current = map;
 
     let abortController: AbortController | null = null;
 
     const loadTrailByBbox = async () => {
+      if (isMountainModeRef.current) return;
+
       if (abortController) {
         abortController.abort();
       }
@@ -370,7 +396,7 @@ const GpsTrackingMap = ({
         className="h-full w-full"
         onMapReady={handleMapReady}
       />
-      {isTooFar && (
+      {isTooFar && !(mountains && mountains.length > 0) && (
         <div
           style={{
             position: "absolute",
