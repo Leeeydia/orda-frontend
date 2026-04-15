@@ -49,6 +49,11 @@ export interface GpsTrackRequest {
   accuracyM: number | null;
 }
 
+export interface GpsTrackSaveResponse {
+  canonicalElevationM: number | null;
+  elevationSource: string;
+}
+
 export interface HikingSessionResponse {
   sessionId: number;
   userId: number;

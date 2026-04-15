@@ -7,6 +7,7 @@ import type {
   SummitVerifyRequest,
   SummitVerifyResponse,
   GpsTrackRequest,
+  GpsTrackSaveResponse,
   HikingSessionResponse,
   HikingTrackFeatureCollection,
   ElevationProfileResponse,
@@ -46,8 +47,12 @@ export const verifySummit = async (
 export const saveGpsTrack = async (
   sessionId: number,
   body: GpsTrackRequest
-): Promise<void> => {
-  await axios.post<ApiResponse<null>>(`/api/hiking/${sessionId}/tracks`, body);
+): Promise<GpsTrackSaveResponse> => {
+  const res = await axios.post<ApiResponse<GpsTrackSaveResponse>>(
+    `/api/hiking/${sessionId}/tracks`,
+    body
+  );
+  return res.data.data;
 };
 
 export const getHikingSession = async (
