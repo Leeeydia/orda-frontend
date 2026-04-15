@@ -10,13 +10,13 @@ export default function HikingSessionHeader({
 }: HikingSessionHeaderProps) {
   if (!session) {
     return (
-      <div className="rounded-full border border-white/35 bg-white/90 px-3 py-2 text-[11px] font-medium text-[#4a521e] shadow-md">
+      <div className="rounded-full border border-white/35 bg-white/90 px-3 py-2 text-[11px] font-medium text-heading shadow-md">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="inline-block h-3 w-20 rounded-full bg-slate-200" />
-          <span className="text-[#89943d]/70">•</span>
-          <span className="inline-block h-3 w-24 rounded-full bg-slate-200" />
-          <span className="text-[#89943d]/70">•</span>
-          <span className="inline-block h-4 w-10 rounded-full bg-slate-200" />
+          <span className="bg-border-default inline-block h-3 w-20 rounded-full" />
+          <span className="text-primary/70">•</span>
+          <span className="bg-border-default inline-block h-3 w-24 rounded-full" />
+          <span className="text-primary/70">•</span>
+          <span className="bg-border-default inline-block h-4 w-10 rounded-full" />
         </div>
       </div>
     );
@@ -35,13 +35,13 @@ export default function HikingSessionHeader({
   const statusText = session.endedAt ? "완료" : "진행 중";
 
   return (
-    <div className="rounded-full border border-white/35 bg-white/78 px-3 py-2 text-[11px] font-medium text-[#4a521e] shadow-md backdrop-blur-md">
+    <div className="rounded-full border border-white/35 bg-white/78 px-3 py-2 text-[11px] font-medium text-heading shadow-md backdrop-blur-md">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span>{dateText}</span>
-        <span className="text-[#89943d]/70">•</span>
+        <span className="text-primary/70">•</span>
         <span>{timeRangeText}</span>
-        <span className="text-[#89943d]/70">•</span>
-        <span className="font-semibold text-[#4a521e]">{statusText}</span>
+        <span className="text-primary/70">•</span>
+        <span className="font-semibold text-heading">{statusText}</span>
       </div>
     </div>
   );
