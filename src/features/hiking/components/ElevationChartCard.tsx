@@ -36,21 +36,21 @@ const ElevationChartCard = ({
   const summaryClassName =
     summaryTone === "warning"
       ? "border border-amber-200 bg-amber-50 text-amber-700"
-      : "border border-[#89943d]/10 bg-white text-slate-600";
+      : "border border-primary/10 bg-white text-body/80";
 
   if (variant === "embedded") {
     return (
-      <div className="rounded-3xl border border-[#89943d]/10 bg-[#f7f7f6] px-4 py-4">
-        {summaryMessage && (
+      <div className="border-primary/10 bg-bg-page rounded-3xl border px-4 py-4">
+        {summaryMessage ? (
           <div
             className={`mb-3 rounded-2xl px-3 py-2 text-xs font-medium ${summaryClassName}`}>
             {summaryMessage}
           </div>
-        )}
+        ) : null}
 
         <div className="mt-2 rounded-2xl bg-white px-3 py-3">
           {isEmpty ? (
-            <div className="flex h-28 items-center justify-center text-xs text-slate-400">
+            <div className="text-muted flex h-28 items-center justify-center text-xs">
               {emptyMessage}
             </div>
           ) : (
@@ -69,28 +69,28 @@ const ElevationChartCard = ({
                       y2="100%">
                       <stop
                         offset="0%"
-                        stopColor="#89943d"
+                        stopColor="var(--color-primary)"
                         stopOpacity={gradientTopOpacity}
                       />
                       <stop
                         offset="100%"
-                        stopColor="#89943d"
+                        stopColor="var(--color-primary)"
                         stopOpacity="0"
                       />
                     </linearGradient>
                   </defs>
 
-                  {showFilledArea && (
+                  {showFilledArea ? (
                     <path
                       d={`${svgPath} L 320 120 L 0 120 Z`}
                       fill={`url(#${gradientId})`}
                     />
-                  )}
+                  ) : null}
 
                   <path
                     d={svgPath}
                     fill="none"
-                    stroke="#89943d"
+                    stroke="var(--color-primary)"
                     strokeWidth={lineStrokeWidth}
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -132,12 +132,12 @@ const ElevationChartCard = ({
       </div>
 
       <div className="border-default bg-bg-page mt-4 rounded-xl border p-4">
-        {summaryMessage && (
+        {summaryMessage ? (
           <div
             className={`mb-3 rounded-2xl px-3 py-2 text-xs font-medium ${summaryClassName}`}>
             {summaryMessage}
           </div>
-        )}
+        ) : null}
 
         <div className="rounded-xl bg-white p-3">
           {isEmpty ? (
@@ -160,24 +160,28 @@ const ElevationChartCard = ({
                       y2="100%">
                       <stop
                         offset="0%"
-                        stopColor="#89943D"
+                        stopColor="var(--color-primary)"
                         stopOpacity={gradientTopOpacity}
                       />
-                      <stop offset="100%" stopColor="#89943D" stopOpacity="0" />
+                      <stop
+                        offset="100%"
+                        stopColor="var(--color-primary)"
+                        stopOpacity="0"
+                      />
                     </linearGradient>
                   </defs>
 
-                  {showFilledArea && (
+                  {showFilledArea ? (
                     <path
                       d={`${svgPath} L 320 120 L 0 120 Z`}
                       fill={`url(#${gradientId})`}
                     />
-                  )}
+                  ) : null}
 
                   <path
                     d={svgPath}
                     fill="none"
-                    stroke="#89943D"
+                    stroke="var(--color-primary)"
                     strokeWidth={lineStrokeWidth}
                     strokeLinecap="round"
                     strokeLinejoin="round"

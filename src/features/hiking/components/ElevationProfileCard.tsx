@@ -56,19 +56,19 @@ export default function ElevationProfileCard({ elevationProfile }: Props) {
       : ["0km", "", "", ""];
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-[#89943d]/10 bg-white shadow-sm">
+    <section className="overflow-hidden rounded-3xl border border-primary/10 bg-white shadow-sm">
       <div className="flex items-center justify-between px-5 py-4">
         <div>
-          <p className="text-[11px] font-semibold tracking-[0.04em] text-[#89943d]">
+          <p className="text-[11px] font-semibold tracking-[0.04em] text-primary">
             고도 프로파일
           </p>
-          <h2 className="mt-1 text-lg font-bold tracking-tight text-[#2f3415]">
+          <h2 className="mt-1 text-lg font-bold tracking-tight text-heading">
             고도 변화
           </h2>
         </div>
 
         {maxElevation != null && (
-          <span className="rounded-full bg-[#89943d]/10 px-3 py-1 text-[11px] font-semibold text-[#4a521e]">
+          <span className="rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold text-heading">
             최고 {Math.round(maxElevation)}m
           </span>
         )}
@@ -86,7 +86,7 @@ export default function ElevationProfileCard({ elevationProfile }: Props) {
           showFilledArea={isContinuousProfile}
           lineStrokeWidth={3}
           gradientTopOpacity={0.28}
-          xAxisLabelClassName="text-[10px] font-semibold text-[#89943d]/70"
+          xAxisLabelClassName="text-[10px] font-semibold text-primary/70"
         />
       </div>
     </section>

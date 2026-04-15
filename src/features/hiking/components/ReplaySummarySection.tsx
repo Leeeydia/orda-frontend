@@ -7,6 +7,7 @@ import {
   formatDurationDisplay,
   formatElevationDisplay
 } from "../mappers/hikingMappers";
+import SummaryNotice from "./SummaryNotice";
 
 function formatPace(
   distanceMeters: number | null | undefined,
@@ -51,9 +52,7 @@ type ReplaySummarySectionProps = {
   replay: ReplaySessionModel;
 };
 
-export default function ReplaySummarySection({
-  replay
-}: ReplaySummarySectionProps) {
+const ReplaySummarySection = ({ replay }: ReplaySummarySectionProps) => {
   const { summary } = replay;
   const pace = formatPace(
     summary.totalDistanceMeters,
@@ -63,49 +62,50 @@ export default function ReplaySummarySection({
 
   return (
     <div className="space-y-4 px-4 pt-4">
-      <section className="rounded-3xl border border-[#89943d]/10 bg-white px-4 py-4 shadow-sm">
+      <section className="rounded-3xl border border-primary/10 bg-white px-4 py-4 shadow-sm">
         <div className="mb-3">
-          <p className="text-[11px] font-semibold tracking-[0.16em] text-[#89943d] uppercase">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
             기록 요약
           </p>
         </div>
 
-        {summaryMessage && (
-          <div
-            className={`mb-3 rounded-2xl px-3 py-2 text-xs font-medium ${
+        {summaryMessage ? (
+          <SummaryNotice
+            message={summaryMessage}
+            tone={
               summary.elevationSummaryStatus === "UNAVAILABLE"
-                ? "border border-amber-200 bg-amber-50 text-amber-700"
-                : "border border-[#89943d]/10 bg-[#f7f7f6] text-slate-600"
-            }`}
-          >
-            {summaryMessage}
-          </div>
-        )}
+                ? "warning"
+                : "default"
+            }
+            surface="soft"
+            className="mb-3"
+          />
+        ) : null}
 
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
-            <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
+          <div className="rounded-2xl bg-bg-page px-4 py-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
               거리
             </p>
-            <p className="mt-1 text-base font-bold text-[#2f3415]">
+            <p className="text-heading mt-1 text-base font-bold">
               {formatDistanceDisplay(summary.totalDistanceMeters)}
             </p>
           </div>
 
-          <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
-            <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
+          <div className="rounded-2xl bg-bg-page px-4 py-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
               시간
             </p>
-            <p className="mt-1 text-base font-bold text-[#2f3415]">
+            <p className="text-heading mt-1 text-base font-bold">
               {formatDurationDisplay(summary.totalElapsedSeconds)}
             </p>
           </div>
 
-          <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
-            <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
+          <div className="rounded-2xl bg-bg-page px-4 py-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
               상승
             </p>
-            <p className="mt-1 text-base font-bold text-[#2f3415]">
+            <p className="text-heading mt-1 text-base font-bold">
               {formatElevationDisplay(
                 summary.totalElevationGainMeters,
                 summary.elevationSummaryStatus
@@ -113,14 +113,14 @@ export default function ReplaySummarySection({
             </p>
           </div>
 
-          <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
-            <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
+          <div className="rounded-2xl bg-bg-page px-4 py-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
               페이스
             </p>
-            <p className="mt-1 text-base font-bold text-[#2f3415]">
+            <p className="text-heading mt-1 text-base font-bold">
               {pace}
               {pace !== "-" ? (
-                <span className="ml-1 text-xs font-medium text-[#424434]/60">
+                <span className="ml-1 text-xs font-medium text-body/60">
                   /km
                 </span>
               ) : null}
@@ -130,4 +130,6 @@ export default function ReplaySummarySection({
       </section>
     </div>
   );
-}
+};
+
+export default ReplaySummarySection;

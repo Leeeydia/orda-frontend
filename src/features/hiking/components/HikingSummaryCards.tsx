@@ -70,9 +70,9 @@ export default function HikingSummaryCards({
   const summaryMessage = getSummaryMessage(elevationSummaryStatus);
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-[#89943d]/10 bg-white shadow-xl shadow-[#4a521e]/10">
-      <div className="border-b border-[#89943d]/8 bg-gradient-to-r from-[#89943d]/12 via-[#89943d]/6 to-transparent px-4 py-3">
-        <p className="text-[11px] font-semibold tracking-[0.04em] text-[#89943d]">
+    <section className="overflow-hidden rounded-3xl border border-primary/10 bg-white shadow-xl shadow-primary-dark/10">
+      <div className="border-b border-primary/8 bg-gradient-to-r from-primary/12 via-primary/6 to-transparent px-4 py-3">
+        <p className="text-[11px] font-semibold tracking-[0.04em] text-primary">
           핵심 요약
         </p>
       </div>
@@ -83,7 +83,7 @@ export default function HikingSummaryCards({
             className={`mb-3 rounded-2xl px-3 py-2 text-xs font-medium ${
               elevationSummaryStatus === "UNAVAILABLE"
                 ? "border border-amber-200 bg-amber-50 text-amber-700"
-                : "border border-[#89943d]/10 bg-[#f7f7f6] text-slate-600"
+                : "border border-primary/10 bg-bg-page text-body/80"
             }`}>
             {summaryMessage}
           </div>
@@ -93,11 +93,11 @@ export default function HikingSummaryCards({
           {items.map((item) => (
             <div
               key={item.label}
-              className="rounded-2xl bg-[#f7f7f6] px-3 py-3">
-              <p className="text-[11px] font-semibold text-[#89943d]">
+              className="rounded-2xl bg-bg-page px-3 py-3">
+              <p className="text-[11px] font-semibold text-primary">
                 {item.label}
               </p>
-              <p className="mt-2 text-base font-bold tracking-tight text-[#2f3415]">
+              <p className="mt-2 text-base font-bold tracking-tight text-heading">
                 {item.value}
               </p>
             </div>
