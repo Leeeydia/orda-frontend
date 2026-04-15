@@ -1,5 +1,8 @@
 import { useMemo } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import Header from "@/components/layout/Header";
+import BackButton from "@/components/layout/BackButton";
+import BottomNav from "@/components/layout/BottomNav";
 import ElevationProfileCard from "@/features/hiking/components/ElevationProfileCard";
 import HikingSessionHeader from "@/features/hiking/components/HikingSessionHeader";
 import HikingSummaryCards from "@/features/hiking/components/HikingSummaryCards";
@@ -7,8 +10,17 @@ import HikingTrackSection from "@/features/hiking/components/HikingTrackSection"
 import ReplayEntryCard from "@/features/hiking/components/ReplayEntryCard";
 import { useHikingSessionDetail } from "@/features/hiking/hooks/useHikingSessionDetail";
 
+const SessionDetailState = ({ message }: { message: string }) => {
+  return (
+    <main className="mx-auto min-h-screen w-full max-w-[390px] bg-bg-page px-4 pt-[68px] pb-24">
+      <section className="rounded-3xl border border-error/20 bg-error/10 px-4 py-4 text-sm text-error shadow-sm">
+        {message}
+      </section>
+    </main>
+  );
+};
+
 export default function HikingSessionDetailPage() {
-  const navigate = useNavigate();
   const { sessionId } = useParams();
 
   const numericSessionId = useMemo(() => {
@@ -22,128 +34,51 @@ export default function HikingSessionDetailPage() {
 
   if (numericSessionId == null) {
     return (
-      <div className="min-h-screen bg-[#f7f7f6] text-slate-900">
-        <div className="mx-auto min-h-screen w-full max-w-md bg-[#f7f7f6]">
-          <header className="sticky top-0 z-30 border-b border-[#89943d]/10 bg-white/90 backdrop-blur">
-            <div className="flex items-center justify-between px-4 py-3">
-              <button
-                type="button"
-                onClick={() => navigate(-1)}
-                className="flex h-10 w-10 items-center justify-center rounded-full text-[#4a521e] transition hover:bg-[#89943d]/10"
-                aria-label="뒤로가기">
-                <span className="text-xl">←</span>
-              </button>
-
-              <div className="flex flex-1 flex-col items-center px-2">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#89943d]">
-                  ORDA
-                </p>
-                <h1 className="text-base font-bold tracking-tight text-[#2f3415]">
-                  등산 세션
-                </h1>
-              </div>
-
-              <div className="h-10 w-10" />
-            </div>
-          </header>
-
-          <main className="px-4 pt-4 pb-6">
-            <section className="rounded-3xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700 shadow-sm">
-              잘못된 세션 ID입니다.
-            </section>
-          </main>
-        </div>
+      <div className="min-h-screen bg-bg-page text-body">
+        <Header leftSlot={<BackButton />} title="등산 세션" />
+        <SessionDetailState message="잘못된 세션 ID입니다." />
+        <BottomNav />
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="min-h-screen bg-[#f7f7f6] text-slate-900">
-        <div className="mx-auto min-h-screen w-full max-w-md bg-[#f7f7f6]">
-          <header className="sticky top-0 z-30 border-b border-[#89943d]/10 bg-white/90 backdrop-blur">
-            <div className="flex items-center justify-between px-4 py-3">
-              <button
-                type="button"
-                onClick={() => navigate(-1)}
-                className="flex h-10 w-10 items-center justify-center rounded-full text-[#4a521e] transition hover:bg-[#89943d]/10"
-                aria-label="뒤로가기">
-                <span className="text-xl">←</span>
-              </button>
-
-              <div className="flex flex-1 flex-col items-center px-2">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#89943d]">
-                  ORDA
-                </p>
-                <h1 className="text-base font-bold tracking-tight text-[#2f3415]">
-                  등산 세션
-                </h1>
-              </div>
-
-              <div className="h-10 w-10" />
-            </div>
-          </header>
-
-          <main className="px-4 pt-4 pb-6">
-            <section className="rounded-3xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700 shadow-sm">
-              세션 상세 정보를 불러오지 못했습니다.
-            </section>
-          </main>
-        </div>
+      <div className="min-h-screen bg-bg-page text-body">
+        <Header leftSlot={<BackButton />} title="등산 세션" />
+        <SessionDetailState message="세션 상세 정보를 불러오지 못했습니다." />
+        <BottomNav />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f7f6] text-slate-900">
-      <div className="mx-auto min-h-screen w-full max-w-md bg-[#f7f7f6]">
-        <header className="sticky top-0 z-30 border-b border-[#89943d]/10 bg-white/90 backdrop-blur">
-          <div className="flex items-center justify-between px-4 py-3">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="flex h-10 w-10 items-center justify-center rounded-full text-[#4a521e] transition hover:bg-[#89943d]/10"
-              aria-label="뒤로가기">
-              <span className="text-xl">←</span>
-            </button>
+    <div className="min-h-screen bg-bg-page text-body">
+      <Header leftSlot={<BackButton />} title="등산 세션" />
 
-            <div className="flex flex-1 flex-col items-center px-2">
-              <p className="text-[11px] font-semibold tracking-[0.18em] text-[#89943d] uppercase">
-                ORDA
-              </p>
-              <h1 className="text-base font-bold tracking-tight text-[#2f3415]">
-                등산 세션
-              </h1>
-            </div>
-
-            <button
-              type="button"
-              className="flex h-10 w-10 items-center justify-center rounded-full text-[#4a521e] transition hover:bg-[#89943d]/10"
-              aria-label="더보기">
-              <span className="text-xl">⋯</span>
-            </button>
-          </div>
-        </header>
-
-        <main className="pb-6">
+      <div className="mx-auto min-h-screen w-full max-w-[390px] bg-bg-page pt-[68px] pb-24">
+        <main>
           <section className="relative">
-            <div className="relative h-[calc(100dvh-65px)] min-h-[520px] overflow-hidden bg-gradient-to-br from-[#dfe6ba] via-[#eef1dc] to-[#f7f7f6]">
+            <div className="relative h-[calc(100dvh-68px)] min-h-[520px] overflow-hidden bg-gradient-to-br from-bg-accent via-bg-soft to-bg-page">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(137,148,61,0.16),_transparent_55%)]" />
               <div className="absolute inset-0 bg-[linear-gradient(to_bottom,_rgba(255,255,255,0.18),_rgba(255,255,255,0)_28%,_rgba(0,0,0,0.1)_100%)]" />
 
-              <HikingTrackSection tracks={tracks} verifiedSummits={session?.verifiedSummits ?? []} />
+              <HikingTrackSection
+                tracks={tracks}
+                verifiedSummits={session?.verifiedSummits ?? []}
+              />
 
               <div className="absolute top-4 right-4 left-4 z-20">
                 <HikingSessionHeader session={session} />
               </div>
 
               {isLoading && !session ? (
-                <div className="absolute top-20 right-4 left-4 z-20 rounded-2xl border border-white/40 bg-white/90 px-4 py-3 text-sm text-slate-500 shadow-sm">
+                <div className="absolute top-20 right-4 left-4 z-20 rounded-2xl border border-white/40 bg-white/90 px-4 py-3 text-sm text-body/70 shadow-sm">
                   세션 정보를 불러오는 중...
                 </div>
               ) : null}
 
-              <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#f7f7f6] via-[#f7f7f6]/70 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-bg-page via-bg-page/70 to-transparent" />
             </div>
 
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-4 pb-4">
@@ -162,6 +97,8 @@ export default function HikingSessionDetailPage() {
           </div>
         </main>
       </div>
+
+      <BottomNav />
     </div>
   );
 }

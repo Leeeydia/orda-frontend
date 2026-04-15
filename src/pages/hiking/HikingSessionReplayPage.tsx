@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import Header from "@/components/layout/Header";
+import BackButton from "@/components/layout/BackButton";
+import BottomNav from "@/components/layout/BottomNav";
 import ReplayMapSection, {
   type ReplayCameraMode
 } from "@/features/hiking/components/ReplayMapSection";
@@ -30,7 +33,6 @@ type ReplayContentProps = {
   replay: ReplaySessionModel;
   verifiedSummits: VerifiedSummit[];
   isSummitInfoError: boolean;
-  onBack: () => void;
 };
 
 function clamp(value: number, min: number, max: number) {
@@ -123,8 +125,7 @@ function getStatusText(
 function ReplayPageContent({
   replay,
   verifiedSummits,
-  isSummitInfoError,
-  onBack
+  isSummitInfoError
 }: ReplayContentProps) {
   const replayDurationMs = useMemo(() => {
     return Math.round((replay.durationSeconds ?? 0) * 1000);
@@ -139,11 +140,9 @@ function ReplayPageContent({
   const replayStartMs = INTRO_OVERVIEW_MS + START_FOCUS_MS;
   const replayEndMs = replayStartMs + replayDurationMs;
 
-  // sequence 기준 elapsed ms 상태
   const [sequenceElapsedMs, setSequenceElapsedMs] = useState(0);
   const [isSequencePlaying, setIsSequencePlaying] = useState(false);
 
-  // sequence → replaySeconds 변환 (hikingMappers 활용)
   const currentReplaySeconds = useMemo(() => {
     return mapSequenceToReplaySeconds(
       sequenceElapsedMs,
@@ -153,7 +152,6 @@ function ReplayPageContent({
     );
   }, [sequenceElapsedMs, replayStartMs, replayEndMs, replay.durationSeconds]);
 
-  // 새 useReplayPlayer: replay + replaySeconds를 받아서 위치 계산만 담당
   const { currentPosition, currentIndex } = useReplayPlayer({
     replay,
     replaySeconds: currentReplaySeconds
@@ -199,7 +197,6 @@ function ReplayPageContent({
       );
   }, [verifiedSummits, currentActualElapsedSeconds]);
 
-  // 시퀀스 타이머
   useEffect(() => {
     if (!isSequencePlaying) return;
     if (totalSequenceMs <= 0) return;
@@ -272,142 +269,119 @@ function ReplayPageContent({
       : "경로 없음";
 
   return (
-    <>
-      <header className="sticky top-0 z-30 border-b border-[#89943d]/10 bg-white/90 backdrop-blur">
-        <div className="px-4 py-3">
-          <div className="flex h-10 items-center justify-between rounded-2xl border border-dashed border-[#89943d]/20 bg-[#f7f7f6] px-4 text-xs font-medium text-[#89943d]/70">
-            <span>Header Placeholder</span>
-            <button
-              type="button"
-              onClick={onBack}
-              className="rounded-full px-2 py-1 text-[#4a521e] transition hover:bg-[#89943d]/10">
-              뒤로가기
-            </button>
-          </div>
-        </div>
-      </header>
+    <main className="pb-24">
+      <section className="relative">
+        <div className="relative h-[56dvh] max-h-[560px] min-h-[380px] overflow-hidden bg-bg-page">
+          <ReplayMapSection
+            replay={replay}
+            currentPosition={currentPosition}
+            currentIndex={currentIndex}
+            cameraMode={cameraMode}
+            visibleSummits={visibleSummits}
+          />
 
-      <main className="pb-6">
-        <section className="relative">
-          <div className="relative h-[56dvh] max-h-[560px] min-h-[380px] overflow-hidden bg-[#f7f7f6]">
-            <ReplayMapSection
-              replay={replay}
-              currentPosition={currentPosition}
-              currentIndex={currentIndex}
-              cameraMode={cameraMode}
-              visibleSummits={visibleSummits}
-            />
+          <div className="absolute top-4 right-4 left-4 z-20">
+            <div className="rounded-3xl border border-white/50 bg-white/88 px-4 py-3 shadow-sm backdrop-blur">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0 truncate">
+                  <p className="truncate text-sm tracking-tight text-heading">
+                    <span className="font-bold text-heading">리플레이</span>
+                    <span className="mx-1.5 font-medium text-body/40">·</span>
+                    <span className="text-xs font-medium text-body/70">
+                      {formatDistanceDisplay(
+                        replay.summary.totalDistanceMeters
+                      )}{" "}
+                      · {formatDuration(replay.summary.totalElapsedSeconds)}
+                    </span>
+                  </p>
+                </div>
 
-            <div className="absolute top-4 right-4 left-4 z-20">
-              <div className="rounded-3xl border border-white/50 bg-white/88 px-4 py-3 shadow-sm backdrop-blur">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0 truncate">
-                    <p className="truncate text-sm tracking-tight text-[#2f3415]">
-                      <span className="font-bold text-[#2f3415]">리플레이</span>
-                      <span className="mx-1.5 font-medium text-slate-400">
-                        ·
-                      </span>
-                      <span className="text-xs font-medium text-slate-500">
-                        {formatDistanceDisplay(
-                          replay.summary.totalDistanceMeters
-                        )}{" "}
-                        · {formatDuration(replay.summary.totalElapsedSeconds)}
-                      </span>
-                    </p>
-                  </div>
-
-                  <div className="shrink-0 rounded-full bg-[#89943d]/10 px-3 py-1 text-[11px] font-medium text-[#4a521e]">
-                    {statusText}
-                  </div>
+                <div className="shrink-0 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-medium text-heading">
+                  {statusText}
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white px-4 pt-4 pb-5">
-            <div className="rounded-[28px] border border-[#89943d]/10 bg-[#f7f7f6] px-4 py-5 shadow-sm">
-              <div className="mb-5">
-                <div className="mb-3 flex items-center justify-between">
-                  <p className="text-sm font-bold text-[#2f3415]">
-                    {formatMsToDisplay(sequenceElapsedMs)} /{" "}
-                    {formatMsToDisplay(totalSequenceMs)}
-                  </p>
-                  <p className="text-xs font-medium text-slate-500">
-                    {Math.round(sequenceProgress * 100)}%
-                  </p>
-                </div>
+          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-bg-page via-bg-page/75 to-transparent" />
+        </div>
 
-                <input
-                  type="range"
-                  min={0}
-                  max={totalSequenceMs}
-                  step={SEQUENCE_TICK_MS}
-                  value={sequenceElapsedMs}
-                  onChange={handleSliderChange}
-                  className="h-3 w-full accent-[#89943d]"
-                />
+        <div className="bg-bg-page px-4 pt-4 pb-5">
+          <div className="rounded-3xl border border-primary/10 bg-white px-4 py-5 shadow-sm">
+            <div className="mb-5">
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-sm font-bold text-heading">
+                  {formatMsToDisplay(sequenceElapsedMs)} /{" "}
+                  {formatMsToDisplay(totalSequenceMs)}
+                </p>
+                <p className="text-xs font-medium text-body/70">
+                  {Math.round(sequenceProgress * 100)}%
+                </p>
               </div>
 
-              <div className="flex items-center justify-center gap-10">
-                <button
-                  type="button"
-                  onClick={handleBackward}
-                  disabled={!hasReplayPath}
-                  className="flex h-11 w-11 items-center justify-center rounded-full text-[#424434]/60 transition enabled:hover:bg-white enabled:hover:text-[#424434] disabled:opacity-30"
-                  aria-label="5초 뒤로">
-                  <span className="material-symbols-outlined material-symbols-filled text-[28px]">
-                    replay_5
-                  </span>
-                </button>
+              <input
+                type="range"
+                min={0}
+                max={totalSequenceMs}
+                step={SEQUENCE_TICK_MS}
+                value={sequenceElapsedMs}
+                onChange={handleSliderChange}
+                className="h-3 w-full accent-primary"
+              />
+            </div>
 
-                <button
-                  type="button"
-                  onClick={handlePlayPause}
-                  disabled={!hasReplayPath}
-                  className="flex h-16 w-16 items-center justify-center rounded-full bg-[#89943d] text-white shadow-lg shadow-[#89943d]/30 transition active:scale-95 disabled:opacity-40"
-                  aria-label={isSequencePlaying ? "일시정지" : "재생"}>
-                  <span className="material-symbols-outlined material-symbols-filled text-[34px]">
-                    {isSequencePlaying ? "pause" : "play_arrow"}
-                  </span>
-                </button>
+            <div className="flex items-center justify-center gap-10">
+              <button
+                type="button"
+                onClick={handleBackward}
+                disabled={!hasReplayPath}
+                className="flex h-11 w-11 items-center justify-center rounded-full text-body/60 transition-colors duration-150 enabled:hover:bg-bg-page enabled:hover:text-body disabled:opacity-30"
+                aria-label="5초 뒤로">
+                <span className="material-symbols-outlined material-symbols-filled text-[28px]">
+                  replay_5
+                </span>
+              </button>
 
-                <button
-                  type="button"
-                  onClick={handleResetReplay}
-                  disabled={!hasReplayPath}
-                  className="flex h-11 w-11 items-center justify-center rounded-full text-[#424434]/60 transition enabled:hover:bg-white enabled:hover:text-[#424434] disabled:opacity-30"
-                  aria-label="처음으로">
-                  <span className="material-symbols-outlined material-symbols-filled text-[28px]">
-                    restart_alt
-                  </span>
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handlePlayPause}
+                disabled={!hasReplayPath}
+                className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/30 transition active:scale-95 disabled:opacity-40"
+                aria-label={isSequencePlaying ? "일시정지" : "재생"}>
+                <span className="material-symbols-outlined material-symbols-filled text-[34px]">
+                  {isSequencePlaying ? "pause" : "play_arrow"}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleResetReplay}
+                disabled={!hasReplayPath}
+                className="flex h-11 w-11 items-center justify-center rounded-full text-body/60 transition-colors duration-150 enabled:hover:bg-bg-page enabled:hover:text-body disabled:opacity-30"
+                aria-label="처음으로">
+                <span className="material-symbols-outlined material-symbols-filled text-[28px]">
+                  restart_alt
+                </span>
+              </button>
             </div>
           </div>
-        </section>
-
-        {!hasReplayPath ? (
-          <div className="px-4 pt-4">
-            <section className="rounded-3xl border border-[#89943d]/10 bg-white px-4 py-4 text-sm text-slate-600 shadow-sm">
-              표시할 리플레이 경로가 없어 요약 정보만 확인할 수 있습니다.
-            </section>
-          </div>
-        ) : null}
-
-        <ReplaySummarySection replay={replay} />
-      </main>
-
-      <div className="sticky bottom-0 border-t border-[#89943d]/10 bg-white/90 px-4 py-3 backdrop-blur">
-        <div className="flex h-14 items-center justify-center rounded-2xl border border-dashed border-[#89943d]/20 bg-[#f7f7f6] text-xs font-medium text-[#89943d]/70">
-          Bottom Tab Placeholder
         </div>
-      </div>
-    </>
+      </section>
+
+      {!hasReplayPath ? (
+        <div className="px-4 pt-4">
+          <section className="rounded-3xl border border-primary/10 bg-white px-4 py-4 text-sm text-body/80 shadow-sm">
+            표시할 리플레이 경로가 없어 요약 정보만 확인할 수 있습니다.
+          </section>
+        </div>
+      ) : null}
+
+      <ReplaySummarySection replay={replay} />
+    </main>
   );
 }
 
 export default function HikingSessionReplayPage() {
-  const navigate = useNavigate();
   const { sessionId } = useParams();
 
   const numericSessionId = useMemo(() => {
@@ -435,7 +409,7 @@ export default function HikingSessionReplayPage() {
   const isSummitInfoError = sessionQuery.isError;
 
   if (numericSessionId == null) {
-    return <ReplayScaffoldState message="잘못된 세션 ID입니다." tone="error" onBack={() => navigate(-1)} />;
+    return <ReplayScaffoldState message="잘못된 세션 ID입니다." tone="error" />;
   }
 
   if (isError) {
@@ -443,26 +417,28 @@ export default function HikingSessionReplayPage() {
       <ReplayScaffoldState
         message="리플레이 정보를 불러오지 못했습니다."
         tone="error"
-        onBack={() => navigate(-1)}
       />
     );
   }
 
   if (isLoading && replay.totalPoints === 0) {
-    return <ReplayScaffoldState message="리플레이 정보를 불러오는 중..." onBack={() => navigate(-1)} />;
+    return <ReplayScaffoldState message="리플레이 정보를 불러오는 중..." />;
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f7f6] text-slate-900">
-      <div className="mx-auto min-h-screen w-full max-w-md bg-[#f7f7f6]">
+    <div className="min-h-screen bg-bg-page text-body">
+      <Header leftSlot={<BackButton />} title="리플레이" />
+
+      <div className="mx-auto min-h-screen w-full max-w-[390px] bg-bg-page pt-[68px]">
         <ReplayPageContent
           key={replay.sessionId}
           replay={replay}
           verifiedSummits={verifiedSummits}
           isSummitInfoError={isSummitInfoError}
-          onBack={() => navigate(-1)}
         />
       </div>
+
+      <BottomNav />
     </div>
   );
 }
