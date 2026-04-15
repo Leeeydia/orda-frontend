@@ -1,49 +1,92 @@
+import { useNavigate } from "react-router-dom";
+import Header from "@/components/layout/Header";
+import BackButton from "@/components/layout/BackButton";
+import Button from "@/components/ui/Button";
+
+type ReplayScaffoldStateTone = "neutral" | "error";
+
 type ReplayScaffoldStateProps = {
   message: string;
-  tone?: "neutral" | "error";
-  onBack?: () => void;
+  tone?: ReplayScaffoldStateTone;
 };
 
-export default function ReplayScaffoldState({
+const REPLAY_STATE_META: Record<
+  ReplayScaffoldStateTone,
+  {
+    eyebrow: string;
+    title: string;
+  }
+> = {
+  neutral: {
+    eyebrow: "리플레이",
+    title: "리플레이 정보를 준비하고 있어요"
+  },
+  error: {
+    eyebrow: "리플레이 오류",
+    title: "리플레이를 불러오지 못했어요"
+  }
+};
+
+const ReplayScaffoldState = ({
   message,
-  tone = "neutral",
-  onBack
-}: ReplayScaffoldStateProps) {
-  const sectionClass =
-    tone === "error"
-      ? "rounded-3xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700 shadow-sm"
-      : "rounded-3xl border border-[#89943d]/10 bg-white px-4 py-4 text-sm text-slate-600 shadow-sm";
+  tone = "neutral"
+}: ReplayScaffoldStateProps) => {
+  const navigate = useNavigate();
+  const meta = REPLAY_STATE_META[tone];
+  const isError = tone === "error";
 
   return (
-    <div className="min-h-screen bg-[#f7f7f6] text-slate-900">
-      <div className="mx-auto min-h-screen w-full max-w-md bg-[#f7f7f6]">
-        <header className="sticky top-0 z-30 border-b border-[#89943d]/10 bg-white/90 backdrop-blur">
-          <div className="px-4 py-3">
-            <div className="flex h-10 items-center justify-between rounded-2xl border border-dashed border-[#89943d]/20 bg-[#f7f7f6] px-4 text-xs font-medium text-[#89943d]/70">
-              <span>Header Placeholder</span>
+    <div className="min-h-screen bg-bg-page">
+      <Header leftSlot={<BackButton />} title="리플레이" />
 
-              {onBack && (
-                <button
-                  type="button"
-                  onClick={onBack}
-                  className="rounded-full px-2 py-1 text-[#4a521e] transition hover:bg-[#89943d]/10">
-                  뒤로가기
-                </button>
-              )}
+      <main className="mx-auto flex min-h-screen w-full max-w-[390px] items-center px-4 pt-20 pb-6">
+        <section
+          className={
+            isError
+              ? "w-full overflow-hidden rounded-3xl border border-error/15 bg-white shadow-sm"
+              : "w-full overflow-hidden rounded-3xl border border-primary/10 bg-white shadow-sm"
+          }>
+          <div
+            className={
+              isError
+                ? "border-b border-error/10 bg-gradient-to-r from-error/10 via-error/5 to-transparent px-4 py-3"
+                : "border-b border-primary/8 bg-gradient-to-r from-primary/12 via-primary/6 to-transparent px-4 py-3"
+            }>
+            <p
+              className={
+                isError
+                  ? "text-[11px] font-semibold tracking-[0.04em] text-error"
+                  : "text-[11px] font-semibold tracking-[0.04em] text-primary"
+              }>
+              {meta.eyebrow}
+            </p>
+            <h2 className="mt-1 text-lg font-bold tracking-tight text-heading">
+              {meta.title}
+            </h2>
+          </div>
+
+          <div className="px-4 py-4">
+            <div
+              className={
+                isError
+                  ? "rounded-2xl border border-error/10 bg-error/5 px-3 py-3 text-sm leading-5 text-body"
+                  : "rounded-2xl border border-primary/10 bg-bg-page px-3 py-3 text-sm leading-5 text-body"
+              }>
+              {message}
             </div>
-          </div>
-        </header>
 
-        <main className="px-4 pt-4 pb-6">
-          <section className={sectionClass}>{message}</section>
-        </main>
-
-        <div className="sticky bottom-0 border-t border-[#89943d]/10 bg-white/90 px-4 py-3 backdrop-blur">
-          <div className="flex h-14 items-center justify-center rounded-2xl border border-dashed border-[#89943d]/20 bg-[#f7f7f6] text-xs font-medium text-[#89943d]/70">
-            Bottom Tab Placeholder
+            {isError ? (
+              <div className="mt-4">
+                <Button variant="secondary" onClick={() => navigate(-1)}>
+                  이전 화면으로
+                </Button>
+              </div>
+            ) : null}
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
     </div>
   );
-}
+};
+
+export default ReplayScaffoldState;
