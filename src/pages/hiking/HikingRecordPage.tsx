@@ -8,6 +8,9 @@
  *  - 등산 중 TIME/거리/고도 카드, 정상 인증, 종료 기능 추가
  *  - 배낭맨 하단 대기 → 마커로 이동 애니메이션 추가
  *  - 100대 명산 모드 토글, 마커 표시, 바텀시트 연결
+ *  - 명산 마커 탭 시 해당 산 위치로 지도 이동 및 반경 등산로 표시
+ *  - 100대 명산 모드 토글 버튼 나침반 아래 배치, 텍스트 전환
+ *  - 명산 마커 탭 시 edgeIds 기반 등산로 조회로 교체, edgeIds 없으면 반경 5km fallback
  */
 import { useState, useRef, useEffect } from "react";
 import maplibregl from "maplibre-gl";
@@ -18,7 +21,12 @@ import BottomNav from "@/components/layout/BottomNav";
 import Button from "@/components/ui/Button";
 import type { GpsPoint } from "@/features/gps/types/gps.types";
 import { getTop100Mountains } from "@/features/mountain/api/mountainApi";
+import {
+  getTrailDifficultyMapByMountain,
+  getTrailDifficultyMapByEdgeIds
+} from "@/features/trail/api/trailApi";
 import type { Top100Mountain } from "@/features/mountain/types/mountainTypes";
+import type { TrailGeoJson } from "@/features/trail/types/trail.types";
 import Top100MountainBottomSheet from "@/features/mountain/components/Top100MountainBottomSheet";
 
 import hikerIcon from "@/assets/hiking-icon.png";
@@ -191,6 +199,8 @@ export default function HikingRecordPage() {
   const [selectedMountain, setSelectedMountain] =
     useState<Top100Mountain | null>(null);
   const [isMountainLoading, setIsMountainLoading] = useState(false);
+  const [mountainTrailGeoJson, setMountainTrailGeoJson] =
+    useState<TrailGeoJson | null>(null);
 
   // 100대 명산 모드 토글
   const handleMountainModeToggle = async () => {
@@ -198,6 +208,7 @@ export default function HikingRecordPage() {
       setIsMountainMode(false);
       setMountains([]);
       setSelectedMountain(null);
+      setMountainTrailGeoJson(null);
       return;
     }
     setIsMountainLoading(true);
@@ -207,6 +218,33 @@ export default function HikingRecordPage() {
       setIsMountainMode(true);
     } finally {
       setIsMountainLoading(false);
+    }
+  };
+
+  // 명산 마커 탭 → 지도 이동 + edgeIds 기반 등산로 조회 (없으면 반경 5km fallback)
+  const handleMountainClick = async (mountain: Top100Mountain) => {
+    setSelectedMountain(mountain);
+    if (mapRef.current) {
+      mapRef.current.flyTo({
+        center: [mountain.longitude, mountain.latitude],
+        zoom: 13,
+        duration: 800
+      });
+    }
+    try {
+      let trailData: TrailGeoJson;
+      if (mountain.edgeIds && mountain.edgeIds.length > 0) {
+        trailData = await getTrailDifficultyMapByEdgeIds(mountain.edgeIds);
+      } else {
+        trailData = await getTrailDifficultyMapByMountain(
+          mountain.latitude,
+          mountain.longitude,
+          5.0
+        );
+      }
+      setMountainTrailGeoJson(trailData);
+    } catch (e) {
+      console.error("mountain trail load error", e);
     }
   };
 
@@ -223,6 +261,7 @@ export default function HikingRecordPage() {
 
       const mapContainer = mapRef.current.getContainer();
       const mapRect = mapContainer.getBoundingClientRect();
+
       const targetX = mapRect.left + markerPixel.x;
       const targetY = mapRect.top + markerPixel.y;
 
@@ -312,76 +351,92 @@ export default function HikingRecordPage() {
             mapRef.current = map;
           }}
           mountains={isMountainMode ? mountains : []}
-          onMountainClick={(mountain) => setSelectedMountain(mountain)}
+          onMountainClick={handleMountainClick}
+          mountainTrailGeoJson={mountainTrailGeoJson}
         />
 
-        {/* 100대 명산 모드 토글 버튼 */}
-        {pageState === "idle" && (
-          <button
-            onClick={handleMountainModeToggle}
-            disabled={isMountainLoading}
-            style={{
-              position: "absolute",
-              top: 16,
-              right: 16,
-              padding: "6px 12px",
-              borderRadius: 20,
-              background: isMountainMode ? "#89943d" : "white",
-              color: isMountainMode ? "white" : "#4A521E",
-              border: `1px solid ${isMountainMode ? "#89943d" : "#D7DACB"}`,
-              fontWeight: 700,
-              fontSize: 12,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
-              cursor: "pointer",
-              zIndex: 50,
-              opacity: isMountainLoading ? 0.6 : 1
-            }}>
-            {isMountainLoading ? "불러오는 중..." : "🏔 100대 명산"}
-          </button>
-        )}
-
-        {/* 현위치 버튼 */}
-        {pageState === "idle" && (
-          <button
-            onClick={handleMoveToCurrentPos}
+        {/* 현위치 버튼 + 100대 명산 토글 버튼 */}
+        {pageState === "idle" && !selectedMountain && (
+          <div
             style={{
               position: "absolute",
               bottom: 180,
               right: 10,
-              width: 44,
-              height: 44,
-              borderRadius: "50%",
-              background: "white",
-              border: "1px solid #e2e8f0",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              justifyContent: "center",
-              zIndex: 50,
-              cursor: "pointer",
-              gap: 2
+              gap: 8,
+              zIndex: 50
             }}>
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#89943d"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <circle cx="12" cy="12" r="3" />
-              <line x1="12" y1="2" x2="12" y2="5" />
-              <line x1="12" y1="19" x2="12" y2="22" />
-              <line x1="2" y1="12" x2="5" y2="12" />
-              <line x1="19" y1="12" x2="22" y2="12" />
-            </svg>
-            <span style={{ fontSize: 9, color: "#89943d", fontWeight: 600 }}>
-              현위치
-            </span>
-          </button>
+            {/* 현위치 버튼 */}
+            <button
+              onClick={handleMoveToCurrentPos}
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: "50%",
+                background: "white",
+                border: "1px solid #e2e8f0",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                gap: 2
+              }}>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#89943d"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <circle cx="12" cy="12" r="3" />
+                <line x1="12" y1="2" x2="12" y2="5" />
+                <line x1="12" y1="19" x2="12" y2="22" />
+                <line x1="2" y1="12" x2="5" y2="12" />
+                <line x1="19" y1="12" x2="22" y2="12" />
+              </svg>
+              <span style={{ fontSize: 9, color: "#89943d", fontWeight: 600 }}>
+                현위치
+              </span>
+            </button>
+
+            {/* 100대 명산 토글 버튼 */}
+            <button
+              onClick={handleMountainModeToggle}
+              disabled={isMountainLoading}
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: "50%",
+                background: isMountainMode ? "#89943d" : "white",
+                border: `1px solid ${isMountainMode ? "#89943d" : "#e2e8f0"}`,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                gap: 2,
+                opacity: isMountainLoading ? 0.6 : 1
+              }}>
+              <span style={{ fontSize: 16, lineHeight: 1 }}>🏔</span>
+              <span
+                style={{
+                  fontSize: 8,
+                  color: isMountainMode ? "white" : "#89943d",
+                  fontWeight: 700,
+                  lineHeight: 1
+                }}>
+                {isMountainLoading ? "..." : isMountainMode ? "일반" : "명산"}
+              </span>
+            </button>
+          </div>
         )}
 
         {/* 난이도 범례 */}
