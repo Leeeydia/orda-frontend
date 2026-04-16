@@ -31,7 +31,6 @@ import BottomNav from "@/components/layout/BottomNav";
 import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import { checkNearbyTrail } from "@/features/trail/api/trailApi";
-import type { GpsPoint } from "@/features/gps/types/gps.types";
 import { getTop100Mountains } from "@/features/mountain/api/mountainApi";
 import { getTrailDifficultyMapByEdgeIds } from "@/features/trail/api/trailApi";
 import type { Top100Mountain } from "@/features/mountain/types/mountainTypes";
