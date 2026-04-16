@@ -18,6 +18,10 @@ const pageOffsetStyle = {
   paddingTop: HEADER_HEIGHT
 } as const;
 
+const mapSectionStyle = {
+  height: `calc(100dvh - ${HEADER_HEIGHT}px)`
+} as const;
+
 const SessionDetailState = ({ message }: SessionDetailStateProps) => {
   return (
     <main
@@ -71,7 +75,9 @@ export default function HikingSessionDetailPage() {
         className="bg-bg-page mx-auto w-full max-w-[390px] pb-24">
         <main>
           <section className="relative">
-            <div className="relative h-[calc(100dvh-68px)] min-h-[520px] overflow-hidden bg-gradient-to-br from-bg-accent via-bg-soft to-bg-page">
+            <div
+              style={mapSectionStyle}
+              className="relative min-h-[520px] overflow-hidden bg-gradient-to-br from-bg-accent via-bg-soft to-bg-page">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(137,148,61,0.16),_transparent_55%)]" />
               <div className="absolute inset-0 bg-[linear-gradient(to_bottom,_rgba(255,255,255,0.18),_rgba(255,255,255,0)_28%,_rgba(0,0,0,0.1)_100%)]" />
 
