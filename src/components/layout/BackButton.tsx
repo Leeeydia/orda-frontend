@@ -1,15 +1,15 @@
 import { useNavigate } from "react-router-dom";
+import { joinClassNames } from "@/utils/classNames";
 
 type BackButtonProps = {
   className?: string;
   ariaLabel?: string;
 };
 
-const joinClassNames = (
-  ...classes: Array<string | false | null | undefined>
-): string => classes.filter(Boolean).join(" ");
-
-const BackButton = ({ className, ariaLabel = "뒤로가기" }: BackButtonProps) => {
+const BackButton = ({
+  className,
+  ariaLabel = "뒤로가기"
+}: BackButtonProps) => {
   const navigate = useNavigate();
 
   return (
@@ -18,7 +18,7 @@ const BackButton = ({ className, ariaLabel = "뒤로가기" }: BackButtonProps) 
       onClick={() => navigate(-1)}
       aria-label={ariaLabel}
       className={joinClassNames(
-        "text-heading hover:bg-primary/10 flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-colors duration-150 active:opacity-60",
+        "flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-heading transition-colors duration-150 hover:bg-primary/10 active:opacity-60",
         className
       )}>
       <svg

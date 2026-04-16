@@ -1,3 +1,5 @@
+import { joinClassNames } from "@/utils/classNames";
+
 type SummaryNoticeTone = "default" | "warning";
 type SummaryNoticeSurface = "white" | "soft";
 
@@ -7,10 +9,6 @@ type SummaryNoticeProps = {
   surface?: SummaryNoticeSurface;
   className?: string;
 };
-
-const joinClassNames = (
-  ...classes: Array<string | false | null | undefined>
-): string => classes.filter(Boolean).join(" ");
 
 const SummaryNotice = ({
   message,
@@ -22,8 +20,8 @@ const SummaryNotice = ({
     tone === "warning"
       ? "border border-amber-200 bg-amber-50 text-amber-700"
       : surface === "soft"
-        ? "border border-primary/10 bg-bg-page text-slate-600"
-        : "border border-primary/10 bg-white text-slate-600";
+        ? "border border-primary/10 bg-bg-page text-body/80"
+        : "border border-primary/10 bg-white text-body/80";
 
   return (
     <div
