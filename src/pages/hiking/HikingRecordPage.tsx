@@ -3,11 +3,13 @@
  *
  * 변경 사항:
  *  - idle 상태에서 내 위치 표시, 현위치 버튼, 헤더 심플화, 난이도 범례 추가
- *  - 페이지 진입 시 단발성 위치 조회 (현위치 버튼용)
+ *  - 페이지 진입 시 watchPosition으로 위치 지속 갱신 (idle 상태에서도 위치 추적)
  *  - BottomNav 추가
  *  - 등산 중 TIME/거리/고도 카드, 정상 인증, 종료 기능 추가
  *  - 배낭맨 하단 대기 → 마커로 이동 애니메이션 추가
  *  - 등산로 근접 여부 사전 체크 + 토스트 안내 추가
+ *  - idle 상태 위치 변경 시 proximity 재검사 (debounce 5초)
+ *  - start() 실패 시 errorMessage를 토스트로 표시
  */
 import { useState, useRef, useEffect } from "react";
 import maplibregl from "maplibre-gl";
@@ -37,6 +39,8 @@ const DIFFICULTY_COLORS: Record<string, string> = {
   very_hard: "#f97316",
   extreme: "#ef4444"
 };
+
+const PROXIMITY_RECHECK_DEBOUNCE_MS = 5000;
 
 const useElapsedTime = (isRunning: boolean) => {
   const [seconds, setSeconds] = useState(0);
@@ -207,32 +211,42 @@ export default function HikingRecordPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<"success" | "error">("error");
 
+  // idle 상태에서 watchPosition으로 위치 지속 갱신
+  // 위치가 바뀌면 proximity 재검사가 자동으로 트리거됨
   useEffect(() => {
     if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
+    if (pageState !== "idle") return;
+
+    const watchId = navigator.geolocation.watchPosition(
       (pos) =>
         setIdlePos({ lng: pos.coords.longitude, lat: pos.coords.latitude }),
       () => {},
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
-  }, []);
 
-  // 위치 확보 후 등산로 근접 여부 체크
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [pageState]);
+
+  // 위치 확보/변경 시 등산로 근접 여부 재체크 (debounce 5초)
   useEffect(() => {
     if (!idlePos || pageState !== "idle") return;
 
-    checkNearbyTrail(idlePos.lat, idlePos.lng)
-      .then((result) => {
-        setIsNearTrail(result.nearTrail);
-        if (!result.nearTrail) {
-          setToastType("error");
-          setToastMessage("등산로 근처에서만 등산을 시작할 수 있어요");
-        }
-      })
-      .catch(() => {
-        // 체크 실패 시 차단하지 않음 (백엔드 trail-guard에서 최종 검증)
-        setIsNearTrail(null);
-      });
+    const timerId = setTimeout(() => {
+      checkNearbyTrail(idlePos.lat, idlePos.lng)
+        .then((result) => {
+          setIsNearTrail(result.nearTrail);
+          if (!result.nearTrail) {
+            setToastType("error");
+            setToastMessage("등산로 근처에서만 등산을 시작할 수 있어요");
+          }
+        })
+        .catch(() => {
+          // 체크 실패 시 차단하지 않음 (백엔드 trail-guard에서 최종 검증)
+          setIsNearTrail(null);
+        });
+    }, PROXIMITY_RECHECK_DEBOUNCE_MS);
+
+    return () => clearTimeout(timerId);
   }, [idlePos, pageState]);
 
   const elapsedSeconds = useElapsedTime(pageState === "hiking");
@@ -264,15 +278,24 @@ export default function HikingRecordPage() {
       });
 
       setTimeout(async () => {
-        // fade out 제거 → 마커 위치에 그대로 유지
-        const success = await start();
+        const result = await start();
         setHikerAnimating(false);
         setHikerStyle({});
-        if (success) setPageState("hiking");
+        if (result.success) {
+          setPageState("hiking");
+        } else if (result.errorMessage) {
+          setToastType("error");
+          setToastMessage(result.errorMessage);
+        }
       }, 1200);
     } else {
-      const success = await start();
-      if (success) setPageState("hiking");
+      const result = await start();
+      if (result.success) {
+        setPageState("hiking");
+      } else if (result.errorMessage) {
+        setToastType("error");
+        setToastMessage(result.errorMessage);
+      }
     }
   };
 
@@ -694,7 +717,7 @@ export default function HikingRecordPage() {
         </div>
       )}
 
-      {/* 등산로 근접 안내 토스트 */}
+      {/* 토스트 (등산로 근접 안내 / 시작 실패 메시지) */}
       {toastMessage && (
         <Toast
           message={toastMessage}
