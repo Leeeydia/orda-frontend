@@ -32,20 +32,6 @@ export const getTrailDifficultyMapByBbox = async (
   return data.data;
 };
 
-// 산 좌표 기반 반경 난이도 지도 조회 함수 추가
-export const getTrailDifficultyMapByMountain = async (
-  lat: number,
-  lng: number,
-  radiusKm: number = 5.0,
-  signal?: AbortSignal
-): Promise<TrailGeoJson> => {
-  const { data } = await axios.get(`${BASE_URL}/map/mountain`, {
-    params: { lat, lng, radiusKm },
-    signal
-  });
-  return data.data;
-};
-
 // edgeIds 기반 난이도 지도 조회 함수 추가
 export const getTrailDifficultyMapByEdgeIds = async (
   edgeIds: number[]
