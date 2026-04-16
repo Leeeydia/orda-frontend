@@ -19,12 +19,19 @@
  *  - nearbySummits 정상 마커 표시 기능 추가
  *  - isMountainMode OFF 시 bbox 등산로 즉시 재조회
  *  - loadTrailByBbox 컴포넌트 스코프로 분리, isMountainModeRef 설정 기준 통일
+ *  - 정상 마커 팝업을 ORDA 디자인 시스템 카드 스타일로 변경
+ *  - 정상 마커 렌더링 로직을 summitMarker 공통 유틸로 분리
+ *    (팝업 스타일은 유틸 내부에서 자동 주입됨)
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import maplibregl from "maplibre-gl";
 import { getTrailDifficultyMapByBbox } from "@/features/trail/api/trailApi";
 import type { TrailGeoJson } from "@/features/trail/types/trail.types";
+import {
+  renderSummitMarkers,
+  clearSummitMarkers
+} from "@/features/hiking/components/summitMarker";
 
 import CommonMap from "@/components/map/CommonMap";
 import type { FeatureCollection } from "geojson";
@@ -376,54 +383,18 @@ const GpsTrackingMap = ({
     }
   }, [mountainTrailGeoJson]);
 
-  // nearbySummits 변경 시 정상 마커 업데이트
+  // nearbySummits 변경 시 정상 마커 렌더링 (공통 유틸 사용)
   useEffect(() => {
     if (!mapInstanceRef.current) return;
-    const map = mapInstanceRef.current;
 
-    summitMarkerRefs.current.forEach((m) => m.remove());
-    summitMarkerRefs.current = [];
-
-    nearbySummits.forEach((summit) => {
-      if (
-        typeof summit.longitude !== "number" ||
-        typeof summit.latitude !== "number"
-      )
-        return;
-
-      const el = document.createElement("button");
-      el.type = "button";
-      el.style.cssText =
-        "width:26px;height:22px;padding:0;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 2px 4px rgba(47,52,21,0.28))";
-      el.innerHTML = `
-        <svg width="26" height="22" viewBox="0 0 26 22" fill="none" aria-hidden="true">
-          <path d="M13 2L24 20H2L13 2Z" fill="#BCB88A" stroke="#F7F7F6" stroke-width="1.8" stroke-linejoin="round"/>
-          <path d="M9.2 14.6L10.8 12.3L12.1 13.9L14.1 11.1L16.8 14.6" stroke="#F7F7F6" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>`;
-
-      const popupHtml = `
-        <div style="font-size:12px;line-height:1.4;">
-          <div style="font-weight:600;color:#2f3415;">${summit.summitName}</div>
-          ${summit.elevationM != null ? `<div style="margin-top:4px;color:#64748b;">고도 ${summit.elevationM}m</div>` : ""}
-        </div>`;
-
-      const popup = new maplibregl.Popup({ offset: 14 }).setHTML(popupHtml);
-
-      const marker = new maplibregl.Marker({
-        element: el,
-        anchor: "bottom",
-        offset: [0, 2]
-      })
-        .setLngLat([summit.longitude, summit.latitude])
-        .setPopup(popup)
-        .addTo(map);
-
-      summitMarkerRefs.current.push(marker);
-    });
+    renderSummitMarkers(
+      mapInstanceRef.current,
+      nearbySummits,
+      summitMarkerRefs
+    );
 
     return () => {
-      summitMarkerRefs.current.forEach((m) => m.remove());
-      summitMarkerRefs.current = [];
+      clearSummitMarkers(summitMarkerRefs);
     };
   }, [nearbySummits]);
 
