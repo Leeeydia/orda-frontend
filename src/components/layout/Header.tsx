@@ -15,7 +15,7 @@ const Header = ({ leftSlot, rightSlot, title }: HeaderProps) => {
   return (
     <header className="border-primary/10 fixed top-0 left-1/2 z-50 w-full max-w-[390px] -translate-x-1/2 border-b bg-white/90 backdrop-blur">
       <div className="flex items-center justify-between px-4 py-3">
-        <div className="flex h-11 w-11 items-center justify-center">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center">
           {leftSlot}
         </div>
 
@@ -39,7 +39,7 @@ const Header = ({ leftSlot, rightSlot, title }: HeaderProps) => {
           )}
         </div>
 
-        <div className="flex h-11 w-11 items-center justify-center">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center">
           {rightSlot}
         </div>
       </div>
