@@ -8,9 +8,11 @@
  *             백엔드 등산로 근접 검증 에러 메시지 표시
  *  - start(): 반환 타입을 { success, errorMessage }로 변경
  *             idle 상태 시작 실패 메시지를 호출자가 토스트로 표시 가능
- *  - demElevations: elevationSource === "dem"일 때만 수집
- *                   gps_fallback, none은 그래프에 포함하지 않음
- *  - end(): 마지막 saveGpsTrack() 응답의 canonicalElevationM도 demElevations에 반영
+ *  - demElevations: (number | null)[] 형태로 관리
+ *                   dem이면 값, gps_fallback/none이면 null을 push
+ *                   → raw GPS 그래프로 fallback하지 않고, 누락 구간은 차트에서 공백으로 표시
+ *  - start()/end()에서 demElevations 명시적 초기화 (이전 세션 값 섞임 방지)
+ *  - end(): 마지막 saveGpsTrack() 응답도 demElevations에 반영
  */
 
 import { useState, useRef, useEffect } from "react";
@@ -25,10 +27,20 @@ import {
 import type { GpsPoint } from "@/features/gps/types/gps.types";
 import type {
   NearbySummitItem,
-  HikingStartResult
+  HikingStartResult,
+  GpsTrackSaveResponse
 } from "../types/hiking.types";
 
 const SAVE_INTERVAL_MS = 5000;
+
+// saveGpsTrack 응답 → demElevations에 push할 값
+// dem이면 값, 그 외(gps_fallback, none)면 null로 표시
+function toDemElevationEntry(res: GpsTrackSaveResponse): number | null {
+  if (res.elevationSource === "dem" && res.canonicalElevationM != null) {
+    return res.canonicalElevationM;
+  }
+  return null;
+}
 
 export const useHiking = () => {
   const gps = useGPS();
@@ -37,7 +49,7 @@ export const useHiking = () => {
   const [error, setError] = useState<string | null>(null);
   const [savedPointCount, setSavedPointCount] = useState(0);
   const [nearbySummits, setNearbySummits] = useState<NearbySummitItem[]>([]);
-  const [demElevations, setDemElevations] = useState<number[]>([]);
+  const [demElevations, setDemElevations] = useState<(number | null)[]>([]);
 
   const lastSavedAt = useRef<number>(0);
   const sessionIdRef = useRef<number | null>(null);
@@ -58,6 +70,9 @@ export const useHiking = () => {
       setIsLoading(true);
       setError(null);
       firstFixRef.current = null;
+      // 이전 세션 상태가 섞이지 않도록 명시적 초기화
+      setDemElevations([]);
+      setSavedPointCount(0);
 
       // 1. GPS fix 확보 대기
       //    첫 fix는 sessionId가 없으므로 저장 불가 → firstFixRef에 임시 보관
@@ -82,13 +97,9 @@ export const useHiking = () => {
         })
           .then((res) => {
             setSavedPointCount((prev) => prev + 1);
-            // DEM 기반 고도만 그래프에 반영 (gps_fallback/none 제외)
-            if (
-              res.elevationSource === "dem" &&
-              res.canonicalElevationM != null
-            ) {
-              setDemElevations((prev) => [...prev, res.canonicalElevationM!]);
-            }
+            // dem이 아닌 경우(gps_fallback, none)는 null로 push
+            // → 차트에서 누락 구간이 공백/끊김으로 표시됨
+            setDemElevations((prev) => [...prev, toDemElevationEntry(res)]);
           })
           .catch((e) => console.error("GPS 저장 실패:", e));
       });
@@ -117,12 +128,7 @@ export const useHiking = () => {
         accuracyM: firstFix.accuracy
       });
       setSavedPointCount(1);
-      if (
-        firstTrackRes.elevationSource === "dem" &&
-        firstTrackRes.canonicalElevationM != null
-      ) {
-        setDemElevations([firstTrackRes.canonicalElevationM]);
-      }
+      setDemElevations([toDemElevationEntry(firstTrackRes)]);
       firstFixRef.current = null;
 
       return { success: true };
@@ -159,16 +165,11 @@ export const useHiking = () => {
           accuracyM: gps.currentPos.accuracy
         });
         setSavedPointCount((prev) => prev + 1);
-        // 종료 시점 마지막 포인트도 DEM 고도가 있으면 그래프에 반영
-        if (
-          lastTrackRes.elevationSource === "dem" &&
-          lastTrackRes.canonicalElevationM != null
-        ) {
-          setDemElevations((prev) => [
-            ...prev,
-            lastTrackRes.canonicalElevationM!
-          ]);
-        }
+        // 종료 시점 마지막 포인트도 demElevations에 반영
+        setDemElevations((prev) => [
+          ...prev,
+          toDemElevationEntry(lastTrackRes)
+        ]);
       }
 
       await endHiking(currentSessionId);
@@ -176,7 +177,6 @@ export const useHiking = () => {
       setSessionId(null);
       lastSavedAt.current = 0;
       firstFixRef.current = null;
-      setSavedPointCount(0);
       setNearbySummits([]);
 
       return true;
