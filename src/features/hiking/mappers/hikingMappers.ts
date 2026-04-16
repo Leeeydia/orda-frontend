@@ -1,10 +1,17 @@
 import type { FeatureCollection, LineString, Point } from "geojson";
+import {
+  formatDistanceKm,
+  formatDuration,
+  formatMeters
+} from "@/utils/format";
 import type {
   ElevationProfilePointResponse,
+  ElevationSummaryStatus,
   HikingTrackFeature,
   HikingTrackFeatureCollection,
   ReplayResponse,
   ReplaySessionModel,
+  ReplaySummaryResponse,
   ReplayTrackPoint
 } from "../types/hiking.types";
 
@@ -111,6 +118,16 @@ export const getTrackBounds = (
   ];
 };
 
+export const isRenderableElevationPoint = (
+  point: ElevationProfilePointResponse
+): boolean => {
+  return (
+    typeof point.elevationMeters === "number" &&
+    (point.elevationStatus === "DEM" ||
+      point.elevationStatus === "INTERPOLATED")
+  );
+};
+
 export const mapElevationPointsToSvgPath = (
   points: ElevationProfilePointResponse[],
   width = 320,
@@ -118,14 +135,14 @@ export const mapElevationPointsToSvgPath = (
 ): string => {
   if (!points || points.length === 0) return "";
 
-  if (points.length === 1) {
-    const x = 0;
-    const y = height / 2;
-    return `M ${x} ${y}`;
-  }
+  const renderablePoints = points.filter(isRenderableElevationPoint);
+  if (renderablePoints.length === 0) return "";
 
+  // x축은 전체 points 거리 기준을 유지해 결손 구간 위치가 보이도록 한다.
   const distances = points.map((point) => point.cumulativeDistanceMeters);
-  const elevations = points.map((point) => point.elevationMeters);
+  const elevations = renderablePoints.map(
+    (point) => point.elevationMeters as number
+  );
 
   const minDistance = Math.min(...distances);
   const maxDistance = Math.max(...distances);
@@ -135,23 +152,36 @@ export const mapElevationPointsToSvgPath = (
   const distanceRange = maxDistance - minDistance || 1;
   const elevationRange = maxElevation - minElevation || 1;
 
-  return points
-    .map((point, index) => {
-      const x =
-        ((point.cumulativeDistanceMeters - minDistance) / distanceRange) *
-        width;
-      const y =
-        height -
-        ((point.elevationMeters - minElevation) / elevationRange) * height;
+  const pathCommands: string[] = [];
+  let isDrawing = false;
 
-      return `${index === 0 ? "M" : "L"} ${x} ${y}`;
-    })
-    .join(" ");
+  for (const point of points) {
+    if (!isRenderableElevationPoint(point)) {
+      isDrawing = false;
+      continue;
+    }
+
+    const x =
+      ((point.cumulativeDistanceMeters - minDistance) / distanceRange) * width;
+    const y =
+      height -
+      (((point.elevationMeters as number) - minElevation) / elevationRange) *
+        height;
+
+    pathCommands.push(`${isDrawing ? "L" : "M"} ${x} ${y}`);
+    isDrawing = true;
+  }
+
+  return pathCommands.join(" ");
 };
 
 export const getElevationProfileSummary = (
   points: ElevationProfilePointResponse[]
-) => {
+): {
+  minElevation: number | null;
+  maxElevation: number | null;
+  totalDistance: number;
+} => {
   if (!points || points.length === 0) {
     return {
       minElevation: null,
@@ -160,21 +190,70 @@ export const getElevationProfileSummary = (
     };
   }
 
-  const elevations = points.map((point) => point.elevationMeters);
+  const renderablePoints = points.filter(isRenderableElevationPoint);
   const distances = points.map((point) => point.cumulativeDistanceMeters);
 
   return {
-    minElevation: Math.min(...elevations),
-    maxElevation: Math.max(...elevations),
-    totalDistance: Math.max(...distances)
+    minElevation:
+      renderablePoints.length > 0
+        ? Math.min(
+            ...renderablePoints.map((point) => point.elevationMeters as number)
+          )
+        : null,
+    maxElevation:
+      renderablePoints.length > 0
+        ? Math.max(
+            ...renderablePoints.map((point) => point.elevationMeters as number)
+          )
+        : null,
+    totalDistance: distances.length > 0 ? Math.max(...distances) : 0
   };
 };
 
-const EMPTY_REPLAY_SUMMARY = {
+export const formatDistanceDisplay = (
+  distanceMeters: number | null | undefined,
+  kmDecimals?: number
+) => {
+  if (distanceMeters == null || Number.isNaN(distanceMeters)) {
+    return "-";
+  }
+
+  if (distanceMeters >= 1000) {
+    return kmDecimals != null
+      ? formatDistanceKm(distanceMeters, kmDecimals)
+      : formatDistanceKm(distanceMeters);
+  }
+
+  return formatMeters(distanceMeters, 0);
+};
+
+export const formatDurationDisplay = (
+  totalElapsedSeconds: number | null | undefined
+) => {
+  if (totalElapsedSeconds == null || Number.isNaN(totalElapsedSeconds)) {
+    return "-";
+  }
+
+  return formatDuration(totalElapsedSeconds);
+};
+
+export const formatElevationDisplay = (
+  value: number | null | undefined,
+  status: ElevationSummaryStatus | undefined
+) => {
+  if (value == null || Number.isNaN(value)) {
+    return status === "UNAVAILABLE" ? "계산 불가" : "-";
+  }
+
+  return formatMeters(value, 0);
+};
+
+const EMPTY_REPLAY_SUMMARY: ReplaySummaryResponse = {
   totalDistanceMeters: 0,
-  totalElevationGainMeters: 0,
-  totalElevationLossMeters: 0,
-  totalElapsedSeconds: 0
+  totalElevationGainMeters: null,
+  totalElevationLossMeters: null,
+  totalElapsedSeconds: 0,
+  elevationSummaryStatus: "UNAVAILABLE"
 };
 
 export const mapReplayResponseToReplaySessionModel = (

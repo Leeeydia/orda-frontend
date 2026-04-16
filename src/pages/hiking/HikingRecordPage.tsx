@@ -3,7 +3,7 @@
  *
  * 변경 사항:
  *  - idle 상태에서 내 위치 표시, 현위치 버튼, 헤더 심플화, 난이도 범례 추가
- *  - 페이지 진입 시 단발성 위치 조회 (현위치 버튼용)
+ *  - 페이지 진입 시 watchPosition으로 위치 지속 갱신 (proximity 재검사 지원)
  *  - BottomNav 추가
  *  - 등산 중 TIME/거리/고도 카드, 정상 인증, 종료 기능 추가
  *  - 배낭맨 하단 대기 → 마커로 이동 애니메이션 추가
@@ -15,6 +15,8 @@
  *  - AbortController로 연속 탭 경쟁 조건 방어
  *  - 명산 목록 로드 실패 시 Toast 에러 안내
  *  - handleMountainClick useCallback 적용
+ *  - 등산로 근접 여부 사전 체크 + 토스트 안내 추가
+ *  - idle 상태에서도 시작 실패 에러 토스트 표시
  */
 import { useState, useRef, useEffect, useCallback } from "react";
 import maplibregl from "maplibre-gl";
@@ -24,6 +26,7 @@ import Header from "@/components/layout/Header";
 import BottomNav from "@/components/layout/BottomNav";
 import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
+import { checkNearbyTrail } from "@/features/trail/api/trailApi";
 import type { GpsPoint } from "@/features/gps/types/gps.types";
 import { getTop100Mountains } from "@/features/mountain/api/mountainApi";
 import { getTrailDifficultyMapByEdgeIds } from "@/features/trail/api/trailApi";
@@ -152,6 +155,8 @@ const StatItem = ({
 
 type PageState = "idle" | "hiking" | "finished";
 
+const PROXIMITY_CHECK_DEBOUNCE_MS = 5000;
+
 export default function HikingRecordPage() {
   const {
     geoJson,
@@ -162,6 +167,7 @@ export default function HikingRecordPage() {
     distanceKm,
     elevGain,
     currentAltitude,
+    nearbySummits,
     start,
     end,
     verify
@@ -189,15 +195,50 @@ export default function HikingRecordPage() {
   const [idlePos, setIdlePos] = useState<{ lng: number; lat: number } | null>(
     null
   );
+
+  const [isNearTrail, setIsNearTrail] = useState<boolean | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<"success" | "error">("error");
+
+  // idle 상태일 때 watchPosition으로 위치 지속 갱신
   useEffect(() => {
     if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
+    if (pageState !== "idle") return;
+
+    const watchId = navigator.geolocation.watchPosition(
       (pos) =>
         setIdlePos({ lng: pos.coords.longitude, lat: pos.coords.latitude }),
       () => {},
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
     );
-  }, []);
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [pageState]);
+
+  // 위치 변경 시 등산로 근접 여부 재검사 (debounce)
+  useEffect(() => {
+    if (!idlePos || pageState !== "idle") return;
+
+    const timer = setTimeout(() => {
+      checkNearbyTrail(idlePos.lat, idlePos.lng)
+        .then((result) => {
+          setIsNearTrail(result.nearTrail);
+          if (!result.nearTrail && isNearTrail !== false) {
+            setToastType("error");
+            setToastMessage("등산로 근처에서만 등산을 시작할 수 있어요");
+          }
+          if (result.nearTrail && isNearTrail === false) {
+            setToastType("success");
+            setToastMessage("등산로 근처입니다. 등산을 시작할 수 있어요!");
+          }
+        })
+        .catch(() => {
+          setIsNearTrail(null);
+        });
+    }, PROXIMITY_CHECK_DEBOUNCE_MS);
+
+    return () => clearTimeout(timer);
+  }, [idlePos, pageState]);
 
   // 100대 명산 모드 상태
   const [isMountainMode, setIsMountainMode] = useState(false);
@@ -298,14 +339,24 @@ export default function HikingRecordPage() {
       });
 
       setTimeout(async () => {
-        const success = await start();
+        const result = await start();
         setHikerAnimating(false);
         setHikerStyle({});
-        if (success) setPageState("hiking");
+        if (result.success) {
+          setPageState("hiking");
+        } else if (result.errorMessage) {
+          setToastType("error");
+          setToastMessage(result.errorMessage);
+        }
       }, 1200);
     } else {
-      const success = await start();
-      if (success) setPageState("hiking");
+      const result = await start();
+      if (result.success) {
+        setPageState("hiking");
+      } else if (result.errorMessage) {
+        setToastType("error");
+        setToastMessage(result.errorMessage);
+      }
     }
   };
 
@@ -368,6 +419,7 @@ export default function HikingRecordPage() {
           }
           isTracking={pageState === "hiking"}
           hikerIconUrl={hikerIcon}
+          nearbySummits={nearbySummits}
           onTrailLoaded={() => setTrailLoaded(true)}
           onMapReady={(map) => {
             mapRef.current = map;
@@ -713,22 +765,29 @@ export default function HikingRecordPage() {
           />
           <button
             onClick={handleStart}
-            disabled={hikerAnimating || isLoading}
+            disabled={hikerAnimating || isLoading || isNearTrail === false}
             style={{
               width: "calc(100% - 32px)",
               padding: "16px 0",
               borderRadius: 16,
-              background: "#89943d",
-              color: "white",
+              background: isNearTrail === false ? "#D7DACB" : "#89943d",
+              color: isNearTrail === false ? "#7A8070" : "white",
               fontWeight: 700,
               fontSize: 18,
               border: "none",
-              cursor: "pointer",
-              boxShadow: "0 4px 12px rgba(137,148,61,0.3)",
+              cursor: isNearTrail === false ? "not-allowed" : "pointer",
+              boxShadow:
+                isNearTrail === false
+                  ? "none"
+                  : "0 4px 12px rgba(137,148,61,0.3)",
               opacity: hikerAnimating || isLoading ? 0.6 : 1
             }}>
             <span style={{ fontStyle: "italic", marginRight: 6 }}>hiking</span>
-            {isLoading ? "연결 중..." : "등산 시작"}
+            {isLoading
+              ? "연결 중..."
+              : isNearTrail === false
+                ? "등산로 근처로 이동하세요"
+                : "등산 시작"}
           </button>
         </div>
       )}
@@ -786,6 +845,16 @@ export default function HikingRecordPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 토스트 (근접 안내 + 시작 실패 에러) */}
+      {toastMessage && (
+        <Toast
+          message={toastMessage}
+          type={toastType}
+          onClose={() => setToastMessage(null)}
+          duration={4000}
+        />
       )}
     </div>
   );

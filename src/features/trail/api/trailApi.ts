@@ -1,5 +1,6 @@
 import axios from "axios";
 import type { TrailGeoJson } from "../types/trail.types";
+import type { ApiResponse } from "@/types/common.types";
 
 const BASE_URL = "/api/trails/difficulty";
 
@@ -41,5 +42,22 @@ export const getTrailDifficultyMapByEdgeIds = async (
     params: { edgeIds: edgeIds.join(",") },
     signal
   });
+  return data.data;
+};
+
+// 등산로 근접 여부 확인
+export interface TrailNearbyResult {
+  nearTrail: boolean;
+  distanceM: number | null;
+}
+
+export const checkNearbyTrail = async (
+  lat: number,
+  lng: number
+): Promise<TrailNearbyResult> => {
+  const { data } = await axios.get<ApiResponse<TrailNearbyResult>>(
+    "/api/trails/check-nearby",
+    { params: { lat, lng } }
+  );
   return data.data;
 };

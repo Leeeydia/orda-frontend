@@ -82,10 +82,10 @@ function renderSummitMarkers(
 
     const popupHtml = `
       <div style="font-size:12px; line-height:1.4;">
-        <div style="font-weight:600; color:#2f3415;">${summit.summitName}</div>
+        <div style="font-weight:600; color:#4A521E;">${summit.summitName}</div>
         ${
           summit.verifiedAt
-            ? `<div style="margin-top:4px; color:#64748b;">인증 시각: ${formatVerifiedAt(summit.verifiedAt)}</div>`
+            ? `<div style="margin-top:4px; color:#7A8070;">인증 시각: ${formatVerifiedAt(summit.verifiedAt)}</div>`
             : ""
         }
       </div>
@@ -151,10 +151,10 @@ export default function HikingTrackSection({
     return (
       <div className="absolute inset-0 z-0 flex items-center justify-center px-6 text-center">
         <div>
-          <p className="text-base font-semibold text-[#4a521e]">
+          <p className="text-heading text-base font-semibold">
             표시할 트랙이 없습니다
           </p>
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="text-body/80 mt-2 text-sm">
             저장된 GPS 트랙이 있으면 이 영역에 경로가 표시됩니다.
           </p>
         </div>
@@ -168,13 +168,13 @@ export default function HikingTrackSection({
         geoJsonData={displayGeoJson}
         className="h-full w-full"
         showNavigationControl={false}
-        lineColor="#89943d"
+        lineColor="#89943D"
         lineWidth={5}
-        pointColor="#4a521e"
-        pointStrokeColor="#ffffff"
+        pointColor="#4A521E"
+        pointStrokeColor="#F7F7F6"
         pointRadius={6}
         startPointColor="#A3BE4C"
-        endPointColor="#2F3415"
+        endPointColor="#4A521E"
         startPointRadius={8}
         endPointRadius={8}
         onMapReady={(map) => {
