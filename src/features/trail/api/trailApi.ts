@@ -34,7 +34,7 @@ export const getTrailDifficultyMapByBbox = async (
 
 // edgeIds 기반 난이도 지도 조회 함수 추가
 export const getTrailDifficultyMapByEdgeIds = async (
-  edgeIds: number[]
+  edgeIds: string[]
 ): Promise<TrailGeoJson> => {
   const { data } = await axios.get(`${BASE_URL}/map/edges`, {
     params: { edgeIds: edgeIds.join(",") }

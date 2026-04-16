@@ -6,5 +6,5 @@ export interface Top100Mountain {
   feature: string;
   latitude: number;
   longitude: number;
-  edgeIds: number[];
+  edgeIds: string[];
 }
