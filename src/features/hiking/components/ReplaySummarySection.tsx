@@ -7,6 +7,7 @@ import {
   formatDurationDisplay,
   formatElevationDisplay
 } from "../mappers/hikingMappers";
+import SummaryNotice from "./SummaryNotice";
 
 function formatPace(
   distanceMeters: number | null | undefined,
@@ -51,9 +52,7 @@ type ReplaySummarySectionProps = {
   replay: ReplaySessionModel;
 };
 
-export default function ReplaySummarySection({
-  replay
-}: ReplaySummarySectionProps) {
+const ReplaySummarySection = ({ replay }: ReplaySummarySectionProps) => {
   const { summary } = replay;
   const pace = formatPace(
     summary.totalDistanceMeters,
@@ -62,72 +61,71 @@ export default function ReplaySummarySection({
   const summaryMessage = getSummaryMessage(summary.elevationSummaryStatus);
 
   return (
-    <div className="space-y-4 px-4 pt-4">
-      <section className="rounded-3xl border border-[#89943d]/10 bg-white px-4 py-4 shadow-sm">
-        <div className="mb-3">
-          <p className="text-[11px] font-semibold tracking-[0.16em] text-[#89943d] uppercase">
-            기록 요약
+    <section className="border-primary/10 rounded-3xl border bg-white px-4 py-4 shadow-sm">
+      <div className="mb-3">
+        <p className="text-primary text-[11px] font-semibold tracking-[0.16em] uppercase">
+          기록 요약
+        </p>
+      </div>
+
+      {summaryMessage ? (
+        <SummaryNotice
+          message={summaryMessage}
+          tone={
+            summary.elevationSummaryStatus === "UNAVAILABLE"
+              ? "warning"
+              : "default"
+          }
+          surface="soft"
+          className="mb-3"
+        />
+      ) : null}
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-bg-page rounded-2xl px-4 py-3">
+          <p className="text-primary text-[11px] font-semibold tracking-[0.14em] uppercase">
+            거리
+          </p>
+          <p className="text-heading mt-1 text-base font-bold">
+            {formatDistanceDisplay(summary.totalDistanceMeters)}
           </p>
         </div>
 
-        {summaryMessage && (
-          <div
-            className={`mb-3 rounded-2xl px-3 py-2 text-xs font-medium ${
-              summary.elevationSummaryStatus === "UNAVAILABLE"
-                ? "border border-amber-200 bg-amber-50 text-amber-700"
-                : "border border-[#89943d]/10 bg-[#f7f7f6] text-slate-600"
-            }`}
-          >
-            {summaryMessage}
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
-            <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
-              거리
-            </p>
-            <p className="mt-1 text-base font-bold text-[#2f3415]">
-              {formatDistanceDisplay(summary.totalDistanceMeters)}
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
-            <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
-              시간
-            </p>
-            <p className="mt-1 text-base font-bold text-[#2f3415]">
-              {formatDurationDisplay(summary.totalElapsedSeconds)}
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
-            <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
-              상승
-            </p>
-            <p className="mt-1 text-base font-bold text-[#2f3415]">
-              {formatElevationDisplay(
-                summary.totalElevationGainMeters,
-                summary.elevationSummaryStatus
-              )}
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-[#f7f7f6] px-4 py-3">
-            <p className="text-[11px] font-semibold tracking-[0.14em] text-[#89943d] uppercase">
-              페이스
-            </p>
-            <p className="mt-1 text-base font-bold text-[#2f3415]">
-              {pace}
-              {pace !== "-" ? (
-                <span className="ml-1 text-xs font-medium text-[#424434]/60">
-                  /km
-                </span>
-              ) : null}
-            </p>
-          </div>
+        <div className="bg-bg-page rounded-2xl px-4 py-3">
+          <p className="text-primary text-[11px] font-semibold tracking-[0.14em] uppercase">
+            시간
+          </p>
+          <p className="text-heading mt-1 text-base font-bold">
+            {formatDurationDisplay(summary.totalElapsedSeconds)}
+          </p>
         </div>
-      </section>
-    </div>
+
+        <div className="bg-bg-page rounded-2xl px-4 py-3">
+          <p className="text-primary text-[11px] font-semibold tracking-[0.14em] uppercase">
+            상승
+          </p>
+          <p className="text-heading mt-1 text-base font-bold">
+            {formatElevationDisplay(
+              summary.totalElevationGainMeters,
+              summary.elevationSummaryStatus
+            )}
+          </p>
+        </div>
+
+        <div className="bg-bg-page rounded-2xl px-4 py-3">
+          <p className="text-primary text-[11px] font-semibold tracking-[0.14em] uppercase">
+            페이스
+          </p>
+          <p className="text-heading mt-1 text-base font-bold">
+            {pace}
+            {pace !== "-" ? (
+              <span className="text-body/60 ml-1 text-xs font-medium">/km</span>
+            ) : null}
+          </p>
+        </div>
+      </div>
+    </section>
   );
-}
+};
+
+export default ReplaySummarySection;
