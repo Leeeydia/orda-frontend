@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import Header from "@/components/layout/Header";
+import Header, { HEADER_HEIGHT } from "@/components/layout/Header";
 import BackButton from "@/components/layout/BackButton";
 import BottomNav from "@/components/layout/BottomNav";
 import ReplayMapSection, {
@@ -34,6 +34,10 @@ type ReplayContentProps = {
   verifiedSummits: VerifiedSummit[];
   isSummitInfoError: boolean;
 };
+
+const pageOffsetStyle = {
+  paddingTop: HEADER_HEIGHT
+} as const;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -429,7 +433,9 @@ export default function HikingSessionReplayPage() {
     <div className="bg-bg-page text-body min-h-screen">
       <Header leftSlot={<BackButton />} title="리플레이" />
 
-      <div className="bg-bg-page mx-auto min-h-screen w-full max-w-[390px] pt-[68px]">
+      <div
+        style={pageOffsetStyle}
+        className="bg-bg-page mx-auto w-full max-w-[390px]">
         <ReplayPageContent
           key={replay.sessionId}
           replay={replay}

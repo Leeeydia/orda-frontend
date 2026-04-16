@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useParams } from "react-router-dom";
-import Header from "@/components/layout/Header";
+import Header, { HEADER_HEIGHT } from "@/components/layout/Header";
 import BackButton from "@/components/layout/BackButton";
 import BottomNav from "@/components/layout/BottomNav";
 import ElevationProfileCard from "@/features/hiking/components/ElevationProfileCard";
@@ -14,9 +14,15 @@ type SessionDetailStateProps = {
   message: string;
 };
 
+const pageOffsetStyle = {
+  paddingTop: HEADER_HEIGHT
+} as const;
+
 const SessionDetailState = ({ message }: SessionDetailStateProps) => {
   return (
-    <main className="mx-auto min-h-screen w-full max-w-[390px] bg-bg-page px-4 pt-[68px] pb-24">
+    <main
+      style={pageOffsetStyle}
+      className="bg-bg-page mx-auto w-full max-w-[390px] px-4 pb-24">
       <section className="rounded-3xl border border-error/20 bg-error/10 px-4 py-4 text-sm text-error shadow-sm">
         {message}
       </section>
@@ -60,7 +66,9 @@ export default function HikingSessionDetailPage() {
     <div className="min-h-screen bg-bg-page text-body">
       <Header leftSlot={<BackButton />} title="등산 세션" />
 
-      <div className="mx-auto min-h-screen w-full max-w-[390px] bg-bg-page pt-[68px] pb-24">
+      <div
+        style={pageOffsetStyle}
+        className="bg-bg-page mx-auto w-full max-w-[390px] pb-24">
         <main>
           <section className="relative">
             <div className="relative h-[calc(100dvh-68px)] min-h-[520px] overflow-hidden bg-gradient-to-br from-bg-accent via-bg-soft to-bg-page">
