@@ -4,6 +4,9 @@ export type ElevationSummaryStatus =
   | "ESTIMATED"
   | "UNAVAILABLE";
 
+// saveGpsTrack 응답의 elevationSource 허용값
+export type ElevationSource = "dem" | "gps_fallback" | "none";
+
 export interface HikingStartRequest {
   userId: number;
   latitude: number;
@@ -22,6 +25,12 @@ export interface HikingStartResponse {
   sessionId: number;
   startedAt: string;
   nearbySummits: NearbySummitItem[];
+}
+
+// start() 훅 반환 타입 — 성공 여부와 실패 메시지를 같이 반환
+export interface HikingStartResult {
+  success: boolean;
+  errorMessage?: string;
 }
 
 export interface HikingEndResponse {
@@ -51,7 +60,7 @@ export interface GpsTrackRequest {
 
 export interface GpsTrackSaveResponse {
   canonicalElevationM: number | null;
-  elevationSource: string;
+  elevationSource: ElevationSource;
 }
 
 export interface HikingSessionResponse {

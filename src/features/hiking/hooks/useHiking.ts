@@ -6,6 +6,11 @@
  *             세션 생성 후 즉시 첫 포인트 저장 보장
  *  - start(): startHiking 호출 시 GPS 좌표(latitude, longitude) 포함
  *             백엔드 등산로 근접 검증 에러 메시지 표시
+ *  - start(): 반환 타입을 { success, errorMessage }로 변경
+ *             idle 상태 시작 실패 메시지를 호출자가 토스트로 표시 가능
+ *  - demElevations: elevationSource === "dem"일 때만 수집
+ *                   gps_fallback, none은 그래프에 포함하지 않음
+ *  - end(): 마지막 saveGpsTrack() 응답의 canonicalElevationM도 demElevations에 반영
  */
 
 import { useState, useRef, useEffect } from "react";
@@ -18,7 +23,10 @@ import {
   saveGpsTrack
 } from "../api/hikingApi";
 import type { GpsPoint } from "@/features/gps/types/gps.types";
-import type { NearbySummitItem } from "../types/hiking.types";
+import type {
+  NearbySummitItem,
+  HikingStartResult
+} from "../types/hiking.types";
 
 const SAVE_INTERVAL_MS = 5000;
 
@@ -45,7 +53,7 @@ export const useHiking = () => {
     return () => window.removeEventListener("beforeunload", sendEndBeacon);
   }, []);
 
-  const start = async (): Promise<boolean> => {
+  const start = async (): Promise<HikingStartResult> => {
     try {
       setIsLoading(true);
       setError(null);
@@ -74,7 +82,11 @@ export const useHiking = () => {
         })
           .then((res) => {
             setSavedPointCount((prev) => prev + 1);
-            if (res.canonicalElevationM != null) {
+            // DEM 기반 고도만 그래프에 반영 (gps_fallback/none 제외)
+            if (
+              res.elevationSource === "dem" &&
+              res.canonicalElevationM != null
+            ) {
               setDemElevations((prev) => [...prev, res.canonicalElevationM!]);
             }
           })
@@ -105,20 +117,25 @@ export const useHiking = () => {
         accuracyM: firstFix.accuracy
       });
       setSavedPointCount(1);
-      if (firstTrackRes.canonicalElevationM != null) {
+      if (
+        firstTrackRes.elevationSource === "dem" &&
+        firstTrackRes.canonicalElevationM != null
+      ) {
         setDemElevations([firstTrackRes.canonicalElevationM]);
       }
       firstFixRef.current = null;
 
-      return true;
+      return { success: true };
     } catch (e) {
       const message =
         axios.isAxiosError(e) && e.response?.data?.message
           ? e.response.data.message
-          : "등산 시작에 실패했습니다. GPS 권한을 확인해주세요.";
+          : e instanceof Error
+            ? e.message
+            : "등산 시작에 실패했습니다. GPS 권한을 확인해주세요.";
       setError(message);
       gps.stop();
-      return false;
+      return { success: false, errorMessage: message };
     } finally {
       setIsLoading(false);
     }
@@ -135,13 +152,23 @@ export const useHiking = () => {
       setError(null);
 
       if (gps.currentPos) {
-        await saveGpsTrack(currentSessionId, {
+        const lastTrackRes = await saveGpsTrack(currentSessionId, {
           latitude: gps.currentPos.lat,
           longitude: gps.currentPos.lng,
           elevationM: gps.currentPos.altitude ?? null,
           accuracyM: gps.currentPos.accuracy
         });
         setSavedPointCount((prev) => prev + 1);
+        // 종료 시점 마지막 포인트도 DEM 고도가 있으면 그래프에 반영
+        if (
+          lastTrackRes.elevationSource === "dem" &&
+          lastTrackRes.canonicalElevationM != null
+        ) {
+          setDemElevations((prev) => [
+            ...prev,
+            lastTrackRes.canonicalElevationM!
+          ]);
+        }
       }
 
       await endHiking(currentSessionId);
@@ -151,7 +178,6 @@ export const useHiking = () => {
       firstFixRef.current = null;
       setSavedPointCount(0);
       setNearbySummits([]);
-      setDemElevations([]);
 
       return true;
     } catch {
