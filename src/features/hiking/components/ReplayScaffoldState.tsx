@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import Header from "@/components/layout/Header";
+import Header, { HEADER_HEIGHT } from "@/components/layout/Header";
 import BackButton from "@/components/layout/BackButton";
 import Button from "@/components/ui/Button";
 
@@ -27,6 +27,10 @@ const REPLAY_STATE_META: Record<
   }
 };
 
+const pageOffsetStyle = {
+  paddingTop: HEADER_HEIGHT
+} as const;
+
 const ReplayScaffoldState = ({
   message,
   tone = "neutral"
@@ -39,7 +43,9 @@ const ReplayScaffoldState = ({
     <div className="min-h-screen bg-bg-page">
       <Header leftSlot={<BackButton />} title="리플레이" />
 
-      <main className="mx-auto flex min-h-screen w-full max-w-[390px] items-center px-4 pt-20 pb-6">
+      <main
+        style={pageOffsetStyle}
+        className="mx-auto flex w-full max-w-[390px] items-center px-4 pb-6">
         <section
           className={
             isError
