@@ -14,6 +14,7 @@
  *  - moveend 요청 경쟁 조건 방어 (AbortController)
  *  - 정상 마커 팝업을 ORDA 디자인 시스템 카드 스타일로 변경
  *  - 정상 마커 렌더링 로직을 summitMarker 공통 유틸로 분리
+ *    (팝업 스타일은 유틸 내부에서 자동 주입됨)
  */
 
 import { useState, useRef, useEffect } from "react";
@@ -22,8 +23,7 @@ import { getTrailDifficultyMapByBbox } from "@/features/trail/api/trailApi";
 import type { TrailGeoJson } from "@/features/trail/types/trail.types";
 import {
   renderSummitMarkers,
-  clearSummitMarkers,
-  SUMMIT_POPUP_STYLES
+  clearSummitMarkers
 } from "@/features/hiking/components/summitMarker";
 
 import CommonMap from "@/components/map/CommonMap";
@@ -191,7 +191,11 @@ const GpsTrackingMap = ({
   useEffect(() => {
     if (!mapInstanceRef.current) return;
 
-    renderSummitMarkers(mapInstanceRef.current, nearbySummits, summitMarkerRefs);
+    renderSummitMarkers(
+      mapInstanceRef.current,
+      nearbySummits,
+      summitMarkerRefs
+    );
 
     return () => {
       clearSummitMarkers(summitMarkerRefs);
@@ -312,10 +316,7 @@ const GpsTrackingMap = ({
 
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
-      <style>{`
-        .maplibregl-ctrl-top-right { top: 60px !important; }
-        ${SUMMIT_POPUP_STYLES}
-      `}</style>
+      <style>{`.maplibregl-ctrl-top-right { top: 60px !important; }`}</style>
       <CommonMap
         geoJsonData={geoJson}
         center={currentPos ? [currentPos.lng, currentPos.lat] : undefined}

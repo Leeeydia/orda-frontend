@@ -7,6 +7,9 @@
  * - ReplayMapSection: 리플레이에서 인증된 정상 표시 (인증 시각)
  *
  * 마커 디자인과 팝업 스타일은 ORDA 디자인 시스템 기준으로 통일됨.
+ * 팝업 스타일은 첫 렌더 시 document.head에 한 번만 주입되므로
+ * 소비 컴포넌트에서 별도로 <style>을 추가할 필요가 없다.
+ * 팝업 본문은 DOM node로 생성하여 summitName에 대한 XSS 위험을 방지한다.
  */
 
 import maplibregl from "maplibre-gl";
@@ -20,8 +23,10 @@ export interface SummitMarkerData {
   verifiedAt?: string; // 있으면 "인증 시각 XXXX" 표시
 }
 
-// ORDA 카드 스타일 팝업 CSS (컴포넌트에서 <style> 태그에 주입)
-export const SUMMIT_POPUP_STYLES = `
+const POPUP_STYLE_ID = "orda-summit-popup-styles";
+
+// ORDA 카드 스타일 팝업 CSS (document.head에 한 번만 주입)
+const POPUP_STYLES = `
   .orda-summit-popup .maplibregl-popup-content {
     padding: 0;
     border-radius: 12px;
@@ -54,6 +59,17 @@ export const SUMMIT_POPUP_STYLES = `
   }
 `;
 
+// 첫 호출 시 document.head에 스타일을 한 번만 주입
+function ensurePopupStylesInjected(): void {
+  if (typeof document === "undefined") return;
+  if (document.getElementById(POPUP_STYLE_ID)) return;
+
+  const styleEl = document.createElement("style");
+  styleEl.id = POPUP_STYLE_ID;
+  styleEl.textContent = POPUP_STYLES;
+  document.head.appendChild(styleEl);
+}
+
 // 삼각형 산 모양 마커 엘리먼트
 function createSummitMarkerElement(): HTMLButtonElement {
   const el = document.createElement("button");
@@ -69,13 +85,22 @@ function createSummitMarkerElement(): HTMLButtonElement {
 }
 
 // 인증 시각 포맷 (2026-04-15T16:30:00 → 2026-04-15 16:30:00)
-function formatVerifiedAt(verifiedAt?: string): string {
-  if (!verifiedAt) return "";
+function formatVerifiedAt(verifiedAt: string): string {
   return verifiedAt.replace("T", " ");
 }
 
-// 팝업 본문 HTML 생성
-function createSummitPopupHtml(summit: SummitMarkerData): string {
+// 팝업 본문을 DOM node로 생성 (textContent 사용으로 XSS 방지)
+function createSummitPopupNode(summit: SummitMarkerData): HTMLElement {
+  const container = document.createElement("div");
+  container.style.cssText =
+    "padding:8px 24px 8px 12px;font-family:'Pretendard',-apple-system,sans-serif;white-space:nowrap;";
+
+  const nameEl = document.createElement("div");
+  nameEl.style.cssText =
+    "font-size:13px;font-weight:600;color:#4A521E;line-height:18px;";
+  nameEl.textContent = summit.summitName;
+  container.appendChild(nameEl);
+
   let subText = "";
   if (summit.elevationM != null) {
     subText = `해발 ${summit.elevationM}m`;
@@ -83,11 +108,15 @@ function createSummitPopupHtml(summit: SummitMarkerData): string {
     subText = `인증 시각: ${formatVerifiedAt(summit.verifiedAt)}`;
   }
 
-  return `
-    <div style="padding:8px 24px 8px 12px;font-family:'Pretendard',-apple-system,sans-serif;white-space:nowrap;">
-      <div style="font-size:13px;font-weight:600;color:#4A521E;line-height:18px;">${summit.summitName}</div>
-      ${subText ? `<div style="margin-top:2px;font-size:11px;color:#7A8070;line-height:16px;">${subText}</div>` : ""}
-    </div>`;
+  if (subText) {
+    const subEl = document.createElement("div");
+    subEl.style.cssText =
+      "margin-top:2px;font-size:11px;color:#7A8070;line-height:16px;";
+    subEl.textContent = subText;
+    container.appendChild(subEl);
+  }
+
+  return container;
 }
 
 // 지도에 정상 마커들 렌더링 (기존 마커 자동 제거 후 새로 그림)
@@ -96,6 +125,7 @@ export function renderSummitMarkers(
   summits: SummitMarkerData[],
   markerRefs: React.MutableRefObject<maplibregl.Marker[]>
 ): void {
+  ensurePopupStylesInjected();
   clearSummitMarkers(markerRefs);
 
   summits.forEach((summit) => {
@@ -106,8 +136,8 @@ export function renderSummitMarkers(
       return;
     }
 
-    const el = createSummitMarkerElement();
-    const popupHtml = createSummitPopupHtml(summit);
+    const markerEl = createSummitMarkerElement();
+    const popupNode = createSummitPopupNode(summit);
 
     const popup = new maplibregl.Popup({
       offset: 14,
@@ -115,10 +145,10 @@ export function renderSummitMarkers(
       anchor: "bottom",
       maxWidth: "none",
       className: "orda-summit-popup"
-    }).setHTML(popupHtml);
+    }).setDOMContent(popupNode);
 
     const marker = new maplibregl.Marker({
-      element: el,
+      element: markerEl,
       anchor: "bottom",
       offset: [0, 2]
     })
