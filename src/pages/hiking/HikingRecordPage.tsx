@@ -3,7 +3,7 @@
  *
  * 변경 사항:
  *  - idle 상태에서 내 위치 표시, 현위치 버튼, 헤더 심플화, 난이도 범례 추가
- *  - 페이지 진입 시 watchPosition으로 위치 지속 갱신 (proximity 재검사 지원)
+ *  - 페이지 진입 시 watchPosition으로 위치 지속 갱신 (idle 상태에서도 위치 추적)
  *  - BottomNav 추가
  *  - 등산 중 TIME/거리/고도 카드, 정상 인증, 종료 기능 추가
  *  - 배낭맨 하단 대기 → 마커로 이동 애니메이션 추가
@@ -16,7 +16,11 @@
  *  - 명산 목록 로드 실패 시 Toast 에러 안내
  *  - handleMountainClick useCallback 적용
  *  - 등산로 근접 여부 사전 체크 + 토스트 안내 추가
- *  - idle 상태에서도 시작 실패 에러 토스트 표시
+ *  - idle 상태 위치 변경 시 proximity 재검사 (debounce 5초)
+ *  - start() 실패 시 errorMessage를 토스트로 표시
+ *  - ElevationChart: raw GPS fallback 제거, DEM 고도만 사용
+ *                    DEM 값이 2개 미만이면 "수집 중..." 안내
+ *                    DEM 누락 구간(null)은 차트에서 선 끊김으로 표시
  */
 import { useState, useRef, useEffect, useCallback } from "react";
 import maplibregl from "maplibre-gl";
@@ -51,6 +55,8 @@ const DIFFICULTY_COLORS: Record<string, string> = {
   very_hard: "#f97316",
   extreme: "#ef4444"
 };
+
+const PROXIMITY_RECHECK_DEBOUNCE_MS = 5000;
 
 const useElapsedTime = (isRunning: boolean) => {
   const [seconds, setSeconds] = useState(0);
@@ -87,37 +93,71 @@ const formatTime = (totalSeconds: number): string => {
   return `${h}:${m}:${s}`;
 };
 
-const ElevationChart = ({ trail }: { trail: GpsPoint[] }) => {
-  const elevations = trail
-    .map((p) => p.altitude)
-    .filter((a): a is number => a != null);
-  if (elevations.length < 2) {
+/**
+ * DEM 고도 그래프
+ * - demElevations만 사용 (raw GPS fallback 없음)
+ * - 유효한 값이 2개 미만이면 "수집 중..." 안내
+ * - null 구간은 연속된 선을 끊어서 누락을 시각적으로 표시
+ */
+const ElevationChart = ({
+  demElevations
+}: {
+  demElevations: (number | null)[];
+}) => {
+  const validCount = demElevations.filter((e): e is number => e != null).length;
+
+  if (validCount < 2) {
     return (
-      <div className="relative flex h-20 w-full items-center justify-center overflow-hidden rounded-xl bg-slate-50">
+      <div className="relative flex h-20 w-full items-center justify-center rounded-xl bg-slate-50">
         <span className="text-xs text-slate-400">고도 데이터 수집 중...</span>
       </div>
     );
   }
-  const min = Math.min(...elevations);
-  const max = Math.max(...elevations);
-  const range = max - min || 1;
-  const w = 100,
-    h = 80;
-  const points = elevations.map((e, i) => ({
-    x: (i / (elevations.length - 1)) * w,
-    y: h - ((e - min) / range) * (h - 10) - 5
-  }));
-  const pathD = points
-    .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`)
-    .join(" ");
-  const fillD = `${pathD} L ${w} ${h} L 0 ${h} Z`;
+
+  const validValues = demElevations.filter((e): e is number => e != null);
+  const min = Math.min(...validValues);
+  const max = Math.max(...validValues);
+  const range = Math.max(max - min, 20) || 1;
+  const w = 100;
+  const h = 80;
+  const n = demElevations.length;
+
+  // null이면 null, 값이면 좌표 계산
+  const points = demElevations.map((e, i) => {
+    if (e == null) return null;
+    return {
+      x: n === 1 ? w / 2 : (i / (n - 1)) * w,
+      y: h - ((e - min) / range) * (h - 10) - 5
+    };
+  });
+
+  // null을 만나면 M(move), 이어지면 L(line)
+  let pathD = "";
+  let prevWasNull = true;
+  points.forEach((p) => {
+    if (p == null) {
+      prevWasNull = true;
+      return;
+    }
+    if (prevWasNull) {
+      pathD += `M ${p.x} ${p.y} `;
+      prevWasNull = false;
+    } else {
+      pathD += `L ${p.x} ${p.y} `;
+    }
+  });
+
+  // 마지막 유효 포인트 위치 계산 (끝 점 dot용)
+  const lastValidPoint = [...points].reverse().find((p) => p != null) ?? null;
+  const dotLeft = lastValidPoint ? `${(lastValidPoint.x / w) * 100}%` : "0%";
+  const dotTop = lastValidPoint ? `${(lastValidPoint.y / h) * 100}%` : "0%";
+
   return (
-    <div className="relative h-20 w-full overflow-hidden rounded-xl bg-slate-50">
+    <div className="relative h-20 w-full rounded-xl bg-slate-50">
       <svg
         viewBox={`0 0 ${w} ${h}`}
         preserveAspectRatio="none"
         className="absolute inset-0 h-full w-full">
-        <path d={fillD} fill="rgba(137,148,61,0.2)" />
         <path
           d={pathD}
           fill="none"
@@ -126,6 +166,23 @@ const ElevationChart = ({ trail }: { trail: GpsPoint[] }) => {
           vectorEffect="non-scaling-stroke"
         />
       </svg>
+      {lastValidPoint && (
+        <div
+          style={{
+            position: "absolute",
+            left: dotLeft,
+            top: dotTop,
+            width: 12,
+            height: 12,
+            borderRadius: "50%",
+            background: "#89943d",
+            border: "2.5px solid white",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
+            transform: "translate(-50%, -50%)",
+            zIndex: 10
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -155,19 +212,17 @@ const StatItem = ({
 
 type PageState = "idle" | "hiking" | "finished";
 
-const PROXIMITY_CHECK_DEBOUNCE_MS = 5000;
-
 export default function HikingRecordPage() {
   const {
     geoJson,
     currentPos,
     isLoading,
     error,
-    trail,
     distanceKm,
     elevGain,
     currentAltitude,
     nearbySummits,
+    demElevations,
     start,
     end,
     verify
@@ -200,7 +255,7 @@ export default function HikingRecordPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<"success" | "error">("error");
 
-  // idle 상태일 때 watchPosition으로 위치 지속 갱신
+  // idle 상태에서 watchPosition으로 위치 지속 갱신
   useEffect(() => {
     if (!navigator.geolocation) return;
     if (pageState !== "idle") return;
@@ -209,35 +264,31 @@ export default function HikingRecordPage() {
       (pos) =>
         setIdlePos({ lng: pos.coords.longitude, lat: pos.coords.latitude }),
       () => {},
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
 
     return () => navigator.geolocation.clearWatch(watchId);
   }, [pageState]);
 
-  // 위치 변경 시 등산로 근접 여부 재검사 (debounce)
+  // 위치 확보/변경 시 등산로 근접 여부 재체크 (debounce 5초)
   useEffect(() => {
     if (!idlePos || pageState !== "idle") return;
 
-    const timer = setTimeout(() => {
+    const timerId = setTimeout(() => {
       checkNearbyTrail(idlePos.lat, idlePos.lng)
         .then((result) => {
           setIsNearTrail(result.nearTrail);
-          if (!result.nearTrail && isNearTrail !== false) {
+          if (!result.nearTrail) {
             setToastType("error");
             setToastMessage("등산로 근처에서만 등산을 시작할 수 있어요");
-          }
-          if (result.nearTrail && isNearTrail === false) {
-            setToastType("success");
-            setToastMessage("등산로 근처입니다. 등산을 시작할 수 있어요!");
           }
         })
         .catch(() => {
           setIsNearTrail(null);
         });
-    }, PROXIMITY_CHECK_DEBOUNCE_MS);
+    }, PROXIMITY_RECHECK_DEBOUNCE_MS);
 
-    return () => clearTimeout(timer);
+    return () => clearTimeout(timerId);
   }, [idlePos, pageState]);
 
   // 100대 명산 모드 상태
@@ -636,7 +687,7 @@ export default function HikingRecordPage() {
               />
             </div>
 
-            <ElevationChart trail={trail ?? []} />
+            <ElevationChart demElevations={demElevations} />
 
             {summitResult && (
               <div
@@ -794,7 +845,6 @@ export default function HikingRecordPage() {
         </div>
       )}
 
-      {/* BottomNav */}
       {pageState === "idle" && <BottomNav />}
 
       {/* Toast */}
@@ -849,7 +899,7 @@ export default function HikingRecordPage() {
         </div>
       )}
 
-      {/* 토스트 (근접 안내 + 시작 실패 에러) */}
+      {/* 토스트 */}
       {toastMessage && (
         <Toast
           message={toastMessage}

@@ -7,7 +7,12 @@
  *  - start(): startHiking 호출 시 GPS 좌표(latitude, longitude) 포함
  *             백엔드 등산로 근접 검증 에러 메시지 표시
  *  - start(): 반환 타입을 { success, errorMessage }로 변경
- *             호출 측에서 에러 메시지를 즉시 사용 가능
+ *             idle 상태 시작 실패 메시지를 호출자가 토스트로 표시 가능
+ *  - demElevations: (number | null)[] 형태로 관리
+ *                   dem이면 값, gps_fallback/none이면 null을 push
+ *                   → raw GPS 그래프로 fallback하지 않고, 누락 구간은 차트에서 공백으로 표시
+ *  - start()/end()에서 demElevations 명시적 초기화 (이전 세션 값 섞임 방지)
+ *  - end(): 마지막 saveGpsTrack() 응답도 demElevations에 반영
  */
 
 import { useState, useRef, useEffect } from "react";
@@ -20,13 +25,21 @@ import {
   saveGpsTrack
 } from "../api/hikingApi";
 import type { GpsPoint } from "@/features/gps/types/gps.types";
-import type { NearbySummitItem } from "../types/hiking.types";
+import type {
+  NearbySummitItem,
+  HikingStartResult,
+  GpsTrackSaveResponse
+} from "../types/hiking.types";
 
 const SAVE_INTERVAL_MS = 5000;
 
-interface StartResult {
-  success: boolean;
-  errorMessage: string | null;
+// saveGpsTrack 응답 → demElevations에 push할 값
+// dem이면 값, 그 외(gps_fallback, none)면 null로 표시
+function toDemElevationEntry(res: GpsTrackSaveResponse): number | null {
+  if (res.elevationSource === "dem" && res.canonicalElevationM != null) {
+    return res.canonicalElevationM;
+  }
+  return null;
 }
 
 export const useHiking = () => {
@@ -36,6 +49,7 @@ export const useHiking = () => {
   const [error, setError] = useState<string | null>(null);
   const [savedPointCount, setSavedPointCount] = useState(0);
   const [nearbySummits, setNearbySummits] = useState<NearbySummitItem[]>([]);
+  const [demElevations, setDemElevations] = useState<(number | null)[]>([]);
 
   const lastSavedAt = useRef<number>(0);
   const sessionIdRef = useRef<number | null>(null);
@@ -51,11 +65,14 @@ export const useHiking = () => {
     return () => window.removeEventListener("beforeunload", sendEndBeacon);
   }, []);
 
-  const start = async (): Promise<StartResult> => {
+  const start = async (): Promise<HikingStartResult> => {
     try {
       setIsLoading(true);
       setError(null);
       firstFixRef.current = null;
+      // 이전 세션 상태가 섞이지 않도록 명시적 초기화
+      setDemElevations([]);
+      setSavedPointCount(0);
 
       // 1. GPS fix 확보 대기
       //    첫 fix는 sessionId가 없으므로 저장 불가 → firstFixRef에 임시 보관
@@ -78,7 +95,12 @@ export const useHiking = () => {
           elevationM: point.altitude ?? null,
           accuracyM: point.accuracy
         })
-          .then(() => setSavedPointCount((prev) => prev + 1))
+          .then((res) => {
+            setSavedPointCount((prev) => prev + 1);
+            // dem이 아닌 경우(gps_fallback, none)는 null로 push
+            // → 차트에서 누락 구간이 공백/끊김으로 표시됨
+            setDemElevations((prev) => [...prev, toDemElevationEntry(res)]);
+          })
           .catch((e) => console.error("GPS 저장 실패:", e));
       });
 
@@ -99,21 +121,24 @@ export const useHiking = () => {
       setNearbySummits(res.nearbySummits ?? []);
 
       // 3. 첫 GPS 포인트 저장
-      await saveGpsTrack(newSessionId, {
+      const firstTrackRes = await saveGpsTrack(newSessionId, {
         latitude: firstFix.lat,
         longitude: firstFix.lng,
         elevationM: firstFix.altitude ?? null,
         accuracyM: firstFix.accuracy
       });
       setSavedPointCount(1);
+      setDemElevations([toDemElevationEntry(firstTrackRes)]);
       firstFixRef.current = null;
 
-      return { success: true, errorMessage: null };
+      return { success: true };
     } catch (e) {
       const message =
         axios.isAxiosError(e) && e.response?.data?.message
           ? e.response.data.message
-          : "등산 시작에 실패했습니다. GPS 권한을 확인해주세요.";
+          : e instanceof Error
+            ? e.message
+            : "등산 시작에 실패했습니다. GPS 권한을 확인해주세요.";
       setError(message);
       gps.stop();
       return { success: false, errorMessage: message };
@@ -133,13 +158,18 @@ export const useHiking = () => {
       setError(null);
 
       if (gps.currentPos) {
-        await saveGpsTrack(currentSessionId, {
+        const lastTrackRes = await saveGpsTrack(currentSessionId, {
           latitude: gps.currentPos.lat,
           longitude: gps.currentPos.lng,
           elevationM: gps.currentPos.altitude ?? null,
           accuracyM: gps.currentPos.accuracy
         });
         setSavedPointCount((prev) => prev + 1);
+        // 종료 시점 마지막 포인트도 demElevations에 반영
+        setDemElevations((prev) => [
+          ...prev,
+          toDemElevationEntry(lastTrackRes)
+        ]);
       }
 
       await endHiking(currentSessionId);
@@ -147,7 +177,6 @@ export const useHiking = () => {
       setSessionId(null);
       lastSavedAt.current = 0;
       firstFixRef.current = null;
-      setSavedPointCount(0);
       setNearbySummits([]);
 
       return true;
@@ -187,6 +216,7 @@ export const useHiking = () => {
     error: error ?? gps.error,
     savedPointCount,
     nearbySummits,
+    demElevations,
     start,
     end,
     verify
