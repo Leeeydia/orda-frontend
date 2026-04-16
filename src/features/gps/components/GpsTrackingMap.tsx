@@ -18,9 +18,10 @@
  *  - mountainTrailGeoJson null 시 빈 FeatureCollection으로 소스 초기화
  *  - nearbySummits 정상 마커 표시 기능 추가
  *  - isMountainMode OFF 시 bbox 등산로 즉시 재조회
+ *  - loadTrailByBbox 컴포넌트 스코프로 분리, isMountainModeRef 설정 기준 통일
  */
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import maplibregl from "maplibre-gl";
 import { getTrailDifficultyMapByBbox } from "@/features/trail/api/trailApi";
 import type { TrailGeoJson } from "@/features/trail/types/trail.types";
@@ -202,6 +203,8 @@ const GpsTrackingMap = ({
   const hikerIconUrlRef = useRef(hikerIconUrl);
   const mountainMarkersRef = useRef<maplibregl.Marker[]>([]);
   const isMountainModeRef = useRef(false);
+  const bboxAbortControllerRef = useRef<AbortController | null>(null);
+  const onTrailLoadedRef = useRef(onTrailLoaded);
 
   useEffect(() => {
     isTrackingRef.current = isTracking;
@@ -210,6 +213,94 @@ const GpsTrackingMap = ({
   useEffect(() => {
     hikerIconUrlRef.current = hikerIconUrl;
   }, [hikerIconUrl]);
+
+  useEffect(() => {
+    onTrailLoadedRef.current = onTrailLoaded;
+  }, [onTrailLoaded]);
+
+  // loadTrailByBbox — 컴포넌트 스코프로 분리
+  const loadTrailByBbox = useCallback(async () => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    if (isMountainModeRef.current) return;
+
+    if (bboxAbortControllerRef.current) {
+      bboxAbortControllerRef.current.abort();
+    }
+    bboxAbortControllerRef.current = new AbortController();
+    const signal = bboxAbortControllerRef.current.signal;
+
+    if (map.getZoom() < MIN_ZOOM_FOR_TRAIL) {
+      if (map.getLayer(TRAIL_LAYER_ID)) {
+        map.setLayoutProperty(TRAIL_LAYER_ID, "visibility", "none");
+      }
+      setIsTooFar(true);
+      return;
+    }
+
+    setIsTooFar(false);
+    if (map.getLayer(TRAIL_LAYER_ID)) {
+      map.setLayoutProperty(TRAIL_LAYER_ID, "visibility", "visible");
+    }
+
+    const bounds = map.getBounds();
+    const lngPad = (bounds.getEast() - bounds.getWest()) * 0.25;
+    const latPad = (bounds.getNorth() - bounds.getSouth()) * 0.25;
+    const minLng = bounds.getWest() - lngPad;
+    const minLat = bounds.getSouth() - latPad;
+    const maxLng = bounds.getEast() + lngPad;
+    const maxLat = bounds.getNorth() + latPad;
+
+    try {
+      const data: TrailGeoJson = await getTrailDifficultyMapByBbox(
+        minLng,
+        minLat,
+        maxLng,
+        maxLat,
+        signal
+      );
+
+      if (signal.aborted) return;
+
+      const source = map.getSource(TRAIL_SOURCE_ID) as
+        | maplibregl.GeoJSONSource
+        | undefined;
+      if (source) {
+        source.setData(data);
+      } else {
+        map.addSource(TRAIL_SOURCE_ID, { type: "geojson", data });
+        map.addLayer({
+          id: TRAIL_LAYER_ID,
+          type: "line",
+          source: TRAIL_SOURCE_ID,
+          layout: { "line-join": "round", "line-cap": "round" },
+          paint: {
+            "line-color": [
+              "match",
+              ["get", "difficulty"],
+              "easy",
+              DIFFICULTY_COLOR_MAP.easy,
+              "moderate",
+              DIFFICULTY_COLOR_MAP.moderate,
+              "hard",
+              DIFFICULTY_COLOR_MAP.hard,
+              "very_hard",
+              DIFFICULTY_COLOR_MAP.very_hard,
+              "extreme",
+              DIFFICULTY_COLOR_MAP.extreme,
+              "#cccccc"
+            ],
+            "line-width": 3,
+            "line-opacity": 0.85
+          }
+        });
+        onTrailLoadedRef.current?.();
+      }
+    } catch (e) {
+      if (signal.aborted) return;
+      console.error("trail bbox load error", e);
+    }
+  }, []);
 
   // currentPos 변경 시 마커 업데이트
   useEffect(() => {
@@ -241,8 +332,6 @@ const GpsTrackingMap = ({
     mountainMarkersRef.current.forEach((m) => m.remove());
     mountainMarkersRef.current = [];
 
-    isMountainModeRef.current = !!(mountains && mountains.length > 0);
-
     if (!mountains || mountains.length === 0) return;
 
     const zoom = map.getZoom();
@@ -257,6 +346,15 @@ const GpsTrackingMap = ({
       mountainMarkersRef.current.push(marker);
     });
   }, [mountains, onMountainClick]);
+
+  // isMountainMode 변경 시 ref 동기화 + OFF 시 bbox 즉시 재조회
+  useEffect(() => {
+    isMountainModeRef.current = !!isMountainMode;
+
+    if (!isMountainMode) {
+      setTimeout(() => loadTrailByBbox(), 0);
+    }
+  }, [isMountainMode, loadTrailByBbox]);
 
   // mountainTrailGeoJson 변경 시 소스 데이터 교체
   useEffect(() => {
@@ -277,33 +375,6 @@ const GpsTrackingMap = ({
       source.setData(EMPTY_FEATURE_COLLECTION);
     }
   }, [mountainTrailGeoJson]);
-
-  // isMountainMode OFF 시 bbox 등산로 즉시 재조회
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!map) return;
-
-    isMountainModeRef.current = !!isMountainMode;
-
-    if (!isMountainMode) {
-      const bounds = map.getBounds();
-      const lngPad = (bounds.getEast() - bounds.getWest()) * 0.25;
-      const latPad = (bounds.getNorth() - bounds.getSouth()) * 0.25;
-      getTrailDifficultyMapByBbox(
-        bounds.getWest() - lngPad,
-        bounds.getSouth() - latPad,
-        bounds.getEast() + lngPad,
-        bounds.getNorth() + latPad
-      )
-        .then((data) => {
-          const source = map.getSource(TRAIL_SOURCE_ID) as
-            | maplibregl.GeoJSONSource
-            | undefined;
-          if (source) source.setData(data);
-        })
-        .catch(() => {});
-    }
-  }, [isMountainMode]);
 
   // nearbySummits 변경 시 정상 마커 업데이트
   useEffect(() => {
@@ -359,88 +430,8 @@ const GpsTrackingMap = ({
   const handleMapReady = (map: maplibregl.Map) => {
     mapInstanceRef.current = map;
 
-    let abortController: AbortController | null = null;
-
-    const loadTrailByBbox = async () => {
-      if (isMountainModeRef.current) return;
-
-      if (abortController) {
-        abortController.abort();
-      }
-      abortController = new AbortController();
-      const signal = abortController.signal;
-
-      if (map.getZoom() < MIN_ZOOM_FOR_TRAIL) {
-        if (map.getLayer(TRAIL_LAYER_ID)) {
-          map.setLayoutProperty(TRAIL_LAYER_ID, "visibility", "none");
-        }
-        setIsTooFar(true);
-        return;
-      }
-
-      setIsTooFar(false);
-      if (map.getLayer(TRAIL_LAYER_ID)) {
-        map.setLayoutProperty(TRAIL_LAYER_ID, "visibility", "visible");
-      }
-
-      const bounds = map.getBounds();
-      const lngPad = (bounds.getEast() - bounds.getWest()) * 0.25;
-      const latPad = (bounds.getNorth() - bounds.getSouth()) * 0.25;
-      const minLng = bounds.getWest() - lngPad;
-      const minLat = bounds.getSouth() - latPad;
-      const maxLng = bounds.getEast() + lngPad;
-      const maxLat = bounds.getNorth() + latPad;
-
-      try {
-        const data: TrailGeoJson = await getTrailDifficultyMapByBbox(
-          minLng,
-          minLat,
-          maxLng,
-          maxLat,
-          signal
-        );
-
-        if (signal.aborted) return;
-
-        const source = map.getSource(TRAIL_SOURCE_ID) as
-          | maplibregl.GeoJSONSource
-          | undefined;
-        if (source) {
-          source.setData(data);
-        } else {
-          map.addSource(TRAIL_SOURCE_ID, { type: "geojson", data });
-          map.addLayer({
-            id: TRAIL_LAYER_ID,
-            type: "line",
-            source: TRAIL_SOURCE_ID,
-            layout: { "line-join": "round", "line-cap": "round" },
-            paint: {
-              "line-color": [
-                "match",
-                ["get", "difficulty"],
-                "easy",
-                DIFFICULTY_COLOR_MAP.easy,
-                "moderate",
-                DIFFICULTY_COLOR_MAP.moderate,
-                "hard",
-                DIFFICULTY_COLOR_MAP.hard,
-                "very_hard",
-                DIFFICULTY_COLOR_MAP.very_hard,
-                "extreme",
-                DIFFICULTY_COLOR_MAP.extreme,
-                "#cccccc"
-              ],
-              "line-width": 3,
-              "line-opacity": 0.85
-            }
-          });
-          onTrailLoaded?.();
-        }
-      } catch (e) {
-        if (signal.aborted) return;
-        console.error("trail bbox load error", e);
-      }
-    };
+    loadTrailByBbox();
+    map.on("moveend", loadTrailByBbox);
 
     const handleZoomForMountains = () => {
       const zoom = map.getZoom();
@@ -450,8 +441,6 @@ const GpsTrackingMap = ({
       });
     };
 
-    loadTrailByBbox();
-    map.on("moveend", loadTrailByBbox);
     map.on("zoom", handleZoomForMountains);
 
     // 줌 시 배낭맨 크기 동적 조정
