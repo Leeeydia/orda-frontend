@@ -10,7 +10,7 @@
  *  - 100대 명산 모드 토글, 마커 표시, 바텀시트 연결
  *  - 명산 마커 탭 시 해당 산 위치로 지도 이동 및 반경 등산로 표시
  *  - 100대 명산 모드 토글 버튼 나침반 아래 배치, 텍스트 전환
- *  - 명산 마커 탭 시 edgeIds 기반 등산로 조회로 교체, edgeIds 없으면 반경 5km fallback
+ *  - 명산 마커 탭 시 edgeIds 기반 등산로 조회, edgeIds 없으면 바텀시트에 준비 중 표시
  *  - 등산로 로딩 상태 관리 추가, 데이터 없을 시 바텀시트에 준비 중 문구 표시
  */
 import { useState, useRef, useEffect } from "react";
@@ -200,6 +200,7 @@ export default function HikingRecordPage() {
   const [mountainTrailGeoJson, setMountainTrailGeoJson] =
     useState<TrailGeoJson | null>(null);
   const [isMountainTrailLoading, setIsMountainTrailLoading] = useState(false);
+  const currentRequestId = useRef(0);
 
   // 100대 명산 모드 토글
   const handleMountainModeToggle = async () => {
@@ -220,8 +221,9 @@ export default function HikingRecordPage() {
     }
   };
 
-  // 명산 마커 탭 → 지도 이동 + edgeIds 기반 등산로 조회 (없으면 반경 5km fallback)
+  // 명산 마커 탭 → 지도 이동 + edgeIds 기반 등산로 조회
   const handleMountainClick = async (mountain: Top100Mountain) => {
+    const requestId = ++currentRequestId.current;
     setSelectedMountain(mountain);
     setMountainTrailGeoJson(null);
     setIsMountainTrailLoading(true);
@@ -237,12 +239,16 @@ export default function HikingRecordPage() {
         const trailData = await getTrailDifficultyMapByEdgeIds(
           mountain.edgeIds
         );
-        setMountainTrailGeoJson(trailData);
+        if (requestId === currentRequestId.current) {
+          setMountainTrailGeoJson(trailData);
+        }
       }
     } catch (e) {
       console.error("mountain trail load error", e);
     } finally {
-      setIsMountainTrailLoading(false);
+      if (requestId === currentRequestId.current) {
+        setIsMountainTrailLoading(false);
+      }
     }
   };
 
@@ -646,7 +652,10 @@ export default function HikingRecordPage() {
         {selectedMountain && (
           <Top100MountainBottomSheet
             mountain={selectedMountain}
-            onClose={() => setSelectedMountain(null)}
+            onClose={() => {
+              setSelectedMountain(null);
+              setMountainTrailGeoJson(null);
+            }}
             isTrailLoading={isMountainTrailLoading}
             hasTrailData={
               !!mountainTrailGeoJson && mountainTrailGeoJson.features.length > 0

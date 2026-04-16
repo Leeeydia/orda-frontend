@@ -135,6 +135,13 @@ export default function Top100MountainBottomSheet({
           </div>
 
           {/* 등산로 데이터 상태 */}
+          {isTrailLoading && (
+            <div
+              className="mt-3 rounded-xl border border-[#D7DACB] bg-[#F4F5EF] p-3"
+              style={{ textAlign: "center" }}>
+              <p className="text-xs text-[#7A8070]">등산로 불러오는 중...</p>
+            </div>
+          )}
           {!isTrailLoading && !hasTrailData && (
             <div
               className="mt-3 rounded-xl border border-[#D7DACB] bg-[#F4F5EF] p-3"
