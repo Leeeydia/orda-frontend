@@ -1,5 +1,3 @@
-// src/components/layout/Header.tsx
-
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import OrdaLogo from "@/assets/icons/ORDA_logo.svg?react";
@@ -10,35 +8,38 @@ type HeaderProps = {
   title?: string;
 };
 
-/** Header 높이 상수 — py-3(24px) + h-10(40px) = 64px */
-export const HEADER_HEIGHT = 64;
+/** Header 높이 상수 — py-3(24px) + h-11(44px) = 68px */
+export const HEADER_HEIGHT = 68;
 
 const Header = ({ leftSlot, rightSlot, title }: HeaderProps) => {
   return (
-    <header className="fixed top-0 left-1/2 z-50 w-full max-w-[390px] -translate-x-1/2 border-b border-[#89943d]/10 bg-white/90 backdrop-blur">
+    <header className="border-primary/10 fixed top-0 left-1/2 z-50 w-full max-w-[390px] -translate-x-1/2 border-b bg-white/90 backdrop-blur">
       <div className="flex items-center justify-between px-4 py-3">
-        <div className="flex h-10 w-10 items-center justify-center">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center">
           {leftSlot}
         </div>
 
-        <div className="flex flex-1 flex-col items-center px-2">
+        <div className="min-w-0 flex-1 px-2 text-center">
           {title ? (
-            <>
-              <p className="text-[11px] font-semibold tracking-[0.18em] text-[#89943d] uppercase">
+            <div className="space-y-1">
+              <p className="text-primary text-xs font-semibold tracking-wide uppercase">
                 ORDA
               </p>
-              <h1 className="text-base font-bold tracking-tight text-[#2f3415]">
+              <h1 className="text-heading truncate text-base leading-6 font-bold">
                 {title}
               </h1>
-            </>
+            </div>
           ) : (
-            <Link to="/">
+            <Link
+              to="/"
+              aria-label="홈으로 이동"
+              className="inline-flex items-center justify-center">
               <OrdaLogo className="h-6 w-auto" />
             </Link>
           )}
         </div>
 
-        <div className="flex h-10 w-10 items-center justify-center">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center">
           {rightSlot}
         </div>
       </div>

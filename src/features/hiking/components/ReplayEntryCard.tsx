@@ -13,8 +13,8 @@ export default function ReplayEntryCard({ sessionId }: ReplayEntryCardProps) {
   };
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-[#89943d]/10 bg-white shadow-sm">
-      <div className="bg-gradient-to-r from-[#4a521e] to-[#89943d] px-5 py-5 text-white">
+    <section className="overflow-hidden rounded-3xl border border-primary/10 bg-white shadow-sm">
+      <div className="bg-gradient-to-r from-primary-dark to-primary px-5 py-5 text-white">
         <p className="text-[11px] font-semibold tracking-[0.04em] text-white/80">
           리플레이
         </p>
@@ -29,7 +29,7 @@ export default function ReplayEntryCard({ sessionId }: ReplayEntryCardProps) {
           type="button"
           onClick={handleClick}
           disabled={sessionId == null}
-          className="mt-4 w-full rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-[#4a521e] transition hover:bg-white/90 disabled:cursor-not-allowed disabled:bg-white/70 disabled:text-slate-400">
+          className="text-heading mt-4 w-full rounded-2xl bg-white px-4 py-3 text-sm font-semibold transition-colors duration-150 hover:bg-white/90 disabled:cursor-not-allowed disabled:bg-white/70 disabled:text-muted">
           리플레이 보기
         </button>
       </div>
