@@ -17,6 +17,7 @@
  *  - 초기 줌 < 6일 때 마커 영구 미생성 버그 수정 (항상 생성 후 display로 제어)
  *  - mountainTrailGeoJson null 시 빈 FeatureCollection으로 소스 초기화
  *  - nearbySummits 정상 마커 표시 기능 추가
+ *  - isMountainMode OFF 시 bbox 등산로 즉시 재조회
  */
 
 import { useState, useRef, useEffect } from "react";
@@ -47,7 +48,6 @@ const EMPTY_FEATURE_COLLECTION: TrailGeoJson = {
   features: []
 };
 
-// idle 상태 원형 마커
 function createCurrentPosMarkerElement() {
   const wrapper = document.createElement("div");
   wrapper.style.width = "24px";
@@ -81,7 +81,6 @@ function createCurrentPosMarkerElement() {
   return wrapper;
 }
 
-// 줌 레벨 기반 배낭맨 크기 계산
 function getHikerSize(zoom: number): number {
   if (zoom < 10) return 24;
   if (zoom < 12) return 32;
@@ -89,7 +88,6 @@ function getHikerSize(zoom: number): number {
   return 48;
 }
 
-// 등산 중 배낭맨+마커 합성 엘리먼트
 function createHikingMarkerElement(hikerIconUrl: string, size: number = 48) {
   const wrapper = document.createElement("div");
   wrapper.style.width = `${size}px`;
@@ -136,7 +134,6 @@ function createHikingMarkerElement(hikerIconUrl: string, size: number = 48) {
   return wrapper;
 }
 
-// 100대 명산 이름표 마커 엘리먼트 생성
 function createMountainMarkerElement(name: string) {
   const wrapper = document.createElement("div");
   wrapper.style.display = "flex";
@@ -181,6 +178,7 @@ interface Props {
   mountains?: Top100Mountain[];
   onMountainClick?: (mountain: Top100Mountain) => void;
   mountainTrailGeoJson?: TrailGeoJson | null;
+  isMountainMode?: boolean;
 }
 
 const GpsTrackingMap = ({
@@ -193,7 +191,8 @@ const GpsTrackingMap = ({
   onMapReady,
   mountains,
   onMountainClick,
-  mountainTrailGeoJson
+  mountainTrailGeoJson,
+  isMountainMode
 }: Props) => {
   const [isTooFar, setIsTooFar] = useState(false);
   const mapInstanceRef = useRef<maplibregl.Map | null>(null);
@@ -250,7 +249,6 @@ const GpsTrackingMap = ({
 
     mountains.forEach((mountain) => {
       const el = createMountainMarkerElement(mountain.name);
-      // 마커는 항상 생성하고 초기 줌 레벨에 따라 display만 제어
       el.style.display = zoom >= MIN_ZOOM_FOR_MOUNTAINS ? "flex" : "none";
       const marker = new maplibregl.Marker({ element: el, anchor: "bottom" })
         .setLngLat([mountain.longitude, mountain.latitude])
@@ -276,10 +274,36 @@ const GpsTrackingMap = ({
         map.setLayoutProperty(TRAIL_LAYER_ID, "visibility", "visible");
       }
     } else {
-      // null이면 빈 FeatureCollection으로 초기화
       source.setData(EMPTY_FEATURE_COLLECTION);
     }
   }, [mountainTrailGeoJson]);
+
+  // isMountainMode OFF 시 bbox 등산로 즉시 재조회
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    isMountainModeRef.current = !!isMountainMode;
+
+    if (!isMountainMode) {
+      const bounds = map.getBounds();
+      const lngPad = (bounds.getEast() - bounds.getWest()) * 0.25;
+      const latPad = (bounds.getNorth() - bounds.getSouth()) * 0.25;
+      getTrailDifficultyMapByBbox(
+        bounds.getWest() - lngPad,
+        bounds.getSouth() - latPad,
+        bounds.getEast() + lngPad,
+        bounds.getNorth() + latPad
+      )
+        .then((data) => {
+          const source = map.getSource(TRAIL_SOURCE_ID) as
+            | maplibregl.GeoJSONSource
+            | undefined;
+          if (source) source.setData(data);
+        })
+        .catch(() => {});
+    }
+  }, [isMountainMode]);
 
   // nearbySummits 변경 시 정상 마커 업데이트
   useEffect(() => {

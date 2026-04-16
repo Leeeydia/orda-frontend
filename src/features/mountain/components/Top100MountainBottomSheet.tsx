@@ -52,8 +52,7 @@ export default function Top100MountainBottomSheet({
 
   return (
     <div
-      className="absolute inset-0 z-40 flex items-end"
-      style={{ background: "rgba(0,0,0,0.4)" }}
+      className="absolute inset-0 z-40 flex items-end bg-black/40"
       onClick={onClose}>
       <div
         className="w-full rounded-t-2xl bg-white"
@@ -84,35 +83,31 @@ export default function Top100MountainBottomSheet({
               margin: "0 auto 12px"
             }}
           />
-          <h2 className="text-lg font-bold text-[#4A521E]">{mountain.name}</h2>
-          <p className="mt-0.5 text-xs text-[#7A8070]">{mountain.location}</p>
+          <h2 className="text-heading text-lg font-bold">{mountain.name}</h2>
+          <p className="text-muted mt-0.5 text-xs">{mountain.location}</p>
         </div>
 
         {/* 스크롤 영역 */}
         <div style={{ overflowY: "auto", padding: "0 16px 24px" }}>
           {/* 고도 / 난이도 */}
           <div className="mb-3 flex gap-2">
-            <div className="flex-1 rounded-xl border border-[#D7DACB] bg-[#F4F5EF] p-3">
-              <p className="mb-1 text-xs font-bold text-[#7A8070]">고도</p>
-              <p className="text-base font-bold text-[#4A521E]">
+            <div className="border-default bg-secondary flex-1 rounded-xl border p-3">
+              <p className="text-muted mb-1 text-xs font-bold">고도</p>
+              <p className="text-heading text-base font-bold">
                 {mountain.height.toLocaleString()}
-                <span className="ml-1 text-xs font-medium text-[#7A8070]">
-                  m
-                </span>
+                <span className="text-muted ml-1 text-xs font-medium">m</span>
               </p>
             </div>
-            <div className="flex-1 rounded-xl border border-[#D7DACB] bg-[#F4F5EF] p-3">
-              <p className="mb-1 text-xs font-bold text-[#7A8070]">
-                난이도 정보
-              </p>
+            <div className="border-default bg-secondary flex-1 rounded-xl border p-3">
+              <p className="text-muted mb-1 text-xs font-bold">난이도 정보</p>
               <div className="flex flex-col gap-0.5">
-                <p className="text-xs text-[#3D3D2E]">
+                <p className="text-body text-xs">
                   <span className="font-bold">산행시간</span> {parsed.time}
                 </p>
-                <p className="text-xs text-[#3D3D2E]">
+                <p className="text-body text-xs">
                   <span className="font-bold">산높이</span> {parsed.height}
                 </p>
-                <p className="text-xs text-[#3D3D2E]">
+                <p className="text-body text-xs">
                   <span className="font-bold">난이도</span> {parsed.level}
                 </p>
               </div>
@@ -120,15 +115,15 @@ export default function Top100MountainBottomSheet({
           </div>
 
           {/* 특징 */}
-          <div className="rounded-xl border border-[#D7DACB] bg-[#F4F5EF] p-3">
-            <p className="mb-2 text-xs font-bold text-[#7A8070]">특징</p>
+          <div className="border-default bg-secondary rounded-xl border p-3">
+            <p className="text-muted mb-2 text-xs font-bold">특징</p>
             {mountain.feature
               .split(". ")
               .filter(Boolean)
               .map((sentence, i) => (
                 <p
                   key={i}
-                  className="mb-1.5 text-xs leading-relaxed text-[#3D3D2E] last:mb-0">
+                  className="text-body mb-1.5 text-xs leading-relaxed last:mb-0">
                   {sentence.endsWith(".") ? sentence : `${sentence}.`}
                 </p>
               ))}
@@ -136,17 +131,13 @@ export default function Top100MountainBottomSheet({
 
           {/* 등산로 데이터 상태 */}
           {isTrailLoading && (
-            <div
-              className="mt-3 rounded-xl border border-[#D7DACB] bg-[#F4F5EF] p-3"
-              style={{ textAlign: "center" }}>
-              <p className="text-xs text-[#7A8070]">등산로 불러오는 중...</p>
+            <div className="border-default bg-secondary mt-3 rounded-xl border p-3 text-center">
+              <p className="text-muted text-xs">등산로 불러오는 중...</p>
             </div>
           )}
           {!isTrailLoading && !hasTrailData && (
-            <div
-              className="mt-3 rounded-xl border border-[#D7DACB] bg-[#F4F5EF] p-3"
-              style={{ textAlign: "center" }}>
-              <p className="text-xs text-[#7A8070]">
+            <div className="border-default bg-secondary mt-3 rounded-xl border p-3 text-center">
+              <p className="text-muted text-xs">
                 🚧 등산로 데이터를 준비 중입니다
               </p>
             </div>

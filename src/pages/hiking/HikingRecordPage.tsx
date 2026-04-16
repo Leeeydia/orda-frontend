@@ -427,6 +427,7 @@ export default function HikingRecordPage() {
           mountains={isMountainMode ? mountains : []}
           onMountainClick={handleMountainClick}
           mountainTrailGeoJson={mountainTrailGeoJson}
+          isMountainMode={isMountainMode}
         />
 
         {/* 현위치 버튼 + 100대 명산 토글 버튼 */}
@@ -725,6 +726,7 @@ export default function HikingRecordPage() {
             onClose={() => {
               setSelectedMountain(null);
               setMountainTrailGeoJson(null);
+              setIsMountainTrailLoading(false);
               if (abortControllerRef.current) {
                 abortControllerRef.current.abort();
               }
