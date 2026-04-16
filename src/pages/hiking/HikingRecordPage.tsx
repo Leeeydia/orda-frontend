@@ -22,10 +22,7 @@ import BottomNav from "@/components/layout/BottomNav";
 import Button from "@/components/ui/Button";
 import type { GpsPoint } from "@/features/gps/types/gps.types";
 import { getTop100Mountains } from "@/features/mountain/api/mountainApi";
-import {
-  getTrailDifficultyMapByMountain,
-  getTrailDifficultyMapByEdgeIds
-} from "@/features/trail/api/trailApi";
+import { getTrailDifficultyMapByEdgeIds } from "@/features/trail/api/trailApi";
 import type { Top100Mountain } from "@/features/mountain/types/mountainTypes";
 import type { TrailGeoJson } from "@/features/trail/types/trail.types";
 import Top100MountainBottomSheet from "@/features/mountain/components/Top100MountainBottomSheet";
@@ -236,17 +233,12 @@ export default function HikingRecordPage() {
       });
     }
     try {
-      let trailData: TrailGeoJson;
       if (mountain.edgeIds && mountain.edgeIds.length > 0) {
-        trailData = await getTrailDifficultyMapByEdgeIds(mountain.edgeIds);
-      } else {
-        trailData = await getTrailDifficultyMapByMountain(
-          mountain.latitude,
-          mountain.longitude,
-          5.0
+        const trailData = await getTrailDifficultyMapByEdgeIds(
+          mountain.edgeIds
         );
+        setMountainTrailGeoJson(trailData);
       }
-      setMountainTrailGeoJson(trailData);
     } catch (e) {
       console.error("mountain trail load error", e);
     } finally {
