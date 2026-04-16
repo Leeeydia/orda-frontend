@@ -8,18 +8,22 @@
  *  - 등산 중 TIME/거리/고도 카드, 정상 인증, 종료 기능 추가
  *  - 배낭맨 하단 대기 → 마커로 이동 애니메이션 추가
  *  - 100대 명산 모드 토글, 마커 표시, 바텀시트 연결
- *  - 명산 마커 탭 시 해당 산 위치로 지도 이동 및 반경 등산로 표시
+ *  - 명산 마커 탭 시 해당 산 위치로 지도 이동 및 등산로 표시
  *  - 100대 명산 모드 토글 버튼 나침반 아래 배치, 텍스트 전환
  *  - 명산 마커 탭 시 edgeIds 기반 등산로 조회, edgeIds 없으면 바텀시트에 준비 중 표시
  *  - 등산로 로딩 상태 관리 추가, 데이터 없을 시 바텀시트에 준비 중 문구 표시
+ *  - AbortController로 연속 탭 경쟁 조건 방어
+ *  - 명산 목록 로드 실패 시 Toast 에러 안내
+ *  - handleMountainClick useCallback 적용
  */
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import maplibregl from "maplibre-gl";
 import { useHiking } from "@/features/hiking/hooks/useHiking";
 import GpsTrackingMap from "@/features/gps/components/GpsTrackingMap";
 import Header from "@/components/layout/Header";
 import BottomNav from "@/components/layout/BottomNav";
 import Button from "@/components/ui/Button";
+import Toast from "@/components/ui/Toast";
 import type { GpsPoint } from "@/features/gps/types/gps.types";
 import { getTop100Mountains } from "@/features/mountain/api/mountainApi";
 import { getTrailDifficultyMapByEdgeIds } from "@/features/trail/api/trailApi";
@@ -177,6 +181,10 @@ export default function HikingRecordPage() {
   } | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
 
   const [idlePos, setIdlePos] = useState<{ lng: number; lat: number } | null>(
     null
@@ -200,7 +208,7 @@ export default function HikingRecordPage() {
   const [mountainTrailGeoJson, setMountainTrailGeoJson] =
     useState<TrailGeoJson | null>(null);
   const [isMountainTrailLoading, setIsMountainTrailLoading] = useState(false);
-  const currentRequestId = useRef(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // 100대 명산 모드 토글
   const handleMountainModeToggle = async () => {
@@ -216,17 +224,25 @@ export default function HikingRecordPage() {
       const data = await getTop100Mountains();
       setMountains(data);
       setIsMountainMode(true);
+    } catch {
+      setToast({ message: "명산 목록을 불러오지 못했습니다.", type: "error" });
     } finally {
       setIsMountainLoading(false);
     }
   };
 
-  // 명산 마커 탭 → 지도 이동 + edgeIds 기반 등산로 조회
-  const handleMountainClick = async (mountain: Top100Mountain) => {
-    const requestId = ++currentRequestId.current;
+  // 명산 마커 탭 → 지도 이동 + edgeIds 기반 등산로 조회 (AbortController로 경쟁 조건 방어)
+  const handleMountainClick = useCallback(async (mountain: Top100Mountain) => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+    const signal = abortControllerRef.current.signal;
+
     setSelectedMountain(mountain);
     setMountainTrailGeoJson(null);
     setIsMountainTrailLoading(true);
+
     if (mapRef.current) {
       mapRef.current.flyTo({
         center: [mountain.longitude, mountain.latitude],
@@ -237,20 +253,22 @@ export default function HikingRecordPage() {
     try {
       if (mountain.edgeIds && mountain.edgeIds.length > 0) {
         const trailData = await getTrailDifficultyMapByEdgeIds(
-          mountain.edgeIds
+          mountain.edgeIds,
+          signal
         );
-        if (requestId === currentRequestId.current) {
+        if (!signal.aborted) {
           setMountainTrailGeoJson(trailData);
         }
       }
-    } catch (e) {
+    } catch (e: unknown) {
+      if (e instanceof Error && e.name === "AbortError") return;
       console.error("mountain trail load error", e);
     } finally {
-      if (requestId === currentRequestId.current) {
+      if (!signal.aborted) {
         setIsMountainTrailLoading(false);
       }
     }
-  };
+  }, []);
 
   const elapsedSeconds = useElapsedTime(pageState === "hiking");
 
@@ -655,6 +673,9 @@ export default function HikingRecordPage() {
             onClose={() => {
               setSelectedMountain(null);
               setMountainTrailGeoJson(null);
+              if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+              }
             }}
             isTrailLoading={isMountainTrailLoading}
             hasTrailData={
@@ -714,6 +735,15 @@ export default function HikingRecordPage() {
 
       {/* BottomNav */}
       {pageState === "idle" && <BottomNav />}
+
+      {/* Toast */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
 
       {/* 종료 확인 바텀시트 */}
       {showFinishConfirm && (

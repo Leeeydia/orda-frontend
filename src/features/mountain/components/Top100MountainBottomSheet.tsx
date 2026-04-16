@@ -2,9 +2,9 @@ import { useState, useRef } from "react";
 import type { Top100Mountain } from "../types/mountainTypes";
 
 const parseDifficulty = (raw: string) => {
-  const timeMatch = raw.match(/산행시간\s*:\s*([^산]+)/);
-  const heightMatch = raw.match(/산높이\s*:\s*([^난]+)/);
-  const levelMatch = raw.match(/난이도\s*:\s*(.+)/);
+  const timeMatch = raw.match(/산행시간\s*:\s*([^\n/]+)/);
+  const heightMatch = raw.match(/산높이\s*:\s*([^\n/]+)/);
+  const levelMatch = raw.match(/난이도\s*:\s*([^\n/]+)/);
   return {
     time: timeMatch?.[1]?.trim() ?? "-",
     height: heightMatch?.[1]?.trim() ?? "-",
@@ -95,7 +95,7 @@ export default function Top100MountainBottomSheet({
             <div className="flex-1 rounded-xl border border-[#D7DACB] bg-[#F4F5EF] p-3">
               <p className="mb-1 text-xs font-bold text-[#7A8070]">고도</p>
               <p className="text-base font-bold text-[#4A521E]">
-                {Number(mountain.height).toLocaleString()}
+                {mountain.height.toLocaleString()}
                 <span className="ml-1 text-xs font-medium text-[#7A8070]">
                   m
                 </span>

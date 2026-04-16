@@ -13,7 +13,9 @@
  *  - 줌 레벨 기반 배낭맨 크기 동적 조정
  *  - moveend 요청 경쟁 조건 방어 (AbortController)
  *  - 100대 명산 마커 표시 기능 추가 (mountains prop, onMountainClick prop)
- *  - 100대 명산 모드 시 bbox 등산로 대신 산 반경 등산로 표시 (mountainTrailGeoJson prop)
+ *  - 100대 명산 모드 시 bbox 등산로 대신 산 edgeIds 등산로 표시 (mountainTrailGeoJson prop)
+ *  - 초기 줌 < 6일 때 마커 영구 미생성 버그 수정 (항상 생성 후 display로 제어)
+ *  - mountainTrailGeoJson null 시 빈 FeatureCollection으로 소스 초기화
  */
 
 import { useState, useRef, useEffect } from "react";
@@ -37,6 +39,11 @@ const TRAIL_SOURCE_ID = "trail-difficulty-source";
 const TRAIL_LAYER_ID = "trail-difficulty-layer";
 const MIN_ZOOM_FOR_TRAIL = 8;
 const MIN_ZOOM_FOR_MOUNTAINS = 6;
+
+const EMPTY_FEATURE_COLLECTION: TrailGeoJson = {
+  type: "FeatureCollection",
+  features: []
+};
 
 // idle 상태 원형 마커
 function createCurrentPosMarkerElement() {
@@ -235,10 +242,11 @@ const GpsTrackingMap = ({
     if (!mountains || mountains.length === 0) return;
 
     const zoom = map.getZoom();
-    if (zoom < MIN_ZOOM_FOR_MOUNTAINS) return;
 
     mountains.forEach((mountain) => {
       const el = createMountainMarkerElement(mountain.name);
+      // 마커는 항상 생성하고 초기 줌 레벨에 따라 display만 제어
+      el.style.display = zoom >= MIN_ZOOM_FOR_MOUNTAINS ? "flex" : "none";
       const marker = new maplibregl.Marker({ element: el, anchor: "bottom" })
         .setLngLat([mountain.longitude, mountain.latitude])
         .addTo(map);
@@ -247,7 +255,7 @@ const GpsTrackingMap = ({
     });
   }, [mountains, onMountainClick]);
 
-  // 100대 명산 모드 시 등산로 레이어 데이터 교체
+  // mountainTrailGeoJson 변경 시 소스 데이터 교체
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
@@ -262,6 +270,9 @@ const GpsTrackingMap = ({
       if (map.getLayer(TRAIL_LAYER_ID)) {
         map.setLayoutProperty(TRAIL_LAYER_ID, "visibility", "visible");
       }
+    } else {
+      // null이면 빈 FeatureCollection으로 초기화
+      source.setData(EMPTY_FEATURE_COLLECTION);
     }
   }, [mountainTrailGeoJson]);
 
