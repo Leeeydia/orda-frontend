@@ -33,15 +33,12 @@ const EditProfileForm = ({
 }) => {
   const [nickname, setNickname] = useState(profile.nickname);
   const [nicknameError, setNicknameError] = useState("");
-
   const [phone, setPhone] = useState(formatPhone(profile.phone));
   const [phoneError, setPhoneError] = useState("");
-
   const [toast, setToast] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
-
   const [currentPassword, setCurrentPassword] = useState("");
   const [currentPasswordError, setCurrentPasswordError] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -73,7 +70,6 @@ const EditProfileForm = ({
     setNicknameError(nErr);
     setPhoneError(pErr);
     if (nErr || pErr) return;
-
     const result = await handleUpdateProfile({ nickname, phone });
     if (result.success) {
       setToast({ type: "success", text: "프로필이 수정되었습니다" });
@@ -93,7 +89,6 @@ const EditProfileForm = ({
     setNewPasswordError(pwErr);
     setConfirmPasswordError(confirmErr);
     if (curPwErr || pwErr || confirmErr) return;
-
     const result = await handleChangePassword({ currentPassword, newPassword });
     if (result.success) {
       setToast({ type: "success", text: "비밀번호가 변경되었습니다" });
@@ -115,34 +110,34 @@ const EditProfileForm = ({
 
       {/* 기본 정보 */}
       <section className="mb-6">
-        <p className="text-muted mb-3 text-[10px] font-bold tracking-[0.12em] uppercase">
+        <p className="text-muted mb-3 text-xs font-bold tracking-wider uppercase">
           기본 정보
         </p>
         <div className="border-default bg-page flex flex-col gap-4 rounded-xl border px-4 py-4">
           <div>
-            <p className="text-muted mb-1 text-[10px] font-semibold tracking-wider uppercase">
+            <p className="text-muted mb-1 text-xs font-semibold tracking-wider uppercase">
               이메일
             </p>
             <p className="text-body text-sm">{profile.email}</p>
           </div>
           <div>
-            <p className="text-muted mb-1 text-[10px] font-semibold tracking-wider uppercase">
+            <p className="text-muted mb-1 text-xs font-semibold tracking-wider uppercase">
               이름
             </p>
             <p className="text-body text-sm">{profile.name}</p>
           </div>
           <div>
-            <p className="text-muted mb-1 text-[10px] font-semibold tracking-wider uppercase">
+            <p className="text-muted mb-1 text-xs font-semibold tracking-wider uppercase">
               생년월일
             </p>
             <p className="text-body text-sm">{profile.birthDate ?? "-"}</p>
           </div>
           <div>
-            <p className="text-muted mb-1 text-[10px] font-semibold tracking-wider uppercase">
+            <p className="text-muted mb-1 text-xs font-semibold tracking-wider uppercase">
               닉네임
             </p>
             <input
-              className={`text-heading w-full rounded-xl border bg-white px-3 py-2 text-sm transition outline-none focus:ring-1 ${
+              className={`text-heading w-full rounded-md border bg-white px-3 py-2 text-sm transition outline-none focus:ring-1 ${
                 nicknameError
                   ? "border-error focus:border-error focus:ring-error/20"
                   : "border-default focus:border-focus focus:ring-focus/30"
@@ -158,11 +153,11 @@ const EditProfileForm = ({
             )}
           </div>
           <div>
-            <p className="text-muted mb-1 text-[10px] font-semibold tracking-wider uppercase">
+            <p className="text-muted mb-1 text-xs font-semibold tracking-wider uppercase">
               전화번호
             </p>
             <input
-              className={`text-heading w-full rounded-xl border bg-white px-3 py-2 text-sm transition outline-none focus:ring-1 ${
+              className={`text-heading w-full rounded-md border bg-white px-3 py-2 text-sm transition outline-none focus:ring-1 ${
                 phoneError
                   ? "border-error focus:border-error focus:ring-error/20"
                   : "border-default focus:border-focus focus:ring-focus/30"
@@ -185,17 +180,17 @@ const EditProfileForm = ({
 
       {/* 비밀번호 변경 */}
       <section className="mb-8">
-        <p className="text-muted mb-3 text-[10px] font-bold tracking-[0.12em] uppercase">
+        <p className="text-muted mb-3 text-xs font-bold tracking-wider uppercase">
           비밀번호 변경
         </p>
         <div className="border-default bg-page flex flex-col gap-4 rounded-xl border px-4 py-4">
           <div>
-            <p className="text-muted mb-1 text-[10px] font-semibold tracking-wider uppercase">
+            <p className="text-muted mb-1 text-xs font-semibold tracking-wider uppercase">
               현재 비밀번호
             </p>
             <input
               type="password"
-              className={`text-heading w-full rounded-xl border bg-white px-3 py-2 text-sm transition outline-none focus:ring-1 ${
+              className={`text-heading w-full rounded-md border bg-white px-3 py-2 text-sm transition outline-none focus:ring-1 ${
                 currentPasswordError
                   ? "border-error focus:border-error focus:ring-error/20"
                   : "border-default focus:border-focus focus:ring-focus/30"
@@ -217,12 +212,12 @@ const EditProfileForm = ({
             )}
           </div>
           <div>
-            <p className="text-muted mb-1 text-[10px] font-semibold tracking-wider uppercase">
+            <p className="text-muted mb-1 text-xs font-semibold tracking-wider uppercase">
               새 비밀번호
             </p>
             <input
               type="password"
-              className={`text-heading w-full rounded-xl border bg-white px-3 py-2 text-sm transition outline-none focus:ring-1 ${
+              className={`text-heading w-full rounded-md border bg-white px-3 py-2 text-sm transition outline-none focus:ring-1 ${
                 newPasswordError
                   ? "border-error focus:border-error focus:ring-error/20"
                   : "border-default focus:border-focus focus:ring-focus/30"
@@ -241,12 +236,12 @@ const EditProfileForm = ({
             )}
           </div>
           <div>
-            <p className="text-muted mb-1 text-[10px] font-semibold tracking-wider uppercase">
+            <p className="text-muted mb-1 text-xs font-semibold tracking-wider uppercase">
               새 비밀번호 확인
             </p>
             <input
               type="password"
-              className={`text-heading w-full rounded-xl border bg-white px-3 py-2 text-sm transition outline-none focus:ring-1 ${
+              className={`text-heading w-full rounded-md border bg-white px-3 py-2 text-sm transition outline-none focus:ring-1 ${
                 confirmPasswordError
                   ? "border-error focus:border-error focus:ring-error/20"
                   : "border-default focus:border-focus focus:ring-focus/30"
