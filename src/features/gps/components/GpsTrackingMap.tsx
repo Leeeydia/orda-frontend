@@ -358,7 +358,12 @@ const GpsTrackingMap = ({
   useEffect(() => {
     isMountainModeRef.current = !!isMountainMode;
 
-    if (!isMountainMode) {
+    if (isMountainMode) {
+      const source = mapInstanceRef.current?.getSource(TRAIL_SOURCE_ID) as
+        | maplibregl.GeoJSONSource
+        | undefined;
+      source?.setData(EMPTY_FEATURE_COLLECTION);
+    } else {
       setTimeout(() => loadTrailByBbox(), 0);
     }
   }, [isMountainMode, loadTrailByBbox]);
