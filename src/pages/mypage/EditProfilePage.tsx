@@ -5,7 +5,6 @@ import type { SettingsProfile } from "@/features/edit-profile/types/editProfile.
 import Toast from "@/components/ui/Toast";
 import { validate } from "@/utils/validate";
 
-// 숫자만 있는 전화번호를 010-XXXX-XXXX 포맷으로 변환
 const formatPhone = (phone: string | null): string => {
   if (!phone) return "";
   const raw = phone.replace(/-/g, "");
@@ -35,7 +34,7 @@ const EditProfileForm = ({
   const [nickname, setNickname] = useState(profile.nickname);
   const [nicknameError, setNicknameError] = useState("");
 
-  const [phone, setPhone] = useState(formatPhone(profile.phone)); // 초기값 포맷 적용
+  const [phone, setPhone] = useState(formatPhone(profile.phone));
   const [phoneError, setPhoneError] = useState("");
 
   const [toast, setToast] = useState<{
@@ -116,37 +115,37 @@ const EditProfileForm = ({
 
       {/* 기본 정보 */}
       <section className="mb-6">
-        <p className="mb-3 text-[10px] font-bold tracking-[0.12em] text-slate-400 uppercase">
+        <p className="text-muted mb-3 text-[10px] font-bold tracking-[0.12em] uppercase">
           기본 정보
         </p>
-        <div className="flex flex-col gap-4 rounded-xl border border-slate-100 bg-[#f7f7f6] px-5 py-4">
+        <div className="border-default bg-page flex flex-col gap-4 rounded-xl border px-5 py-4">
           <div>
-            <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+            <p className="text-muted mb-1 text-[10px] font-semibold tracking-wider uppercase">
               이메일
             </p>
-            <p className="text-sm text-slate-700">{profile.email}</p>
+            <p className="text-body text-sm">{profile.email}</p>
           </div>
           <div>
-            <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+            <p className="text-muted mb-1 text-[10px] font-semibold tracking-wider uppercase">
               이름
             </p>
-            <p className="text-sm text-slate-700">{profile.name}</p>
+            <p className="text-body text-sm">{profile.name}</p>
           </div>
           <div>
-            <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+            <p className="text-muted mb-1 text-[10px] font-semibold tracking-wider uppercase">
               생년월일
             </p>
-            <p className="text-sm text-slate-700">{profile.birthDate ?? "-"}</p>
+            <p className="text-body text-sm">{profile.birthDate ?? "-"}</p>
           </div>
           <div>
-            <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+            <p className="text-muted mb-1 text-[10px] font-semibold tracking-wider uppercase">
               닉네임
             </p>
             <input
-              className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition outline-none focus:ring-1 ${
+              className={`text-heading w-full rounded-lg border bg-white px-3 py-2 text-sm transition outline-none focus:ring-1 ${
                 nicknameError
-                  ? "border-red-300 focus:border-red-400 focus:ring-red-100"
-                  : "border-slate-200 focus:border-[#89943d] focus:ring-[#89943d]/30"
+                  ? "border-error focus:border-error focus:ring-error/20"
+                  : "border-default focus:border-focus focus:ring-focus/30"
               }`}
               value={nickname}
               onChange={(e) => {
@@ -155,53 +154,53 @@ const EditProfileForm = ({
               }}
             />
             {nicknameError && (
-              <p className="mt-1 pl-1 text-[12px] text-red-500">
+              <p className="text-error mt-1 pl-1 text-[12px]">
                 {nicknameError}
               </p>
             )}
           </div>
           <div>
-            <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+            <p className="text-muted mb-1 text-[10px] font-semibold tracking-wider uppercase">
               전화번호
             </p>
             <input
-              className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition outline-none focus:ring-1 ${
+              className={`text-heading w-full rounded-lg border bg-white px-3 py-2 text-sm transition outline-none focus:ring-1 ${
                 phoneError
-                  ? "border-red-300 focus:border-red-400 focus:ring-red-100"
-                  : "border-slate-200 focus:border-[#89943d] focus:ring-[#89943d]/30"
+                  ? "border-error focus:border-error focus:ring-error/20"
+                  : "border-default focus:border-focus focus:ring-focus/30"
               }`}
               value={phone}
               onChange={handlePhoneChange}
               placeholder="010-XXXX-XXXX"
             />
             {phoneError && (
-              <p className="mt-1 pl-1 text-[12px] text-red-500">{phoneError}</p>
+              <p className="text-error mt-1 pl-1 text-[12px]">{phoneError}</p>
             )}
           </div>
         </div>
         <button
           onClick={handleProfileSubmit}
-          className="mt-3 w-full rounded-xl bg-[#89943d] py-4 text-sm font-bold tracking-wide text-white shadow-md shadow-[#89943d]/20 transition-transform active:scale-[0.98]">
+          className="bg-primary shadow-primary/20 mt-3 w-full rounded-xl py-4 text-sm font-bold tracking-wide text-white shadow-md transition-transform active:scale-[0.98]">
           저장
         </button>
       </section>
 
       {/* 비밀번호 변경 */}
       <section className="mb-8">
-        <p className="mb-3 text-[10px] font-bold tracking-[0.12em] text-slate-400 uppercase">
+        <p className="text-muted mb-3 text-[10px] font-bold tracking-[0.12em] uppercase">
           비밀번호 변경
         </p>
-        <div className="flex flex-col gap-4 rounded-xl border border-slate-100 bg-[#f7f7f6] px-5 py-4">
+        <div className="border-default bg-page flex flex-col gap-4 rounded-xl border px-5 py-4">
           <div>
-            <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+            <p className="text-muted mb-1 text-[10px] font-semibold tracking-wider uppercase">
               현재 비밀번호
             </p>
             <input
               type="password"
-              className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition outline-none focus:ring-1 ${
+              className={`text-heading w-full rounded-lg border bg-white px-3 py-2 text-sm transition outline-none focus:ring-1 ${
                 currentPasswordError
-                  ? "border-red-300 focus:border-red-400 focus:ring-red-100"
-                  : "border-slate-200 focus:border-[#89943d] focus:ring-[#89943d]/30"
+                  ? "border-error focus:border-error focus:ring-error/20"
+                  : "border-default focus:border-focus focus:ring-focus/30"
               }`}
               value={currentPassword}
               onChange={(e) => {
@@ -214,21 +213,21 @@ const EditProfileForm = ({
               }}
             />
             {currentPasswordError && (
-              <p className="mt-1 pl-1 text-[12px] text-red-500">
+              <p className="text-error mt-1 pl-1 text-[12px]">
                 {currentPasswordError}
               </p>
             )}
           </div>
           <div>
-            <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+            <p className="text-muted mb-1 text-[10px] font-semibold tracking-wider uppercase">
               새 비밀번호
             </p>
             <input
               type="password"
-              className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition outline-none focus:ring-1 ${
+              className={`text-heading w-full rounded-lg border bg-white px-3 py-2 text-sm transition outline-none focus:ring-1 ${
                 newPasswordError
-                  ? "border-red-300 focus:border-red-400 focus:ring-red-100"
-                  : "border-slate-200 focus:border-[#89943d] focus:ring-[#89943d]/30"
+                  ? "border-error focus:border-error focus:ring-error/20"
+                  : "border-default focus:border-focus focus:ring-focus/30"
               }`}
               value={newPassword}
               onChange={(e) => {
@@ -240,21 +239,21 @@ const EditProfileForm = ({
               placeholder="8자 이상, 영문+숫자+특수문자"
             />
             {newPasswordError && (
-              <p className="mt-1 pl-1 text-[12px] text-red-500">
+              <p className="text-error mt-1 pl-1 text-[12px]">
                 {newPasswordError}
               </p>
             )}
           </div>
           <div>
-            <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+            <p className="text-muted mb-1 text-[10px] font-semibold tracking-wider uppercase">
               새 비밀번호 확인
             </p>
             <input
               type="password"
-              className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition outline-none focus:ring-1 ${
+              className={`text-heading w-full rounded-lg border bg-white px-3 py-2 text-sm transition outline-none focus:ring-1 ${
                 confirmPasswordError
-                  ? "border-red-300 focus:border-red-400 focus:ring-red-100"
-                  : "border-slate-200 focus:border-[#89943d] focus:ring-[#89943d]/30"
+                  ? "border-error focus:border-error focus:ring-error/20"
+                  : "border-default focus:border-focus focus:ring-focus/30"
               }`}
               value={confirmPassword}
               onChange={(e) => {
@@ -267,7 +266,7 @@ const EditProfileForm = ({
               }}
             />
             {confirmPasswordError && (
-              <p className="mt-1 pl-1 text-[12px] text-red-500">
+              <p className="text-error mt-1 pl-1 text-[12px]">
                 {confirmPasswordError}
               </p>
             )}
@@ -275,7 +274,7 @@ const EditProfileForm = ({
         </div>
         <button
           onClick={handlePasswordSubmit}
-          className="mt-3 w-full rounded-xl border border-slate-200 bg-white py-3.5 text-sm font-semibold text-slate-600 transition-colors active:bg-slate-50">
+          className="border-default text-body active:bg-secondary mt-3 w-full rounded-xl border bg-white py-3.5 text-sm font-semibold transition-colors">
           변경
         </button>
       </section>
@@ -290,10 +289,10 @@ const EditProfilePage = () => {
 
   if (loading)
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f7f7f6]">
+      <div className="bg-page flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#89943d] border-t-transparent" />
-          <p className="text-sm font-medium tracking-wide text-[#89943d]">
+          <div className="border-primary h-8 w-8 animate-spin rounded-full border-2 border-t-transparent" />
+          <p className="text-primary text-sm font-medium tracking-wide">
             불러오는 중...
           </p>
         </div>
@@ -302,8 +301,8 @@ const EditProfilePage = () => {
 
   if (error)
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f7f7f6]">
-        <p className="text-sm text-red-500">{error}</p>
+      <div className="bg-page flex min-h-screen items-center justify-center">
+        <p className="text-error text-sm">{error}</p>
       </div>
     );
 
@@ -314,10 +313,10 @@ const EditProfilePage = () => {
       className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-white"
       style={{ maxWidth: 390, margin: "0 auto" }}>
       {/* 헤더 */}
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-50 bg-white px-4 py-3">
+      <header className="border-default sticky top-0 z-10 flex items-center justify-between border-b bg-white px-4 py-3">
         <button
           onClick={() => navigate(-1)}
-          className="flex h-10 w-10 items-center justify-center text-slate-900">
+          className="text-heading flex h-10 w-10 items-center justify-center">
           <svg
             width="22"
             height="22"
@@ -330,7 +329,7 @@ const EditProfilePage = () => {
             <path d="M15 18l-6-6 6-6" />
           </svg>
         </button>
-        <h1 className="flex-1 text-center text-[17px] font-bold tracking-tight text-slate-900">
+        <h1 className="text-heading flex-1 text-center text-[17px] font-bold tracking-tight">
           개인정보 수정
         </h1>
         <div className="h-10 w-10" />
