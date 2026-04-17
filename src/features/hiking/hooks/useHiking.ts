@@ -4,8 +4,7 @@
  * 변경 사항:
  *  - sequenceNumRef: 프론트에서 GPS 포인트 순서 번호를 직접 채번
  *    → 백엔드 max+1 race condition 해결
- *    → 포인트 생성 시점에 즉시 번호 확정 & 증가 (다른 포인트가 같은 번호 공유 방지)
- *    → 같은 포인트의 재시도는 백엔드 멱등성으로 보장
+ *    → 성공 응답 받은 후에만 증가 (네트워크 재시도 시 같은 번호 유지 = 멱등성)
  *  - start(): 첫 GPS fix를 firstFixRef에 임시 보관
  *             세션 생성 후 즉시 첫 포인트 저장 보장
  *  - start(): startHiking 호출 시 GPS 좌표(latitude, longitude) 포함
@@ -95,10 +94,7 @@ export const useHiking = () => {
         if (now - lastSavedAt.current < SAVE_INTERVAL_MS) return;
         lastSavedAt.current = now;
 
-        // 포인트 생성 시점에 즉시 번호 확정 & 증가
-        // → 다음 포인트는 반드시 다른 번호를 사용
         const seq = sequenceNumRef.current;
-        sequenceNumRef.current += 1;
 
         saveGpsTrack(sessionIdRef.current, {
           sequenceNum: seq,
@@ -108,7 +104,11 @@ export const useHiking = () => {
           accuracyM: point.accuracy
         })
           .then((res) => {
+            // 성공 응답 후에만 다음 번호로 증가
+            sequenceNumRef.current = seq + 1;
             setSavedPointCount((prev) => prev + 1);
+            // dem이 아닌 경우(gps_fallback, none)는 null로 push
+            // → 차트에서 누락 구간이 공백/끊김으로 표시됨
             setDemElevations((prev) => [...prev, toDemElevationEntry(res)]);
           })
           .catch((e) => console.error("GPS 저장 실패:", e));
@@ -127,6 +127,9 @@ export const useHiking = () => {
       });
       const newSessionId = res.sessionId;
       setSessionId(newSessionId);
+      // 첫 포인트는 sequenceNum: 1로 저장할 예정이므로,
+      // sessionIdRef 설정 전에 2로 올려서 콜백이 끼어들어도 1 중복 방지
+      sequenceNumRef.current = 2;
       sessionIdRef.current = newSessionId;
       setNearbySummits(res.nearbySummits ?? []);
 
@@ -140,7 +143,6 @@ export const useHiking = () => {
       });
       setSavedPointCount(1);
       setDemElevations([toDemElevationEntry(firstTrackRes)]);
-      sequenceNumRef.current = 2;
       firstFixRef.current = null;
 
       return { success: true };
@@ -170,10 +172,7 @@ export const useHiking = () => {
       setError(null);
 
       if (gps.currentPos) {
-        // 마지막 포인트도 즉시 번호 확정 & 증가
         const seq = sequenceNumRef.current;
-        sequenceNumRef.current += 1;
-
         const lastTrackRes = await saveGpsTrack(currentSessionId, {
           sequenceNum: seq,
           latitude: gps.currentPos.lat,
@@ -181,6 +180,7 @@ export const useHiking = () => {
           elevationM: gps.currentPos.altitude ?? null,
           accuracyM: gps.currentPos.accuracy
         });
+        sequenceNumRef.current = seq + 1;
         setSavedPointCount((prev) => prev + 1);
         // 종료 시점 마지막 포인트도 demElevations에 반영
         setDemElevations((prev) => [
