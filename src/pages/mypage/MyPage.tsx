@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useMyPage from "../../features/mypage/hooks/useMyPage";
 
@@ -21,6 +21,13 @@ const MyPage = () => {
   const navigate = useNavigate();
   const [showImageSheet, setShowImageSheet] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      navigate("/login", { replace: true });
+    }
+  }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
