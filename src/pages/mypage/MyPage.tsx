@@ -22,6 +22,7 @@ const MyPage = () => {
   const [showImageSheet, setShowImageSheet] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
+  // 비로그인 상태에서 마이페이지 접근 시 로그인 페이지로 리다이렉트
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     if (!token) {
@@ -61,9 +62,7 @@ const MyPage = () => {
     );
 
   return (
-    <div
-      className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-white"
-      style={{ maxWidth: 390, margin: "0 auto" }}>
+    <div className="relative mx-auto flex min-h-screen w-full max-w-[390px] flex-col overflow-x-hidden bg-white">
       {/* ── 헤더 ── */}
       <header className="border-default sticky top-0 z-10 flex items-center justify-between border-b bg-white px-4 py-3">
         <button
@@ -81,33 +80,33 @@ const MyPage = () => {
             <path d="M15 18l-6-6 6-6" />
           </svg>
         </button>
-        <h1 className="text-heading flex-1 text-center text-[17px] font-bold tracking-tight">
+        <h1 className="text-heading flex-1 text-center text-lg font-bold tracking-tight">
           마이페이지
         </h1>
         <div className="h-10 w-10" />
       </header>
 
       {/* ── 프로필 섹션 ── */}
-      <section className="flex flex-col items-center px-6 pt-8 pb-6">
+      <section className="flex flex-col items-center px-4 pt-8 pb-6">
         <div className="relative">
           {profile?.profileImageUrl ? (
             <img
               src={`${API_URL}${profile.profileImageUrl}`}
               alt="프로필 이미지"
-              className="ring-primary/15 h-28 w-28 rounded-full object-cover shadow-lg ring-4"
+              className="h-28 w-28 rounded-full object-cover shadow-lg"
             />
           ) : (
-            <div className="bg-page ring-primary/10 flex h-28 w-28 items-center justify-center rounded-full shadow-md ring-4">
+            <div className="bg-page flex h-28 w-28 items-center justify-center rounded-full shadow-md">
               <svg
                 width="48"
                 height="48"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke="#89943d"
+                stroke="currentColor"
                 strokeWidth="1.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                opacity="0.4">
+                className="text-primary opacity-40">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
@@ -118,7 +117,7 @@ const MyPage = () => {
             <button
               onClick={() => setShowImageSheet((v) => !v)}
               title="프로필 이미지 변경"
-              className="bg-primary absolute right-1 bottom-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white text-white shadow-md transition-transform active:scale-90">
+              className="bg-primary absolute right-1 bottom-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white text-white shadow-md transition-colors duration-150 active:opacity-60">
               <svg
                 width="14"
                 height="14"
@@ -136,10 +135,10 @@ const MyPage = () => {
             {showImageSheet && (
               <>
                 <div
-                  className="fixed inset-0 z-40"
+                  className="fixed inset-0 z-[150]"
                   onClick={() => setShowImageSheet(false)}
                 />
-                <div className="border-default absolute right-0 bottom-10 z-50 w-44 overflow-hidden rounded-2xl border bg-white shadow-xl">
+                <div className="border-default absolute right-0 bottom-10 z-[200] w-44 overflow-hidden rounded-2xl border bg-white shadow-xl">
                   <button
                     onClick={() => {
                       setShowImageSheet(false);
@@ -151,14 +150,15 @@ const MyPage = () => {
                       height="16"
                       viewBox="0 0 24 24"
                       fill="none"
-                      stroke="#89943d"
+                      stroke="currentColor"
                       strokeWidth="2"
                       strokeLinecap="round"
-                      strokeLinejoin="round">
+                      strokeLinejoin="round"
+                      className="text-primary">
                       <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                       <circle cx="12" cy="13" r="4" />
                     </svg>
-                    <span className="text-body text-[13px] font-semibold">
+                    <span className="text-body text-sm font-semibold">
                       앨범에서 선택
                     </span>
                   </button>
@@ -177,14 +177,15 @@ const MyPage = () => {
                           height="16"
                           viewBox="0 0 24 24"
                           fill="none"
-                          stroke="#ef4444"
+                          stroke="currentColor"
                           strokeWidth="2"
                           strokeLinecap="round"
-                          strokeLinejoin="round">
+                          strokeLinejoin="round"
+                          className="text-error">
                           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                           <circle cx="12" cy="7" r="4" />
                         </svg>
-                        <span className="text-error text-[13px] font-semibold">
+                        <span className="text-error text-sm font-semibold">
                           기본 이미지로
                         </span>
                       </button>
@@ -205,7 +206,7 @@ const MyPage = () => {
         </div>
 
         <div className="mt-4 flex flex-col items-center gap-1">
-          <p className="text-heading text-[22px] font-bold tracking-tight">
+          <p className="text-heading text-xl font-bold tracking-tight">
             {profile?.nickname ?? "—"}
           </p>
           <p className="text-primary text-[10px] font-bold tracking-widest uppercase">
@@ -216,8 +217,8 @@ const MyPage = () => {
       </section>
 
       {/* ── 통계 섹션 ── */}
-      <section className="px-6 pb-6">
-        <div className="border-default bg-page rounded-xl border p-5">
+      <section className="px-4 pb-6">
+        <div className="border-default bg-page rounded-xl border p-4">
           <p className="text-muted mb-4 text-[10px] font-bold tracking-[0.12em] uppercase">
             나의 등산 통계
           </p>
@@ -229,10 +230,11 @@ const MyPage = () => {
                   height="18"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="#89943d"
+                  stroke="currentColor"
                   strokeWidth="2"
                   strokeLinecap="round"
-                  strokeLinejoin="round">
+                  strokeLinejoin="round"
+                  className="text-primary">
                   <path d="M3 17l4-8 4 4 4-6 4 10" />
                 </svg>
               }
@@ -246,10 +248,11 @@ const MyPage = () => {
                   height="18"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="#89943d"
+                  stroke="currentColor"
                   strokeWidth="2"
                   strokeLinecap="round"
-                  strokeLinejoin="round">
+                  strokeLinejoin="round"
+                  className="text-primary">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                 </svg>
               }
@@ -263,10 +266,11 @@ const MyPage = () => {
                   height="18"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="#89943d"
+                  stroke="currentColor"
                   strokeWidth="2"
                   strokeLinecap="round"
-                  strokeLinejoin="round">
+                  strokeLinejoin="round"
+                  className="text-primary">
                   <circle cx="12" cy="12" r="10" />
                   <polyline points="12 6 12 12 16 14" />
                 </svg>
@@ -281,10 +285,11 @@ const MyPage = () => {
                   height="18"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="#89943d"
+                  stroke="currentColor"
                   strokeWidth="2"
                   strokeLinecap="round"
-                  strokeLinejoin="round">
+                  strokeLinejoin="round"
+                  className="text-primary">
                   <path d="M8 3l4 8 5-5 5 15H2L8 3z" />
                 </svg>
               }
@@ -296,7 +301,7 @@ const MyPage = () => {
       </section>
 
       {/* ── 등산 기록 섹션 ── */}
-      <section className="px-6 pb-6">
+      <section className="px-4 pb-6">
         <p className="text-muted mb-3 text-[10px] font-bold tracking-[0.12em] uppercase">
           등산 기록
         </p>
@@ -307,11 +312,11 @@ const MyPage = () => {
               height="36"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#89943d"
+              stroke="currentColor"
               strokeWidth="1.4"
               strokeLinecap="round"
               strokeLinejoin="round"
-              opacity="0.4">
+              className="text-primary opacity-40">
               <path d="M8 3l4 8 5-5 5 15H2L8 3z" />
             </svg>
             <p className="text-muted text-sm">아직 등산 기록이 없습니다</p>
@@ -328,12 +333,10 @@ const MyPage = () => {
       <div className="h-36" />
 
       {/* ── 개인 정보 수정 + 로그아웃 버튼 (하단 고정) ── */}
-      <div
-        className="border-default fixed bottom-0 left-1/2 w-full -translate-x-1/2 border-t bg-white px-6 pt-3 pb-8"
-        style={{ maxWidth: 390 }}>
+      <div className="border-default fixed bottom-0 left-1/2 w-full max-w-[390px] -translate-x-1/2 border-t bg-white px-4 pt-3 pb-8">
         <button
           onClick={() => navigate("/mypage/edit-profile")}
-          className="bg-primary shadow-primary/20 flex w-full items-center justify-center gap-2 rounded-xl py-4 text-sm font-bold tracking-wide text-white shadow-md transition-transform active:scale-[0.98]">
+          className="bg-primary inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-4 text-sm font-semibold text-white transition-colors duration-150 active:opacity-60">
           <svg
             width="16"
             height="16"
@@ -351,7 +354,7 @@ const MyPage = () => {
 
         <button
           onClick={() => setShowLogoutConfirm(true)}
-          className="border-default text-muted active:bg-secondary mt-2 flex w-full items-center justify-center gap-2 rounded-xl border bg-white py-3.5 text-sm font-semibold transition-colors">
+          className="border-default text-muted mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border bg-white py-4 text-sm font-semibold transition-colors duration-150 active:opacity-60">
           <svg
             width="15"
             height="15"
@@ -373,27 +376,28 @@ const MyPage = () => {
       {showLogoutConfirm && (
         <>
           <div
-            className="fixed inset-0 z-40 bg-black/40"
+            className="fixed inset-0 z-[150] bg-black/40"
             onClick={() => setShowLogoutConfirm(false)}
           />
-          <div className="fixed top-1/2 left-1/2 z-50 w-72 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl bg-white shadow-2xl">
-            <div className="flex flex-col items-center px-6 pt-8 pb-6 text-center">
+          <div className="fixed top-1/2 left-1/2 z-[200] w-72 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex flex-col items-center px-4 pt-8 pb-6 text-center">
               <div className="bg-page mb-4 flex h-14 w-14 items-center justify-center rounded-full">
                 <svg
                   width="24"
                   height="24"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="#94a3b8"
+                  stroke="currentColor"
                   strokeWidth="2"
                   strokeLinecap="round"
-                  strokeLinejoin="round">
+                  strokeLinejoin="round"
+                  className="text-muted">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                   <polyline points="16 17 21 12 16 7" />
                   <line x1="21" y1="12" x2="9" y2="12" />
                 </svg>
               </div>
-              <p className="text-heading text-[17px] font-bold">로그아웃</p>
+              <p className="text-heading text-lg font-bold">로그아웃</p>
               <p className="text-muted mt-1.5 text-sm">
                 정말 로그아웃 하시겠어요?
               </p>
@@ -401,13 +405,13 @@ const MyPage = () => {
             <div className="border-default flex border-t">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className="text-muted active:bg-secondary flex-1 py-4 text-[15px] font-semibold transition-colors">
+                className="text-muted flex-1 py-4 text-sm font-semibold transition-colors duration-150 active:opacity-60">
                 취소
               </button>
               <div className="bg-default w-px" />
               <button
                 onClick={handleLogout}
-                className="text-error flex-1 py-4 text-[15px] font-bold transition-colors active:bg-red-50">
+                className="text-error flex-1 py-4 text-sm font-bold transition-colors duration-150 active:opacity-60">
                 로그아웃
               </button>
             </div>
@@ -427,8 +431,8 @@ interface StatCardProps {
 }
 
 const StatCard = ({ icon, label, value }: StatCardProps) => (
-  <div className="border-default flex flex-col gap-2 rounded-lg border bg-white px-4 py-3 shadow-sm">
-    <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-lg">
+  <div className="border-default flex flex-col gap-2 rounded-xl border bg-white p-4 shadow-sm">
+    <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-xl">
       {icon}
     </div>
     <div>
@@ -470,7 +474,7 @@ const RecordCard = ({ record }: RecordCardProps) => {
 
   return (
     <div
-      className="border-default active:bg-secondary flex items-center gap-4 rounded-xl border bg-white px-4 py-4 shadow-sm"
+      className="border-default flex items-center gap-4 rounded-xl border bg-white p-4 shadow-sm transition-colors duration-150 active:opacity-60"
       onClick={() => navigate(`/hiking/sessions/${record.sessionId}`)}>
       <div className="bg-primary/10 flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl">
         <svg
@@ -478,10 +482,11 @@ const RecordCard = ({ record }: RecordCardProps) => {
           height="20"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="#89943d"
+          stroke="currentColor"
           strokeWidth="1.8"
           strokeLinecap="round"
-          strokeLinejoin="round">
+          strokeLinejoin="round"
+          className="text-primary">
           <path d="M8 3l4 8 5-5 5 15H2L8 3z" />
         </svg>
       </div>
@@ -504,10 +509,11 @@ const RecordCard = ({ record }: RecordCardProps) => {
         height="16"
         viewBox="0 0 24 24"
         fill="none"
-        stroke="#89943d"
+        stroke="currentColor"
         strokeWidth="2"
         strokeLinecap="round"
-        strokeLinejoin="round">
+        strokeLinejoin="round"
+        className="text-primary">
         <path d="M9 18l6-6-6-6" />
       </svg>
     </div>
