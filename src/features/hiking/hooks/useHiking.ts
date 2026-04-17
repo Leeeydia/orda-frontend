@@ -2,6 +2,9 @@
  * 📄 src/features/hiking/hooks/useHiking.ts
  *
  * 변경 사항:
+ *  - sequenceNumRef: 프론트에서 GPS 포인트 순서 번호를 직접 채번
+ *    → 백엔드 max+1 race condition 해결
+ *    → 성공 응답 받은 후에만 증가 (네트워크 재시도 시 같은 번호 유지 = 멱등성)
  *  - start(): 첫 GPS fix를 firstFixRef에 임시 보관
  *             세션 생성 후 즉시 첫 포인트 저장 보장
  *  - start(): startHiking 호출 시 GPS 좌표(latitude, longitude) 포함
@@ -54,6 +57,7 @@ export const useHiking = () => {
   const lastSavedAt = useRef<number>(0);
   const sessionIdRef = useRef<number | null>(null);
   const firstFixRef = useRef<GpsPoint | null>(null);
+  const sequenceNumRef = useRef<number>(1);
 
   useEffect(() => {
     const sendEndBeacon = () => {
@@ -73,6 +77,7 @@ export const useHiking = () => {
       // 이전 세션 상태가 섞이지 않도록 명시적 초기화
       setDemElevations([]);
       setSavedPointCount(0);
+      sequenceNumRef.current = 1;
 
       // 1. GPS fix 확보 대기
       //    첫 fix는 sessionId가 없으므로 저장 불가 → firstFixRef에 임시 보관
@@ -89,13 +94,18 @@ export const useHiking = () => {
         if (now - lastSavedAt.current < SAVE_INTERVAL_MS) return;
         lastSavedAt.current = now;
 
+        const seq = sequenceNumRef.current;
+
         saveGpsTrack(sessionIdRef.current, {
+          sequenceNum: seq,
           latitude: point.lat,
           longitude: point.lng,
           elevationM: point.altitude ?? null,
           accuracyM: point.accuracy
         })
           .then((res) => {
+            // 성공 응답 후에만 다음 번호로 증가
+            sequenceNumRef.current = seq + 1;
             setSavedPointCount((prev) => prev + 1);
             // dem이 아닌 경우(gps_fallback, none)는 null로 push
             // → 차트에서 누락 구간이 공백/끊김으로 표시됨
@@ -120,8 +130,9 @@ export const useHiking = () => {
       sessionIdRef.current = newSessionId;
       setNearbySummits(res.nearbySummits ?? []);
 
-      // 3. 첫 GPS 포인트 저장
+      // 3. 첫 GPS 포인트 저장 (sequenceNum = 1)
       const firstTrackRes = await saveGpsTrack(newSessionId, {
+        sequenceNum: 1,
         latitude: firstFix.lat,
         longitude: firstFix.lng,
         elevationM: firstFix.altitude ?? null,
@@ -129,6 +140,7 @@ export const useHiking = () => {
       });
       setSavedPointCount(1);
       setDemElevations([toDemElevationEntry(firstTrackRes)]);
+      sequenceNumRef.current = 2;
       firstFixRef.current = null;
 
       return { success: true };
@@ -158,12 +170,15 @@ export const useHiking = () => {
       setError(null);
 
       if (gps.currentPos) {
+        const seq = sequenceNumRef.current;
         const lastTrackRes = await saveGpsTrack(currentSessionId, {
+          sequenceNum: seq,
           latitude: gps.currentPos.lat,
           longitude: gps.currentPos.lng,
           elevationM: gps.currentPos.altitude ?? null,
           accuracyM: gps.currentPos.accuracy
         });
+        sequenceNumRef.current = seq + 1;
         setSavedPointCount((prev) => prev + 1);
         // 종료 시점 마지막 포인트도 demElevations에 반영
         setDemElevations((prev) => [
@@ -177,6 +192,7 @@ export const useHiking = () => {
       setSessionId(null);
       lastSavedAt.current = 0;
       firstFixRef.current = null;
+      sequenceNumRef.current = 1;
       setNearbySummits([]);
 
       return true;

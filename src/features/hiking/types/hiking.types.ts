@@ -1,8 +1,5 @@
 export type ElevationStatus = "DEM" | "INTERPOLATED" | "MISSING" | "GAP";
-export type ElevationSummaryStatus =
-  | "COMPLETE"
-  | "ESTIMATED"
-  | "UNAVAILABLE";
+export type ElevationSummaryStatus = "COMPLETE" | "ESTIMATED" | "UNAVAILABLE";
 
 // saveGpsTrack 응답의 elevationSource 허용값
 export type ElevationSource = "dem" | "gps_fallback" | "none";
@@ -52,6 +49,7 @@ export interface SummitVerifyResponse {
 }
 
 export interface GpsTrackRequest {
+  sequenceNum: number;
   latitude: number;
   longitude: number;
   elevationM: number | null;
