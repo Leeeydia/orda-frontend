@@ -94,7 +94,9 @@ export const useHiking = () => {
         if (now - lastSavedAt.current < SAVE_INTERVAL_MS) return;
         lastSavedAt.current = now;
 
+        // 번호를 먼저 선점하여 다음 콜백이 같은 번호를 쓰지 않도록 함
         const seq = sequenceNumRef.current;
+        sequenceNumRef.current = seq + 1;
 
         saveGpsTrack(sessionIdRef.current, {
           sequenceNum: seq,
@@ -104,11 +106,7 @@ export const useHiking = () => {
           accuracyM: point.accuracy
         })
           .then((res) => {
-            // 성공 응답 후에만 다음 번호로 증가
-            sequenceNumRef.current = seq + 1;
             setSavedPointCount((prev) => prev + 1);
-            // dem이 아닌 경우(gps_fallback, none)는 null로 push
-            // → 차트에서 누락 구간이 공백/끊김으로 표시됨
             setDemElevations((prev) => [...prev, toDemElevationEntry(res)]);
           })
           .catch((e) => console.error("GPS 저장 실패:", e));
@@ -173,6 +171,7 @@ export const useHiking = () => {
 
       if (gps.currentPos) {
         const seq = sequenceNumRef.current;
+        sequenceNumRef.current = seq + 1;
         const lastTrackRes = await saveGpsTrack(currentSessionId, {
           sequenceNum: seq,
           latitude: gps.currentPos.lat,
@@ -180,9 +179,7 @@ export const useHiking = () => {
           elevationM: gps.currentPos.altitude ?? null,
           accuracyM: gps.currentPos.accuracy
         });
-        sequenceNumRef.current = seq + 1;
         setSavedPointCount((prev) => prev + 1);
-        // 종료 시점 마지막 포인트도 demElevations에 반영
         setDemElevations((prev) => [
           ...prev,
           toDemElevationEntry(lastTrackRes)
