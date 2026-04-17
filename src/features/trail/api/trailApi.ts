@@ -33,6 +33,18 @@ export const getTrailDifficultyMapByBbox = async (
   return data.data;
 };
 
+// edgeIds 기반 난이도 지도 조회 함수 추가
+export const getTrailDifficultyMapByEdgeIds = async (
+  edgeIds: string[],
+  signal?: AbortSignal
+): Promise<TrailGeoJson> => {
+  const { data } = await axios.get(`${BASE_URL}/map/edges`, {
+    params: { edgeIds: edgeIds.join(",") },
+    signal
+  });
+  return data.data;
+};
+
 // 등산로 근접 여부 확인
 export interface TrailNearbyResult {
   nearTrail: boolean;

@@ -7,6 +7,14 @@
  *  - BottomNav 추가
  *  - 등산 중 TIME/거리/고도 카드, 정상 인증, 종료 기능 추가
  *  - 배낭맨 하단 대기 → 마커로 이동 애니메이션 추가
+ *  - 100대 명산 모드 토글, 마커 표시, 바텀시트 연결
+ *  - 명산 마커 탭 시 해당 산 위치로 지도 이동 및 등산로 표시
+ *  - 100대 명산 모드 토글 버튼 나침반 아래 배치, 텍스트 전환
+ *  - 명산 마커 탭 시 edgeIds 기반 등산로 조회, edgeIds 없으면 바텀시트에 준비 중 표시
+ *  - 등산로 로딩 상태 관리 추가, 데이터 없을 시 바텀시트에 준비 중 문구 표시
+ *  - AbortController로 연속 탭 경쟁 조건 방어
+ *  - 명산 목록 로드 실패 시 Toast 에러 안내
+ *  - handleMountainClick useCallback 적용
  *  - 등산로 근접 여부 사전 체크 + 토스트 안내 추가
  *  - idle 상태 위치 변경 시 proximity 재검사 (debounce 5초)
  *  - start() 실패 시 errorMessage를 토스트로 표시
@@ -14,7 +22,7 @@
  *                    DEM 값이 2개 미만이면 "수집 중..." 안내
  *                    DEM 누락 구간(null)은 차트에서 선 끊김으로 표시
  */
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import maplibregl from "maplibre-gl";
 import { useHiking } from "@/features/hiking/hooks/useHiking";
 import GpsTrackingMap from "@/features/gps/components/GpsTrackingMap";
@@ -23,6 +31,11 @@ import BottomNav from "@/components/layout/BottomNav";
 import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 import { checkNearbyTrail } from "@/features/trail/api/trailApi";
+import { getTop100Mountains } from "@/features/mountain/api/mountainApi";
+import { getTrailDifficultyMapByEdgeIds } from "@/features/trail/api/trailApi";
+import type { Top100Mountain } from "@/features/mountain/types/mountainTypes";
+import type { TrailGeoJson } from "@/features/trail/types/trail.types";
+import Top100MountainBottomSheet from "@/features/mountain/components/Top100MountainBottomSheet";
 
 import hikerIcon from "@/assets/hiking-icon.png";
 
@@ -228,12 +241,15 @@ export default function HikingRecordPage() {
   } | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
 
   const [idlePos, setIdlePos] = useState<{ lng: number; lat: number } | null>(
     null
   );
 
-  // 등산로 근접 여부
   const [isNearTrail, setIsNearTrail] = useState<boolean | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<"success" | "error">("error");
@@ -274,6 +290,77 @@ export default function HikingRecordPage() {
     return () => clearTimeout(timerId);
   }, [idlePos, pageState]);
 
+  // 100대 명산 모드 상태
+  const [isMountainMode, setIsMountainMode] = useState(false);
+  const [mountains, setMountains] = useState<Top100Mountain[]>([]);
+  const [selectedMountain, setSelectedMountain] =
+    useState<Top100Mountain | null>(null);
+  const [isMountainLoading, setIsMountainLoading] = useState(false);
+  const [mountainTrailGeoJson, setMountainTrailGeoJson] =
+    useState<TrailGeoJson | null>(null);
+  const [isMountainTrailLoading, setIsMountainTrailLoading] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // 100대 명산 모드 토글
+  const handleMountainModeToggle = async () => {
+    if (isMountainMode) {
+      setIsMountainMode(false);
+      setMountains([]);
+      setSelectedMountain(null);
+      setMountainTrailGeoJson(null);
+      return;
+    }
+    setIsMountainLoading(true);
+    try {
+      const data = await getTop100Mountains();
+      setMountains(data);
+      setIsMountainMode(true);
+    } catch {
+      setToast({ message: "명산 목록을 불러오지 못했습니다.", type: "error" });
+    } finally {
+      setIsMountainLoading(false);
+    }
+  };
+
+  // 명산 마커 탭 → 지도 이동 + edgeIds 기반 등산로 조회 (AbortController로 경쟁 조건 방어)
+  const handleMountainClick = useCallback(async (mountain: Top100Mountain) => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+    const signal = abortControllerRef.current.signal;
+
+    setSelectedMountain(mountain);
+    setMountainTrailGeoJson(null);
+    setIsMountainTrailLoading(true);
+
+    if (mapRef.current) {
+      mapRef.current.flyTo({
+        center: [mountain.longitude, mountain.latitude],
+        zoom: 13,
+        duration: 800
+      });
+    }
+    try {
+      if (mountain.edgeIds && mountain.edgeIds.length > 0) {
+        const trailData = await getTrailDifficultyMapByEdgeIds(
+          mountain.edgeIds,
+          signal
+        );
+        if (!signal.aborted) {
+          setMountainTrailGeoJson(trailData);
+        }
+      }
+    } catch (e: unknown) {
+      if (e instanceof Error && e.name === "AbortError") return;
+      console.error("mountain trail load error", e);
+    } finally {
+      if (!signal.aborted) {
+        setIsMountainTrailLoading(false);
+      }
+    }
+  }, []);
+
   const elapsedSeconds = useElapsedTime(pageState === "hiking");
 
   const handleStart = async () => {
@@ -287,6 +374,7 @@ export default function HikingRecordPage() {
 
       const mapContainer = mapRef.current.getContainer();
       const mapRect = mapContainer.getBoundingClientRect();
+
       const targetX = mapRect.left + markerPixel.x;
       const targetY = mapRect.top + markerPixel.y;
 
@@ -386,50 +474,94 @@ export default function HikingRecordPage() {
           onMapReady={(map) => {
             mapRef.current = map;
           }}
+          mountains={isMountainMode ? mountains : []}
+          onMountainClick={handleMountainClick}
+          mountainTrailGeoJson={mountainTrailGeoJson}
+          isMountainMode={isMountainMode}
         />
 
-        {/* 현위치 버튼 */}
-        {pageState === "idle" && (
-          <button
-            onClick={handleMoveToCurrentPos}
+        {/* 현위치 버튼 + 100대 명산 토글 버튼 */}
+        {pageState === "idle" && !selectedMountain && (
+          <div
             style={{
               position: "absolute",
               bottom: 180,
               right: 10,
-              width: 44,
-              height: 44,
-              borderRadius: "50%",
-              background: "white",
-              border: "1px solid #e2e8f0",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              justifyContent: "center",
-              zIndex: 50,
-              cursor: "pointer",
-              gap: 2
+              gap: 8,
+              zIndex: 50
             }}>
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#89943d"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <circle cx="12" cy="12" r="3" />
-              <line x1="12" y1="2" x2="12" y2="5" />
-              <line x1="12" y1="19" x2="12" y2="22" />
-              <line x1="2" y1="12" x2="5" y2="12" />
-              <line x1="19" y1="12" x2="22" y2="12" />
-            </svg>
-            <span style={{ fontSize: 9, color: "#89943d", fontWeight: 600 }}>
-              현위치
-            </span>
-          </button>
+            {/* 현위치 버튼 */}
+            <button
+              onClick={handleMoveToCurrentPos}
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: "50%",
+                background: "white",
+                border: "1px solid #e2e8f0",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                gap: 2
+              }}>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#89943d"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <circle cx="12" cy="12" r="3" />
+                <line x1="12" y1="2" x2="12" y2="5" />
+                <line x1="12" y1="19" x2="12" y2="22" />
+                <line x1="2" y1="12" x2="5" y2="12" />
+                <line x1="19" y1="12" x2="22" y2="12" />
+              </svg>
+              <span style={{ fontSize: 9, color: "#89943d", fontWeight: 600 }}>
+                현위치
+              </span>
+            </button>
+
+            {/* 100대 명산 토글 버튼 */}
+            <button
+              onClick={handleMountainModeToggle}
+              disabled={isMountainLoading}
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: "50%",
+                background: isMountainMode ? "#89943d" : "white",
+                border: `1px solid ${isMountainMode ? "#89943d" : "#e2e8f0"}`,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                gap: 2,
+                opacity: isMountainLoading ? 0.6 : 1
+              }}>
+              <span style={{ fontSize: 16, lineHeight: 1 }}>🏔</span>
+              <span
+                style={{
+                  fontSize: 8,
+                  color: isMountainMode ? "white" : "#89943d",
+                  fontWeight: 700,
+                  lineHeight: 1
+                }}>
+                {isMountainLoading ? "..." : isMountainMode ? "일반" : "명산"}
+              </span>
+            </button>
+          </div>
         )}
 
         {/* 난이도 범례 */}
@@ -636,6 +768,25 @@ export default function HikingRecordPage() {
             )}
           </div>
         )}
+
+        {/* 100대 명산 바텀시트 */}
+        {selectedMountain && (
+          <Top100MountainBottomSheet
+            mountain={selectedMountain}
+            onClose={() => {
+              setSelectedMountain(null);
+              setMountainTrailGeoJson(null);
+              setIsMountainTrailLoading(false);
+              if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+              }
+            }}
+            isTrailLoading={isMountainTrailLoading}
+            hasTrailData={
+              !!mountainTrailGeoJson && mountainTrailGeoJson.features.length > 0
+            }
+          />
+        )}
       </div>
 
       {/* 배낭맨 + 등산 시작 버튼 */}
@@ -694,6 +845,15 @@ export default function HikingRecordPage() {
       )}
 
       {pageState === "idle" && <BottomNav />}
+
+      {/* Toast */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
 
       {/* 종료 확인 바텀시트 */}
       {showFinishConfirm && (
