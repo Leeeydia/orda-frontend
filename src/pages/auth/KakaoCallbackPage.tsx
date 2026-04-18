@@ -27,6 +27,9 @@ export default function KakaoCallbackPage() {
 
     sessionStorage.removeItem("kakao_oauth_state");
     kakaoLogin(code);
+    // 카카오 OAuth code는 1회성 토큰이라 재호출 시 서버가 실패 처리한다.
+    // called ref 가드로 마운트당 1회만 실행되므로 deps는 의도적으로 비움.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
