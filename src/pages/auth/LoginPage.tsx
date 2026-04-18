@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useLogin } from "../../features/auth/hooks/useAuth";
 import { validate } from "../../utils/validate";
@@ -7,6 +7,7 @@ import Toast from "../../components/ui/Toast";
 import Button from "../../components/ui/Button";
 import Header, { HEADER_HEIGHT } from "../../components/layout/Header";
 import AuthField from "../../features/auth/components/AuthField";
+import { consumeAuthFlash } from "../../utils/authFlash";
 
 const KAKAO_CLIENT_ID = import.meta.env.VITE_KAKAO_CLIENT_ID;
 const KAKAO_REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI;
@@ -27,6 +28,16 @@ const LoginPage = () => {
       ?.errorMessage;
     return errorMessage ? { message: errorMessage, type: "error" } : null;
   });
+
+  // 전역 401 리다이렉트 후 flash 메시지 수신
+  // (useState initializer는 StrictMode에서 두 번 호출되어 flash를 소비 후 잃을 수 있으므로 effect에서 처리)
+  useEffect(() => {
+    if (toast) return;
+    const flash = consumeAuthFlash();
+    if (flash) setToast({ message: flash, type: "error" });
+    // 마운트 시 1회만 실행
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const showToast = (message: string, type: "success" | "error") => {
     setToast({ message, type });

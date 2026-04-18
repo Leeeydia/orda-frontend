@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "@/lib/axios";
 import type { ApiResponse } from "@/types/common.types";
 import type {
   HikingStartRequest,
@@ -18,8 +18,8 @@ import type {
 export const startHiking = async (
   body: HikingStartRequest
 ): Promise<HikingStartResponse> => {
-  const res = await axios.post<ApiResponse<HikingStartResponse>>(
-    "/api/hiking/start",
+  const res = await api.post<ApiResponse<HikingStartResponse>>(
+    "/hiking/start",
     body
   );
   return res.data.data;
@@ -28,8 +28,8 @@ export const startHiking = async (
 export const endHiking = async (
   sessionId: number
 ): Promise<HikingEndResponse> => {
-  const res = await axios.post<ApiResponse<HikingEndResponse>>(
-    `/api/hiking/${sessionId}/end`
+  const res = await api.post<ApiResponse<HikingEndResponse>>(
+    `/hiking/${sessionId}/end`
   );
   return res.data.data;
 };
@@ -37,8 +37,8 @@ export const endHiking = async (
 export const verifySummit = async (
   body: SummitVerifyRequest
 ): Promise<SummitVerifyResponse> => {
-  const res = await axios.post<ApiResponse<SummitVerifyResponse>>(
-    "/api/summit/verify",
+  const res = await api.post<ApiResponse<SummitVerifyResponse>>(
+    "/summit/verify",
     body
   );
   return res.data.data;
@@ -48,8 +48,8 @@ export const saveGpsTrack = async (
   sessionId: number,
   body: GpsTrackRequest
 ): Promise<GpsTrackSaveResponse> => {
-  const res = await axios.post<ApiResponse<GpsTrackSaveResponse>>(
-    `/api/hiking/${sessionId}/tracks`,
+  const res = await api.post<ApiResponse<GpsTrackSaveResponse>>(
+    `/hiking/${sessionId}/tracks`,
     body
   );
   return res.data.data;
@@ -58,8 +58,8 @@ export const saveGpsTrack = async (
 export const getHikingSession = async (
   sessionId: number
 ): Promise<HikingSessionResponse> => {
-  const res = await axios.get<ApiResponse<HikingSessionResponse>>(
-    `/api/hiking/${sessionId}`
+  const res = await api.get<ApiResponse<HikingSessionResponse>>(
+    `/hiking/${sessionId}`
   );
   return res.data.data;
 };
@@ -67,8 +67,8 @@ export const getHikingSession = async (
 export const getHikingTracks = async (
   sessionId: number
 ): Promise<HikingTrackFeatureCollection> => {
-  const res = await axios.get<ApiResponse<HikingTrackFeatureCollection>>(
-    `/api/hiking/${sessionId}/tracks`
+  const res = await api.get<ApiResponse<HikingTrackFeatureCollection>>(
+    `/hiking/${sessionId}/tracks`
   );
   return res.data.data;
 };
@@ -76,8 +76,8 @@ export const getHikingTracks = async (
 export const getElevationProfile = async (
   sessionId: number
 ): Promise<ElevationProfileResponse> => {
-  const res = await axios.get<ApiResponse<ElevationProfileResponse>>(
-    `/api/hiking/${sessionId}/elevation-profile`
+  const res = await api.get<ApiResponse<ElevationProfileResponse>>(
+    `/hiking/${sessionId}/elevation-profile`
   );
   return res.data.data;
 };
@@ -86,8 +86,8 @@ export const getReplay = async (
   sessionId: number,
   params?: ReplayQueryParams
 ): Promise<ReplayResponse> => {
-  const res = await axios.get<ApiResponse<ReplayResponse>>(
-    `/api/hiking/${sessionId}/replay`,
+  const res = await api.get<ApiResponse<ReplayResponse>>(
+    `/hiking/${sessionId}/replay`,
     {
       params
     }

@@ -30,6 +30,7 @@ import Header from "@/components/layout/Header";
 import BottomNav from "@/components/layout/BottomNav";
 import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
+import { consumeAuthFlash } from "@/utils/authFlash";
 import { checkNearbyTrail } from "@/features/trail/api/trailApi";
 import { getTop100Mountains } from "@/features/mountain/api/mountainApi";
 import { getTrailDifficultyMapByEdgeIds } from "@/features/trail/api/trailApi";
@@ -245,6 +246,12 @@ export default function HikingRecordPage() {
     message: string;
     type: "success" | "error";
   } | null>(null);
+
+  // 전역 401/403 리다이렉트 후 flash 메시지 수신
+  useEffect(() => {
+    const msg = consumeAuthFlash();
+    if (msg) setToast({ message: msg, type: "error" });
+  }, []);
 
   const [idlePos, setIdlePos] = useState<{ lng: number; lat: number } | null>(
     null

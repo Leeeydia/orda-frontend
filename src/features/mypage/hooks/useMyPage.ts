@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
   fetchProfile,
@@ -16,7 +15,6 @@ import type {
 import type { ApiResponse } from "@/types/common.types";
 
 const useMyPage = () => {
-  const navigate = useNavigate();
   const [profile, setProfile] = useState<MyPageProfile | null>(null);
   const [stats, setStats] = useState<MyPageStats | null>(null);
   const [records, setRecords] = useState<HikingRecord[]>([]);
@@ -24,12 +22,6 @@ const useMyPage = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      navigate("/login", { replace: true });
-      return;
-    }
-
     const loadAll = async () => {
       setLoading(true);
       try {
@@ -57,7 +49,7 @@ const useMyPage = () => {
     };
 
     loadAll();
-  }, [navigate]);
+  }, []);
 
   const handleUploadImage = async (
     file: File

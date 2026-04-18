@@ -4,8 +4,10 @@ import tailwindcss from "@tailwindcss/vite";
 import svgr from "vite-plugin-svgr";
 import path from "path";
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss(), svgr()],
+  esbuild:
+    mode === "production" ? { drop: ["console", "debugger"] } : undefined,
   server: {
     host: true,
     allowedHosts: ["untrivial-uncausatively-shaun.ngrok-free.dev"],
@@ -19,4 +21,4 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src")
     }
   }
-});
+}));
