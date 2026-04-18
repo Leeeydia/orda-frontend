@@ -24,7 +24,14 @@ export default function App() {
     <BrowserRouter>
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          <Route path="/" element={<HikingRecordPage />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <HikingRecordPage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/guide" element={<GuidePage />} />
           <Route
