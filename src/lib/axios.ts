@@ -1,4 +1,5 @@
 import axios from "axios";
+import { setAuthFlash } from "@/utils/authFlash";
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -22,5 +23,29 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+api.interceptors.response.use(
+  (res) => res,
+  (error) => {
+    if (axios.isAxiosError(error) && error.response) {
+      const status = error.response.status;
+      const currentPath = window.location.pathname;
+
+      if (status === 401) {
+        localStorage.removeItem("accessToken");
+        if (currentPath !== "/login") {
+          setAuthFlash("로그인이 만료되었습니다. 다시 로그인해 주세요.");
+          window.location.assign("/login");
+        }
+      } else if (status === 403) {
+        if (currentPath !== "/") {
+          setAuthFlash("접근 권한이 없습니다.");
+          window.location.assign("/");
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default api;
