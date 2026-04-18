@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useMyPage from "../../features/mypage/hooks/useMyPage";
 
@@ -23,12 +23,6 @@ const MyPage = () => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // 비로그인 상태에서 마이페이지 접근 시 로그인 페이지로 리다이렉트
-  useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      navigate("/login", { replace: true });
-    }
-  }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
@@ -44,10 +38,10 @@ const MyPage = () => {
 
   if (loading)
     return (
-      <div className="flex min-h-screen items-center justify-center bg-page">
+      <div className="bg-page flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <p className="text-sm font-medium tracking-wide text-primary">
+          <div className="border-primary h-8 w-8 animate-spin rounded-full border-2 border-t-transparent" />
+          <p className="text-primary text-sm font-medium tracking-wide">
             불러오는 중...
           </p>
         </div>
@@ -56,18 +50,18 @@ const MyPage = () => {
 
   if (error)
     return (
-      <div className="flex min-h-screen items-center justify-center bg-page">
-        <p className="text-sm text-error">{error}</p>
+      <div className="bg-page flex min-h-screen items-center justify-center">
+        <p className="text-error text-sm">{error}</p>
       </div>
     );
 
   return (
     <div className="relative mx-auto flex min-h-screen w-full max-w-[390px] flex-col overflow-x-hidden bg-white">
       {/* ── 헤더 ── */}
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-default bg-white px-4 py-3">
+      <header className="border-default sticky top-0 z-10 flex items-center justify-between border-b bg-white px-4 py-3">
         <button
           onClick={() => navigate(-1)}
-          className="flex h-10 w-10 items-center justify-center text-heading">
+          className="text-heading flex h-10 w-10 items-center justify-center">
           <svg
             width="22"
             height="22"
@@ -80,7 +74,7 @@ const MyPage = () => {
             <path d="M15 18l-6-6 6-6" />
           </svg>
         </button>
-        <h1 className="flex-1 text-center text-lg font-bold tracking-tight text-heading">
+        <h1 className="text-heading flex-1 text-center text-lg font-bold tracking-tight">
           마이페이지
         </h1>
         <div className="h-10 w-10" />
@@ -96,7 +90,7 @@ const MyPage = () => {
               className="h-28 w-28 rounded-full object-cover shadow-lg"
             />
           ) : (
-            <div className="flex h-28 w-28 items-center justify-center rounded-full bg-page shadow-md">
+            <div className="bg-page flex h-28 w-28 items-center justify-center rounded-full shadow-md">
               <svg
                 width="48"
                 height="48"
@@ -117,7 +111,7 @@ const MyPage = () => {
             <button
               onClick={() => setShowImageSheet((v) => !v)}
               title="프로필 이미지 변경"
-              className="absolute right-1 bottom-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-primary text-white shadow-md transition-colors duration-150 active:opacity-60">
+              className="bg-primary absolute right-1 bottom-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white text-white shadow-md transition-colors duration-150 active:opacity-60">
               <svg
                 width="14"
                 height="14"
@@ -138,13 +132,13 @@ const MyPage = () => {
                   className="fixed inset-0 z-[150]"
                   onClick={() => setShowImageSheet(false)}
                 />
-                <div className="absolute right-0 bottom-10 z-[200] w-44 overflow-hidden rounded-2xl border border-default bg-white shadow-xl">
+                <div className="border-default absolute right-0 bottom-10 z-[200] w-44 overflow-hidden rounded-2xl border bg-white shadow-xl">
                   <button
                     onClick={() => {
                       setShowImageSheet(false);
                       fileInputRef.current?.click();
                     }}
-                    className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-secondary active:bg-secondary">
+                    className="hover:bg-secondary active:bg-secondary flex w-full items-center gap-3 px-4 py-3 text-left transition-colors">
                     <svg
                       width="16"
                       height="16"
@@ -158,14 +152,14 @@ const MyPage = () => {
                       <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                       <circle cx="12" cy="13" r="4" />
                     </svg>
-                    <span className="text-sm font-semibold text-body">
+                    <span className="text-body text-sm font-semibold">
                       앨범에서 선택
                     </span>
                   </button>
 
                   {profile?.profileImageUrl && (
                     <>
-                      <div className="mx-3 border-t border-default" />
+                      <div className="border-default mx-3 border-t" />
                       <button
                         onClick={async () => {
                           setShowImageSheet(false);
@@ -185,7 +179,7 @@ const MyPage = () => {
                           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                           <circle cx="12" cy="7" r="4" />
                         </svg>
-                        <span className="text-sm font-semibold text-error">
+                        <span className="text-error text-sm font-semibold">
                           기본 이미지로
                         </span>
                       </button>
@@ -206,20 +200,20 @@ const MyPage = () => {
         </div>
 
         <div className="mt-4 flex flex-col items-center gap-1">
-          <p className="text-xl font-bold tracking-tight text-heading">
+          <p className="text-heading text-xl font-bold tracking-tight">
             {profile?.nickname ?? "—"}
           </p>
-          <p className="text-xs font-bold tracking-wider text-primary uppercase">
+          <p className="text-primary text-xs font-bold tracking-wider uppercase">
             ORDA Member
           </p>
-          <p className="mt-1 text-sm text-muted">{profile?.email}</p>
+          <p className="text-muted mt-1 text-sm">{profile?.email}</p>
         </div>
       </section>
 
       {/* ── 통계 섹션 ── */}
       <section className="px-4 pb-6">
-        <div className="rounded-xl border border-default bg-page p-4">
-          <p className="mb-4 text-xs font-bold tracking-wider text-muted uppercase">
+        <div className="border-default bg-page rounded-xl border p-4">
+          <p className="text-muted mb-4 text-xs font-bold tracking-wider uppercase">
             나의 등산 통계
           </p>
           <div className="grid grid-cols-2 gap-3">
@@ -302,11 +296,11 @@ const MyPage = () => {
 
       {/* ── 등산 기록 섹션 ── */}
       <section className="px-4 pb-6">
-        <p className="mb-3 text-xs font-bold tracking-wider text-muted uppercase">
+        <p className="text-muted mb-3 text-xs font-bold tracking-wider uppercase">
           등산 기록
         </p>
         {(records ?? []).length === 0 ? (
-          <div className="flex flex-col items-center gap-2 rounded-xl border border-default bg-page py-10">
+          <div className="border-default bg-page flex flex-col items-center gap-2 rounded-xl border py-10">
             <svg
               width="36"
               height="36"
@@ -319,7 +313,7 @@ const MyPage = () => {
               className="text-primary opacity-40">
               <path d="M8 3l4 8 5-5 5 15H2L8 3z" />
             </svg>
-            <p className="text-sm text-muted">아직 등산 기록이 없습니다</p>
+            <p className="text-muted text-sm">아직 등산 기록이 없습니다</p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
@@ -333,10 +327,10 @@ const MyPage = () => {
       <div className="h-36" />
 
       {/* ── 개인 정보 수정 + 로그아웃 버튼 (하단 고정) ── */}
-      <div className="fixed bottom-0 left-1/2 w-full max-w-[390px] -translate-x-1/2 border-t border-default bg-white px-4 pt-3 pb-8">
+      <div className="border-default fixed bottom-0 left-1/2 w-full max-w-[390px] -translate-x-1/2 border-t bg-white px-4 pt-3 pb-8">
         <button
           onClick={() => navigate("/mypage/edit-profile")}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-4 text-sm font-semibold text-white transition-colors duration-150 active:opacity-60">
+          className="bg-primary inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-4 text-sm font-semibold text-white transition-colors duration-150 active:opacity-60">
           <svg
             width="16"
             height="16"
@@ -354,7 +348,7 @@ const MyPage = () => {
 
         <button
           onClick={() => setShowLogoutConfirm(true)}
-          className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-default bg-white py-4 text-sm font-semibold text-muted transition-colors duration-150 active:opacity-60">
+          className="border-default text-muted mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border bg-white py-4 text-sm font-semibold transition-colors duration-150 active:opacity-60">
           <svg
             width="15"
             height="15"
@@ -381,7 +375,7 @@ const MyPage = () => {
           />
           <div className="fixed top-1/2 left-1/2 z-[200] w-72 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl bg-white shadow-2xl">
             <div className="flex flex-col items-center px-4 pt-8 pb-6 text-center">
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-page">
+              <div className="bg-page mb-4 flex h-14 w-14 items-center justify-center rounded-full">
                 <svg
                   width="24"
                   height="24"
@@ -397,21 +391,21 @@ const MyPage = () => {
                   <line x1="21" y1="12" x2="9" y2="12" />
                 </svg>
               </div>
-              <p className="text-lg font-bold text-heading">로그아웃</p>
-              <p className="mt-1.5 text-sm text-muted">
+              <p className="text-heading text-lg font-bold">로그아웃</p>
+              <p className="text-muted mt-1.5 text-sm">
                 정말 로그아웃 하시겠어요?
               </p>
             </div>
-            <div className="flex border-t border-default">
+            <div className="border-default flex border-t">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 py-4 text-sm font-semibold text-muted transition-colors duration-150 active:opacity-60">
+                className="text-muted flex-1 py-4 text-sm font-semibold transition-colors duration-150 active:opacity-60">
                 취소
               </button>
-              <div className="w-px bg-default" />
+              <div className="bg-default w-px" />
               <button
                 onClick={handleLogout}
-                className="flex-1 py-4 text-sm font-bold text-error transition-colors duration-150 active:opacity-60">
+                className="text-error flex-1 py-4 text-sm font-bold transition-colors duration-150 active:opacity-60">
                 로그아웃
               </button>
             </div>
@@ -431,15 +425,15 @@ interface StatCardProps {
 }
 
 const StatCard = ({ icon, label, value }: StatCardProps) => (
-  <div className="flex flex-col gap-2 rounded-xl border border-default bg-white p-4 shadow-sm">
-    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10">
+  <div className="border-default flex flex-col gap-2 rounded-xl border bg-white p-4 shadow-sm">
+    <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-xl">
       {icon}
     </div>
     <div>
-      <p className="text-xs font-semibold tracking-wider text-muted uppercase">
+      <p className="text-muted text-xs font-semibold tracking-wider uppercase">
         {label}
       </p>
-      <p className="mt-0.5 text-lg font-bold text-heading">{value}</p>
+      <p className="text-heading mt-0.5 text-lg font-bold">{value}</p>
     </div>
   </div>
 );
@@ -474,9 +468,9 @@ const RecordCard = ({ record }: RecordCardProps) => {
 
   return (
     <div
-      className="flex items-center gap-4 rounded-xl border border-default bg-white p-4 shadow-sm transition-colors duration-150 active:opacity-60"
+      className="border-default flex items-center gap-4 rounded-xl border bg-white p-4 shadow-sm transition-colors duration-150 active:opacity-60"
       onClick={() => navigate(`/hiking/sessions/${record.sessionId}`)}>
-      <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-primary/10">
+      <div className="bg-primary/10 flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl">
         <svg
           width="20"
           height="20"
@@ -491,15 +485,15 @@ const RecordCard = ({ record }: RecordCardProps) => {
         </svg>
       </div>
       <div className="flex flex-1 flex-col gap-0.5">
-        <p className="text-sm font-bold text-heading">
+        <p className="text-heading text-sm font-bold">
           {formatDate(record.startedAt)}
         </p>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-muted">
+          <span className="text-muted text-xs">
             {(toNum(record.totalDistanceM) / 1000).toFixed(1)}km
           </span>
-          <span className="h-1 w-1 rounded-full bg-default" />
-          <span className="text-xs text-muted">
+          <span className="bg-default h-1 w-1 rounded-full" />
+          <span className="text-muted text-xs">
             {formatDuration(record.totalDurationSec)}
           </span>
         </div>
