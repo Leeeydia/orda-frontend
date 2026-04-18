@@ -5,7 +5,6 @@ export type ElevationSummaryStatus = "COMPLETE" | "ESTIMATED" | "UNAVAILABLE";
 export type ElevationSource = "dem" | "gps_fallback" | "none";
 
 export interface HikingStartRequest {
-  userId: number;
   latitude: number;
   longitude: number;
 }

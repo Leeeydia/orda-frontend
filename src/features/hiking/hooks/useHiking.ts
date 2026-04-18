@@ -11,6 +11,7 @@
  *             백엔드 등산로 근접 검증 에러 메시지 표시
  *  - start(): 반환 타입을 { success, errorMessage }로 변경
  *             idle 상태 시작 실패 메시지를 호출자가 토스트로 표시 가능
+ *  - start(): userId 하드코딩 제거 (백엔드가 토큰에서 userId 획득하도록 변경됨)
  *  - demElevations: (number | null)[] 형태로 관리
  *                   dem이면 값, gps_fallback/none이면 null을 push
  *                   → raw GPS 그래프로 fallback하지 않고, 누락 구간은 차트에서 공백으로 표시
@@ -113,13 +114,13 @@ export const useHiking = () => {
       });
 
       // 2. 등산 시작 요청 (GPS 좌표 포함 → 백엔드에서 등산로 근접 검증)
+      //    userId는 백엔드가 JWT 토큰에서 획득하므로 요청 바디에 포함하지 않음
       const firstFix = firstFixRef.current as GpsPoint | null;
       if (!firstFix) {
         throw new Error("GPS 위치를 확인할 수 없습니다.");
       }
 
       const res = await startHiking({
-        userId: 1, // TODO: auth 연동 후 교체
         latitude: firstFix.lat,
         longitude: firstFix.lng
       });
