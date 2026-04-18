@@ -22,6 +22,7 @@
 import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import { useGPS } from "@/features/gps/hooks/useGPS";
+import { API_BASE_URL } from "@/lib/axios";
 import {
   startHiking,
   endHiking,
@@ -63,7 +64,9 @@ export const useHiking = () => {
   useEffect(() => {
     const sendEndBeacon = () => {
       if (sessionIdRef.current) {
-        navigator.sendBeacon(`/api/hiking/${sessionIdRef.current}/end`);
+        navigator.sendBeacon(
+          `${API_BASE_URL}/hiking/${sessionIdRef.current}/end`
+        );
       }
     };
     window.addEventListener("beforeunload", sendEndBeacon);

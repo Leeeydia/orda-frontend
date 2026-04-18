@@ -1,10 +1,9 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useMyPage from "../../features/mypage/hooks/useMyPage";
+import { API_ORIGIN } from "@/lib/axios";
 
 const toNum = (v: number | null | undefined): number => v ?? 0;
-
-const API_URL = import.meta.env.VITE_API_URL ?? "";
 
 const MyPage = () => {
   const {
@@ -85,7 +84,7 @@ const MyPage = () => {
         <div className="relative">
           {profile?.profileImageUrl ? (
             <img
-              src={`${API_URL}${profile.profileImageUrl}`}
+              src={`${API_ORIGIN}${profile.profileImageUrl}`}
               alt="프로필 이미지"
               className="h-28 w-28 rounded-full object-cover shadow-lg"
             />
