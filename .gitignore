@@ -30,3 +30,6 @@ dist-ssr
 
 # Test pages
 src/pages/MapTestPage.tsx
+
+# Claude Code local settings
+.claude/
