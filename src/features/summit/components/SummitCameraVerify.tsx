@@ -272,7 +272,7 @@ export default function SummitCameraVerify({
                 </div>
                 <div style={{ fontSize: 12 }}>
                   AI 인식: {result.aiRecognizedName} · 해발{" "}
-                  {result.aiRecognizedElevation}m
+                  {result.aiRecognizedElevation?.replace(/m$/i, "")}m
                 </div>
               </>
             ) : (

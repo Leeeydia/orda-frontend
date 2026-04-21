@@ -211,6 +211,7 @@ export default function HikingRecordPage() {
     verified: boolean;
     summitName?: string;
     distanceM?: number;
+    aiReason?: string;
   } | null>(null);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
@@ -391,7 +392,8 @@ export default function HikingRecordPage() {
     setSummitResult({
       verified: result.verified,
       summitName: result.summitName,
-      distanceM: result.distanceM
+      distanceM: result.distanceM,
+      aiReason: result.aiReason
     });
   };
 
@@ -665,7 +667,8 @@ export default function HikingRecordPage() {
                 }}>
                 {summitResult.verified
                   ? `🏔 ${summitResult.summitName ?? "정상"} 인증 완료`
-                  : `📍 정상까지 약 ${summitResult.distanceM ?? "—"}m 남음`}
+                  : (summitResult.aiReason ??
+                    `📍 정상까지 약 ${Math.round(summitResult.distanceM ?? 0)}m 떨어져 있습니다`)}
               </div>
             )}
 
@@ -687,7 +690,7 @@ export default function HikingRecordPage() {
               <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
                 <button
                   onClick={handleVerify}
-                  disabled={!currentPos}
+                  disabled={!sessionId || !currentPos}
                   style={{
                     flex: 1,
                     padding: "16px 0",
