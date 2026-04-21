@@ -17,6 +17,7 @@ import type { Top100Mountain } from "@/features/mountain/types/mountainTypes";
 import type { TrailGeoJson } from "@/features/trail/types/trail.types";
 import Top100MountainBottomSheet from "@/features/mountain/components/Top100MountainBottomSheet";
 import SummitCameraVerify from "@/features/summit/components/SummitCameraVerify";
+import { verifySummitWithGps } from "@/features/summit/api/summitApi";
 import type { PhotoVerifyResponse } from "@/features/summit/types/summit.types";
 
 import hikerIcon from "@/assets/hiking-icon.png";
@@ -212,6 +213,7 @@ export default function HikingRecordPage() {
     summitName?: string;
     distanceM?: number;
     aiReason?: string;
+    verificationMethod?: string;
   } | null>(null);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
@@ -384,16 +386,36 @@ export default function HikingRecordPage() {
     }
   };
 
-  const handleVerify = () => {
-    setShowCamera(true);
-  };
+  const [isVerifyLoading, setIsVerifyLoading] = useState(false);
 
+  const handleVerify = async () => {
+    if (!sessionId || !currentPos) return;
+    setIsVerifyLoading(true);
+    try {
+      const result = await verifySummitWithGps({
+        sessionId,
+        latitude: currentPos.lat,
+        longitude: currentPos.lng
+      });
+      setSummitResult({
+        verified: result.verified,
+        summitName: result.summitName,
+        distanceM: result.distanceM,
+        verificationMethod: "gps"
+      });
+    } catch {
+      setToast({ message: "정상 인증에 실패했습니다.", type: "error" });
+    } finally {
+      setIsVerifyLoading(false);
+    }
+  };
   const handleVerified = (result: PhotoVerifyResponse) => {
     setSummitResult({
       verified: result.verified,
       summitName: result.summitName,
       distanceM: result.distanceM,
-      aiReason: result.aiReason
+      aiReason: result.aiReason,
+      verificationMethod: "photo"
     });
   };
 
@@ -666,9 +688,8 @@ export default function HikingRecordPage() {
                   color: summitResult.verified ? "#15803d" : "#a16207"
                 }}>
                 {summitResult.verified
-                  ? `🏔 ${summitResult.summitName ?? "정상"} 인증 완료`
-                  : (summitResult.aiReason ??
-                    `📍 정상까지 약 ${Math.round(summitResult.distanceM ?? 0)}m 떨어져 있습니다`)}
+                  ? `🏔 ${summitResult.summitName ?? "정상"} 인증 완료${summitResult.verificationMethod === "photo" ? " (사진)" : ""}`
+                  : `📍 ${summitResult.summitName ?? "정상"}까지 약 ${Math.round(summitResult.distanceM ?? 0)}m 떨어져 있습니다`}
               </div>
             )}
 
@@ -687,39 +708,66 @@ export default function HikingRecordPage() {
             )}
 
             {pageState === "hiking" && (
-              <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
-                <button
-                  onClick={handleVerify}
-                  disabled={!sessionId || !currentPos}
-                  style={{
-                    flex: 1,
-                    padding: "16px 0",
-                    borderRadius: 16,
-                    background: "#f1f5f9",
-                    border: "none",
-                    cursor: "pointer",
-                    fontWeight: 700,
-                    fontSize: 14,
-                    color: "#0f172a",
-                    opacity: !currentPos ? 0.4 : 1
-                  }}>
-                  📷 정상 인증
-                </button>
-                <button
-                  onClick={() => setShowFinishConfirm(true)}
-                  style={{
-                    flex: 1.5,
-                    padding: "16px 0",
-                    borderRadius: 16,
-                    background: "#89943d",
-                    border: "none",
-                    cursor: "pointer",
-                    fontWeight: 700,
-                    fontSize: 14,
-                    color: "white"
-                  }}>
-                  stop FINISH
-                </button>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 12,
+                  marginTop: 16
+                }}>
+                <div style={{ display: "flex", gap: 12 }}>
+                  <button
+                    onClick={handleVerify}
+                    disabled={!sessionId || !currentPos || isVerifyLoading}
+                    style={{
+                      flex: 1,
+                      padding: "16px 0",
+                      borderRadius: 16,
+                      background: "#f1f5f9",
+                      border: "none",
+                      cursor: "pointer",
+                      fontWeight: 700,
+                      fontSize: 14,
+                      color: "#0f172a",
+                      opacity:
+                        !sessionId || !currentPos || isVerifyLoading ? 0.4 : 1
+                    }}>
+                    {isVerifyLoading ? "인증 중..." : "📍 정상 인증"}
+                  </button>
+                  <button
+                    onClick={() => setShowFinishConfirm(true)}
+                    style={{
+                      flex: 1.5,
+                      padding: "16px 0",
+                      borderRadius: 16,
+                      background: "#89943d",
+                      border: "none",
+                      cursor: "pointer",
+                      fontWeight: 700,
+                      fontSize: 14,
+                      color: "white"
+                    }}>
+                    stop FINISH
+                  </button>
+                </div>
+                {summitResult?.verified &&
+                  summitResult.verificationMethod === "gps" && (
+                    <button
+                      onClick={() => setShowCamera(true)}
+                      style={{
+                        width: "100%",
+                        padding: "14px 0",
+                        borderRadius: 16,
+                        background: "transparent",
+                        border: "2px solid #89943d",
+                        cursor: "pointer",
+                        fontWeight: 700,
+                        fontSize: 14,
+                        color: "#89943d"
+                      }}>
+                      📷 사진 추가 인증 (보너스)
+                    </button>
+                  )}
               </div>
             )}
 
