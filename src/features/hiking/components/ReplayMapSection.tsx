@@ -179,6 +179,7 @@ export default function ReplayMapSection({
   const mapRef = useRef<maplibregl.Map | null>(null);
   const replayMarkerRef = useRef<maplibregl.Marker | null>(null);
   const summitMarkerRefs = useRef<maplibregl.Marker[]>([]);
+  const latestVisibleSummitsRef = useRef<SummitMarkerItem[]>([]);
   const previousCameraModeRef = useRef<ReplayCameraMode | null>(null);
   const [isMapReady, setIsMapReady] = useState(false);
 
@@ -189,6 +190,16 @@ export default function ReplayMapSection({
   const bounds = useMemo(() => {
     return getReplayBounds(replay);
   }, [replay]);
+
+  const visibleSummitKey = useMemo(() => {
+    return visibleSummits
+      .map((summit) => `${summit.summitId}:${summit.verifiedAt ?? ""}`)
+      .join("|");
+  }, [visibleSummits]);
+
+  useEffect(() => {
+    latestVisibleSummitsRef.current = visibleSummits;
+  }, [visibleSummits]);
 
   useEffect(() => {
     if (!isMapReady || !mapRef.current || !bounds) return;
@@ -271,12 +282,16 @@ export default function ReplayMapSection({
   useEffect(() => {
     if (!isMapReady || !mapRef.current) return;
 
-    renderSummitMarkers(mapRef.current, visibleSummits, summitMarkerRefs);
+    renderSummitMarkers(
+      mapRef.current,
+      latestVisibleSummitsRef.current,
+      summitMarkerRefs
+    );
 
     return () => {
       clearSummitMarkers(summitMarkerRefs);
     };
-  }, [isMapReady, visibleSummits]);
+  }, [isMapReady, visibleSummitKey]);
 
   useEffect(() => {
     return () => {
