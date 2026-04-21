@@ -1,5 +1,5 @@
 /**
- * 📄 src/features/hiking/components/summitMarker.ts
+ * 📄 src/components/map/summitMarker.ts
  *
  * 정상 마커 공통 유틸
  * - GpsTrackingMap: 등산 시작 시 주변 정상 표시 (해발 고도)

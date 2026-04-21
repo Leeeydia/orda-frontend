@@ -31,7 +31,7 @@ import type { TrailGeoJson } from "@/features/trail/types/trail.types";
 import {
   renderSummitMarkers,
   clearSummitMarkers
-} from "@/features/hiking/components/summitMarker";
+} from "@/components/map/summitMarker";
 
 import CommonMap from "@/components/map/CommonMap";
 import type { FeatureCollection } from "geojson";
