@@ -41,9 +41,9 @@ export default function HikingTrackSection({
     mapRef.current.resize();
     mapRef.current.fitBounds(bounds, {
       padding: {
-        top: 96,
+        top: 135,
         right: 24,
-        bottom: 260,
+        bottom: 300,
         left: 24
       },
       duration: 800

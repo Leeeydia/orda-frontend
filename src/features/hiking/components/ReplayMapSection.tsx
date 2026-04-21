@@ -6,7 +6,10 @@ import {
   clearSummitMarkers,
   renderSummitMarkers
 } from "@/components/map/summitMarker";
-import type { ReplaySessionModel, SummitMarkerItem } from "../types/hiking.types";
+import type {
+  ReplaySessionModel,
+  SummitMarkerItem
+} from "../types/hiking.types";
 
 type ReplayCurrentPosition = {
   lat: number;
@@ -196,9 +199,9 @@ export default function ReplayMapSection({
     mapRef.current.resize();
     mapRef.current.fitBounds(bounds, {
       padding: {
-        top: 88,
+        top: 150,
         right: 24,
-        bottom: 112,
+        bottom: 90,
         left: 24
       },
       duration: 900
