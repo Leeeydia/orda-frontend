@@ -21,6 +21,8 @@ import Top100MountainBottomSheet from "@/features/mountain/components/Top100Moun
 import SummitCameraVerify from "@/features/summit/components/SummitCameraVerify";
 import { verifySummitWithGps } from "@/features/summit/api/summitApi";
 import type { PhotoVerifyResponse } from "@/features/summit/types/summit.types";
+import ElevationChartCard from "@/features/hiking/components/ElevationChartCard";
+import { mapElevationSeriesToSvgPath } from "@/features/hiking/mappers/hikingMappers";
 
 import hikerIcon from "@/assets/hiking-icon.png";
 
@@ -75,91 +77,6 @@ const formatTime = (totalSeconds: number): string => {
     .padStart(2, "0");
   const s = (totalSeconds % 60).toString().padStart(2, "0");
   return `${h}:${m}:${s}`;
-};
-
-const ElevationChart = ({
-  demElevations
-}: {
-  demElevations: (number | null)[];
-}) => {
-  const validCount = demElevations.filter((e): e is number => e != null).length;
-
-  if (validCount < 2) {
-    return (
-      <div className="relative flex h-20 w-full items-center justify-center rounded-xl bg-slate-50">
-        <span className="text-xs text-slate-400">고도 데이터 수집 중...</span>
-      </div>
-    );
-  }
-
-  const validValues = demElevations.filter((e): e is number => e != null);
-  const min = Math.min(...validValues);
-  const max = Math.max(...validValues);
-  const range = Math.max(max - min, 20) || 1;
-  const w = 100;
-  const h = 80;
-  const n = demElevations.length;
-
-  const points = demElevations.map((e, i) => {
-    if (e == null) return null;
-    return {
-      x: n === 1 ? w / 2 : (i / (n - 1)) * w,
-      y: h - ((e - min) / range) * (h - 10) - 5
-    };
-  });
-
-  let pathD = "";
-  let prevWasNull = true;
-  points.forEach((p) => {
-    if (p == null) {
-      prevWasNull = true;
-      return;
-    }
-    if (prevWasNull) {
-      pathD += `M ${p.x} ${p.y} `;
-      prevWasNull = false;
-    } else {
-      pathD += `L ${p.x} ${p.y} `;
-    }
-  });
-
-  const lastValidPoint = [...points].reverse().find((p) => p != null) ?? null;
-  const dotLeft = lastValidPoint ? `${(lastValidPoint.x / w) * 100}%` : "0%";
-  const dotTop = lastValidPoint ? `${(lastValidPoint.y / h) * 100}%` : "0%";
-
-  return (
-    <div className="relative h-20 w-full rounded-xl bg-slate-50">
-      <svg
-        viewBox={`0 0 ${w} ${h}`}
-        preserveAspectRatio="none"
-        className="absolute inset-0 h-full w-full">
-        <path
-          d={pathD}
-          fill="none"
-          stroke="#89943d"
-          strokeWidth="1.5"
-          vectorEffect="non-scaling-stroke"
-        />
-      </svg>
-      {lastValidPoint && (
-        <div
-          style={{
-            position: "absolute",
-            left: dotLeft,
-            top: dotTop,
-            width: 12,
-            height: 12,
-            borderRadius: "50%",
-            background: "#89943d",
-            border: "2.5px solid white",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
-            transform: "translate(-50%, -50%)",
-            zIndex: 10
-          }}
-        />
-      )}
-    </div>
-  );
 };
 
 const StatItem = ({
@@ -710,7 +627,16 @@ export default function HikingRecordPage() {
                   />
                 </div>
 
-                <ElevationChart demElevations={demElevations} />
+                <ElevationChartCard
+                  variant="embedded"
+                  svgPath={mapElevationSeriesToSvgPath(demElevations)}
+                  xAxisLabels={[]}
+                  isEmpty={
+                    demElevations.filter((e): e is number => e != null).length <
+                    2
+                  }
+                  emptyMessage="고도 데이터 수집 중..."
+                />
 
                 {summitResult && (
                   <div

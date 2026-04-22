@@ -175,6 +175,42 @@ export const mapElevationPointsToSvgPath = (
   return pathCommands.join(" ");
 };
 
+export const mapElevationSeriesToSvgPath = (
+  elevations: (number | null)[],
+  width = 320,
+  height = 120
+): string => {
+  if (!elevations || elevations.length === 0) return "";
+
+  const validElevations = elevations.filter(
+    (value): value is number => value != null
+  );
+  if (validElevations.length < 2) return "";
+
+  const minElevation = Math.min(...validElevations);
+  const maxElevation = Math.max(...validElevations);
+  const elevationRange = maxElevation - minElevation || 1;
+  const n = elevations.length;
+
+  const pathCommands: string[] = [];
+  let isDrawing = false;
+
+  elevations.forEach((elevation, index) => {
+    if (elevation == null) {
+      isDrawing = false;
+      return;
+    }
+
+    const x = n === 1 ? width / 2 : (index / (n - 1)) * width;
+    const y = height - ((elevation - minElevation) / elevationRange) * height;
+
+    pathCommands.push(`${isDrawing ? "L" : "M"} ${x} ${y}`);
+    isDrawing = true;
+  });
+
+  return pathCommands.join(" ");
+};
+
 export const getElevationProfileSummary = (
   points: ElevationProfilePointResponse[]
 ): {
