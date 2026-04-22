@@ -765,7 +765,7 @@ export default function HikingRecordPage() {
                         fontSize: 14,
                         color: "#89943d"
                       }}>
-                      📷 사진 추가 인증 (보너스)
+                      📷 사진 추가 인증
                     </button>
                   )}
               </div>
