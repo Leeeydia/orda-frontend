@@ -26,6 +26,7 @@
  *  - 명산 모드 ON + 산 선택: 해당 산 edgeIds GET 방식으로 조회
  *  - 바텀시트 닫기(mountainTrailGeoJson null) 시 전체 명산 등산로로 복귀
  *  - 명산 모드에서 moveend 시 재조회 없음 (전체 명산 등산로는 최초 1회만 로드)
+ *  - mountains 변경 시 명산 모드 ON 상태면 등산로 재조회 (느린 네트워크 대응)
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -414,6 +415,18 @@ const GpsTrackingMap = ({
       mountainMarkersRef.current.push(marker);
     });
   }, [mountains, onMountainClick]);
+
+  // mountains 변경 시 명산 모드 ON 상태면 등산로 재조회 (느린 네트워크 대응)
+  useEffect(() => {
+    if (
+      isMountainMode &&
+      !mountainTrailGeoJson &&
+      mountains &&
+      mountains.length > 0
+    ) {
+      setTimeout(() => loadMountainTrails(), 0);
+    }
+  }, [mountains, isMountainMode, mountainTrailGeoJson, loadMountainTrails]);
 
   // isMountainMode 변경 시 ref 동기화 + 즉시 재조회
   useEffect(() => {
