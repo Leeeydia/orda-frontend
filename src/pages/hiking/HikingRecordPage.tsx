@@ -584,7 +584,7 @@ export default function HikingRecordPage() {
                       letterSpacing: "0.2em",
                       marginBottom: 4
                     }}>
-                    TIME
+                    경과 시간
                   </div>
                   <div
                     style={{
@@ -711,7 +711,7 @@ export default function HikingRecordPage() {
                       fontSize: 14,
                       color: "white"
                     }}>
-                    stop FINISH
+                    종료
                   </button>
                 </div>
                 {summitResult?.verified &&
@@ -783,7 +783,7 @@ export default function HikingRecordPage() {
           <img
             ref={hikerRef}
             src={hikerIcon}
-            alt="hiker"
+            alt="등산 캐릭터"
             style={{
               width: 42,
               height: 42,
@@ -811,7 +811,6 @@ export default function HikingRecordPage() {
                   : "0 4px 12px rgba(137,148,61,0.3)",
               opacity: hikerAnimating || isLoading ? 0.6 : 1
             }}>
-            <span style={{ fontStyle: "italic", marginRight: 6 }}>hiking</span>
             {isLoading
               ? "연결 중..."
               : isNearTrail === false

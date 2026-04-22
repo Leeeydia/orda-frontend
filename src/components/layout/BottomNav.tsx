@@ -4,7 +4,7 @@ export const BOTTOM_NAV_HEIGHT = 64;
 
 const NAV_ITEMS = [
   {
-    label: "Guide",
+    label: "가이드",
     path: "/guide",
     icon: (active: boolean) => (
       <svg
@@ -22,7 +22,7 @@ const NAV_ITEMS = [
     )
   },
   {
-    label: "Map",
+    label: "지도",
     path: "/",
     icon: (active: boolean) => (
       <svg
@@ -41,7 +41,7 @@ const NAV_ITEMS = [
     )
   },
   {
-    label: "Profile",
+    label: "프로필",
     path: "/mypage",
     icon: (active: boolean) => (
       <svg

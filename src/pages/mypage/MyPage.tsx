@@ -203,7 +203,7 @@ const MyPage = () => {
             {profile?.nickname ?? "—"}
           </p>
           <p className="text-primary text-xs font-bold tracking-wider uppercase">
-            ORDA Member
+            ORDA 회원
           </p>
           <p className="text-muted mt-1 text-sm">{profile?.email}</p>
         </div>

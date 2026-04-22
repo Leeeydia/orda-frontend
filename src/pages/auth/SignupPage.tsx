@@ -176,7 +176,7 @@ const SignupPage = () => {
               label="생년월일"
               name="birthDate"
               type="text"
-              placeholder="YYYY-MM-DD (선택)"
+              placeholder="예: 1990-01-01 (선택)"
               value={form.birthDate}
               error={errors.birthDate}
               onChange={handleBirthDateChange}
