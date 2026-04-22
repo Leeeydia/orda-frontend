@@ -649,7 +649,7 @@ export default function HikingRecordPage() {
                     }}>
                     {summitResult.verified
                       ? `🏔 ${summitResult.summitName ?? "정상"} 인증 완료${summitResult.verificationMethod === "photo" ? " (사진)" : ""}`
-                      : `📍 ${summitResult.summitName ?? "정상"}까지 약 ${Math.round(summitResult.distanceM ?? 0)}m 떨어져 있습니다`}
+                      : `📍 ${summitResult.aiReason ?? `${summitResult.summitName ?? "정상"}까지 약 ${Math.round(summitResult.distanceM ?? 0)}m 떨어져 있습니다`}`}
                   </div>
                 )}
 
