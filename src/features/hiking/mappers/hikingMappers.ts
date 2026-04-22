@@ -28,8 +28,6 @@ const sortTrackFeatures = (
   );
 };
 
-const DEFAULT_LINE_SMOOTHING_ITERATIONS = 3;
-
 type ChartPoint = {
   x: number;
   y: number;
@@ -38,41 +36,6 @@ type ChartPoint = {
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
-
-export const smoothLineCoordinates = (
-  coordinates: [number, number][],
-  iterations = DEFAULT_LINE_SMOOTHING_ITERATIONS
-): [number, number][] => {
-  if (coordinates.length < 3) {
-    return coordinates;
-  }
-
-  const safeIterations = Math.max(Math.round(iterations), 0);
-  let smoothedCoordinates = coordinates;
-
-  for (let iteration = 0; iteration < safeIterations; iteration += 1) {
-    const nextCoordinates: [number, number][] = [smoothedCoordinates[0]];
-
-    for (let i = 0; i < smoothedCoordinates.length - 1; i += 1) {
-      const current = smoothedCoordinates[i];
-      const next = smoothedCoordinates[i + 1];
-
-      nextCoordinates.push([
-        current[0] * 0.75 + next[0] * 0.25,
-        current[1] * 0.75 + next[1] * 0.25
-      ]);
-      nextCoordinates.push([
-        current[0] * 0.25 + next[0] * 0.75,
-        current[1] * 0.25 + next[1] * 0.75
-      ]);
-    }
-
-    nextCoordinates.push(smoothedCoordinates[smoothedCoordinates.length - 1]);
-    smoothedCoordinates = nextCoordinates;
-  }
-
-  return smoothedCoordinates;
-};
 
 function createSmoothSvgPath(points: ChartPoint[]): string {
   if (points.length === 0) return "";
@@ -139,16 +102,15 @@ export const mapTrackFeaturesToDisplayGeoJson = (
   const coordinates = sortedFeatures.map(
     (feature) => feature.geometry.coordinates
   );
-  const displayCoordinates = smoothLineCoordinates(coordinates);
 
   const features: FeatureCollection["features"] = [];
 
-  if (displayCoordinates.length >= 2) {
+  if (coordinates.length >= 2) {
     features.push({
       type: "Feature",
       geometry: {
         type: "LineString",
-        coordinates: displayCoordinates
+        coordinates
       } satisfies LineString,
       properties: {
         type: "track-line"

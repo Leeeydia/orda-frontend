@@ -6,7 +6,6 @@ import {
   clearSummitMarkers,
   renderSummitMarkers
 } from "@/components/map/summitMarker";
-import { smoothLineCoordinates } from "../mappers/hikingMappers";
 import type {
   ReplaySessionModel,
   SummitMarkerItem
@@ -147,7 +146,7 @@ function getPassedLineCoordinates(
     }
   }
 
-  return smoothLineCoordinates(passedCoordinates);
+  return passedCoordinates;
 }
 
 function getReplayDisplayGeoJson(
