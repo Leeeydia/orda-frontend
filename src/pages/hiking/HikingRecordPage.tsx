@@ -1,5 +1,7 @@
 /**
  * 📄 src/pages/hiking/HikingRecordPage.tsx
+ * ⚠️ 테스트용: GPS 인증 좌표와 카메라 좌표를 금수봉(36.328917, 127.280978)으로 하드코딩
+ * 배포 전 currentPos.lat, currentPos.lng로 원복할 것
  */
 import { useState, useRef, useEffect, useCallback } from "react";
 import maplibregl from "maplibre-gl";
@@ -217,6 +219,7 @@ export default function HikingRecordPage() {
   } | null>(null);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
@@ -388,14 +391,15 @@ export default function HikingRecordPage() {
 
   const [isVerifyLoading, setIsVerifyLoading] = useState(false);
 
+  // ⚠️ 테스트용: 금수봉 좌표 하드코딩 (배포 전 currentPos.lat, currentPos.lng로 원복)
   const handleVerify = async () => {
     if (!sessionId || !currentPos) return;
     setIsVerifyLoading(true);
     try {
       const result = await verifySummitWithGps({
         sessionId,
-        latitude: currentPos.lat,
-        longitude: currentPos.lng
+        latitude: 36.328917,
+        longitude: 127.280978
       });
       setSummitResult({
         verified: result.verified,
@@ -409,6 +413,7 @@ export default function HikingRecordPage() {
       setIsVerifyLoading(false);
     }
   };
+
   const handleVerified = (result: PhotoVerifyResponse) => {
     setSummitResult({
       verified: result.verified,
@@ -595,6 +600,7 @@ export default function HikingRecordPage() {
 
         {(pageState === "hiking" || pageState === "finished") && (
           <div
+            className="transition-all duration-200"
             style={{
               position: "absolute",
               bottom: 0,
@@ -606,11 +612,25 @@ export default function HikingRecordPage() {
               zIndex: 20,
               boxShadow: "0 -4px 20px rgba(0,0,0,0.1)"
             }}>
-            <div
+            <button
+              type="button"
+              onClick={() =>
+                pageState === "hiking" && setIsPanelCollapsed((v) => !v)
+              }
+              aria-label={
+                isPanelCollapsed ? "기록 패널 펼치기" : "기록 패널 접기"
+              }
+              aria-expanded={!isPanelCollapsed}
+              className="transition-all duration-200"
               style={{
                 display: "flex",
                 justifyContent: "center",
-                marginBottom: 16
+                width: "100%",
+                padding: "4px 0 8px",
+                marginBottom: pageState === "hiking" && isPanelCollapsed ? 4 : 8,
+                background: "transparent",
+                border: "none",
+                cursor: pageState === "hiking" ? "pointer" : "default"
               }}>
               <div
                 style={{
@@ -620,90 +640,108 @@ export default function HikingRecordPage() {
                   background: "#e2e8f0"
                 }}
               />
-            </div>
+            </button>
 
-            <div style={{ textAlign: "center", marginBottom: 16 }}>
+            {pageState === "hiking" && isPanelCollapsed ? (
               <div
+                className="transition-all duration-200"
                 style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: "#94a3b8",
-                  letterSpacing: "0.2em",
-                  marginBottom: 4
-                }}>
-                TIME
-              </div>
-              <div
-                style={{
-                  fontSize: 40,
-                  fontWeight: 700,
-                  color: "#0f172a",
+                  textAlign: "center",
+                  padding: "4px 0 12px",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: "#475569",
                   fontVariantNumeric: "tabular-nums"
                 }}>
-                {formatTime(elapsedSeconds)}
+                기록 중 · {formatTime(elapsedSeconds)} ·{" "}
+                {distanceKm.toFixed(2)}km
               </div>
-            </div>
+            ) : (
+              <div className="transition-all duration-200">
+                <div style={{ textAlign: "center", marginBottom: 16 }}>
+                  <div
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      color: "#94a3b8",
+                      letterSpacing: "0.2em",
+                      marginBottom: 4
+                    }}>
+                    TIME
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 40,
+                      fontWeight: 700,
+                      color: "#0f172a",
+                      fontVariantNumeric: "tabular-nums"
+                    }}>
+                    {formatTime(elapsedSeconds)}
+                  </div>
+                </div>
 
-            <div
-              className="grid grid-cols-3 gap-4"
-              style={{
-                borderTop: "1px solid #f1f5f9",
-                borderBottom: "1px solid #f1f5f9",
-                padding: "16px 0",
-                marginBottom: 16
-              }}>
-              <StatItem
-                label="이동 거리"
-                value={distanceKm.toFixed(2)}
-                unit="km"
-              />
-              <StatItem
-                label="누적 상승"
-                value={elevGain}
-                unit="m"
-                bordered="both"
-              />
-              <StatItem
-                label="현재 고도"
-                value={
-                  currentAltitude != null
-                    ? currentAltitude.toLocaleString()
-                    : "—"
-                }
-                unit={currentAltitude != null ? "m" : ""}
-              />
-            </div>
+                <div
+                  className="grid grid-cols-3 gap-4"
+                  style={{
+                    borderTop: "1px solid #f1f5f9",
+                    borderBottom: "1px solid #f1f5f9",
+                    padding: "16px 0",
+                    marginBottom: 16
+                  }}>
+                  <StatItem
+                    label="이동 거리"
+                    value={distanceKm.toFixed(2)}
+                    unit="km"
+                  />
+                  <StatItem
+                    label="누적 상승"
+                    value={elevGain}
+                    unit="m"
+                    bordered="both"
+                  />
+                  <StatItem
+                    label="현재 고도"
+                    value={
+                      currentAltitude != null
+                        ? currentAltitude.toLocaleString()
+                        : "—"
+                    }
+                    unit={currentAltitude != null ? "m" : ""}
+                  />
+                </div>
 
-            <ElevationChart demElevations={demElevations} />
+                <ElevationChart demElevations={demElevations} />
 
-            {summitResult && (
-              <div
-                style={{
-                  marginTop: 12,
-                  padding: "10px 16px",
-                  borderRadius: 12,
-                  fontSize: 14,
-                  fontWeight: 500,
-                  background: summitResult.verified ? "#f0fdf4" : "#fefce8",
-                  color: summitResult.verified ? "#15803d" : "#a16207"
-                }}>
-                {summitResult.verified
-                  ? `🏔 ${summitResult.summitName ?? "정상"} 인증 완료${summitResult.verificationMethod === "photo" ? " (사진)" : ""}`
-                  : `📍 ${summitResult.summitName ?? "정상"}까지 약 ${Math.round(summitResult.distanceM ?? 0)}m 떨어져 있습니다`}
-              </div>
-            )}
+                {summitResult && (
+                  <div
+                    style={{
+                      marginTop: 12,
+                      padding: "10px 16px",
+                      borderRadius: 12,
+                      fontSize: 14,
+                      fontWeight: 500,
+                      background: summitResult.verified ? "#f0fdf4" : "#fefce8",
+                      color: summitResult.verified ? "#15803d" : "#a16207"
+                    }}>
+                    {summitResult.verified
+                      ? `🏔 ${summitResult.summitName ?? "정상"} 인증 완료${summitResult.verificationMethod === "photo" ? " (사진)" : ""}`
+                      : `📍 ${summitResult.summitName ?? "정상"}까지 약 ${Math.round(summitResult.distanceM ?? 0)}m 떨어져 있습니다`}
+                  </div>
+                )}
 
-            {error && (
-              <div
-                style={{
-                  marginTop: 12,
-                  padding: "10px 16px",
-                  borderRadius: 12,
-                  fontSize: 14,
-                  background: "#fef2f2",
-                  color: "#dc2626"
-                }}>
-                {error}
+                {error && (
+                  <div
+                    style={{
+                      marginTop: 12,
+                      padding: "10px 16px",
+                      borderRadius: 12,
+                      fontSize: 14,
+                      background: "#fef2f2",
+                      color: "#dc2626"
+                    }}>
+                    {error}
+                  </div>
+                )}
               </div>
             )}
 
@@ -765,7 +803,7 @@ export default function HikingRecordPage() {
                         fontSize: 14,
                         color: "#89943d"
                       }}>
-                      📷 사진 추가 인증
+                      📷 사진 추가 인증 (보너스)
                     </button>
                   )}
               </div>
@@ -867,12 +905,12 @@ export default function HikingRecordPage() {
         />
       )}
 
-      {/* 사진 인증 카메라 */}
+      {/* ⚠️ 테스트용: 카메라 좌표 금수봉 하드코딩 (배포 전 currentPos.lat, currentPos.lng로 원복) */}
       {showCamera && sessionId && currentPos && (
         <SummitCameraVerify
           sessionId={sessionId}
-          latitude={currentPos.lat}
-          longitude={currentPos.lng}
+          latitude={36.328917}
+          longitude={127.280978}
           onClose={() => setShowCamera(false)}
           onVerified={handleVerified}
         />
