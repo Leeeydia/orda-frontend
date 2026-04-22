@@ -282,6 +282,11 @@ function ReplayPageContent({
             currentIndex={currentIndex}
             cameraMode={cameraMode}
             visibleSummits={visibleSummits}
+            sequenceElapsedMs={sequenceElapsedMs}
+            introOverviewMs={INTRO_OVERVIEW_MS}
+            startFocusMs={START_FOCUS_MS}
+            replayEndMs={replayEndMs}
+            outroOverviewMs={OUTRO_OVERVIEW_MS}
           />
 
           <div className="absolute top-4 right-4 left-4 z-20">

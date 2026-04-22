@@ -12,7 +12,7 @@
  * 팝업 본문은 DOM node로 생성하여 summitName에 대한 XSS 위험을 방지한다.
  */
 
-import type { RefObject } from "react";
+import type { MutableRefObject } from "react";
 import maplibregl from "maplibre-gl";
 
 export interface SummitMarkerData {
@@ -20,13 +20,12 @@ export interface SummitMarkerData {
   summitName: string;
   latitude: number;
   longitude: number;
-  elevationM?: number | null; // 있으면 "해발 Nm" 표시
-  verifiedAt?: string; // 있으면 "인증 시각 XXXX" 표시
+  elevationM?: number | null;
+  verifiedAt?: string;
 }
 
 const POPUP_STYLE_ID = "orda-summit-popup-styles";
 
-// ORDA 카드 스타일 팝업 CSS (document.head에 한 번만 주입)
 const POPUP_STYLES = `
   .orda-summit-popup .maplibregl-popup-content {
     padding: 0;
@@ -60,7 +59,6 @@ const POPUP_STYLES = `
   }
 `;
 
-// 첫 호출 시 document.head에 스타일을 한 번만 주입
 function ensurePopupStylesInjected(): void {
   if (typeof document === "undefined") return;
   if (document.getElementById(POPUP_STYLE_ID)) return;
@@ -71,7 +69,6 @@ function ensurePopupStylesInjected(): void {
   document.head.appendChild(styleEl);
 }
 
-// 삼각형 산 모양 마커 엘리먼트
 function createSummitMarkerElement(): HTMLButtonElement {
   const el = document.createElement("button");
   el.type = "button";
@@ -85,35 +82,25 @@ function createSummitMarkerElement(): HTMLButtonElement {
   return el;
 }
 
-// 숫자를 2자리로 0-padding
 function pad2(n: number): string {
   return n.toString().padStart(2, "0");
 }
 
-/**
- * ISO 문자열을 "YYYY-MM-DD HH:MM" 형태로 포맷
- * - 밀리초, timezone suffix(Z, +09:00 등) 제거
- * - 파싱 실패 시 입력 문자열을 그대로 반환 (안전 fallback)
- *
- * 예시:
- *   "2026-04-15T16:30:45.123Z"   → "2026-04-15 16:30"
- *   "2026-04-15T16:30:00"        → "2026-04-15 16:30"
- *   "2026-04-15T16:30:00+09:00"  → "2026-04-15 16:30"
- */
 function formatVerifiedAt(verifiedAt: string): string {
   const date = new Date(verifiedAt);
-  if (isNaN(date.getTime())) {
+  if (Number.isNaN(date.getTime())) {
     return verifiedAt;
   }
+
   const y = date.getFullYear();
   const mo = pad2(date.getMonth() + 1);
   const d = pad2(date.getDate());
   const h = pad2(date.getHours());
   const mi = pad2(date.getMinutes());
+
   return `${y}-${mo}-${d} ${h}:${mi}`;
 }
 
-// 팝업 본문을 DOM node로 생성 (textContent 사용으로 XSS 방지)
 function createSummitPopupNode(summit: SummitMarkerData): HTMLElement {
   const container = document.createElement("div");
   container.style.cssText =
@@ -143,11 +130,10 @@ function createSummitPopupNode(summit: SummitMarkerData): HTMLElement {
   return container;
 }
 
-// 지도에 정상 마커들 렌더링 (기존 마커 자동 제거 후 새로 그림)
 export function renderSummitMarkers(
   map: maplibregl.Map,
   summits: SummitMarkerData[],
-  markerRefs: RefObject<maplibregl.Marker[]>
+  markerRefs: MutableRefObject<maplibregl.Marker[]>
 ): void {
   ensurePopupStylesInjected();
   clearSummitMarkers(markerRefs);
@@ -184,9 +170,8 @@ export function renderSummitMarkers(
   });
 }
 
-// 지도에서 정상 마커 모두 제거
 export function clearSummitMarkers(
-  markerRefs: RefObject<maplibregl.Marker[]>
+  markerRefs: MutableRefObject<maplibregl.Marker[]>
 ): void {
   markerRefs.current.forEach((marker) => marker.remove());
   markerRefs.current = [];
