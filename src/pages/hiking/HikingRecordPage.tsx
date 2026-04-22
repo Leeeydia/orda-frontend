@@ -633,6 +633,7 @@ export default function HikingRecordPage() {
                     demElevations.filter((e): e is number => e != null).length <
                     2
                   }
+                  showFilledArea={!demElevations.some((v) => v == null)}
                   emptyMessage="고도 데이터 수집 중..."
                 />
 
