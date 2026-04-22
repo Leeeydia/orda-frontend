@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import Header, { HEADER_HEIGHT } from "@/components/layout/Header";
@@ -398,6 +398,12 @@ export default function HikingSessionReplayPage() {
     const parsed = Number(sessionId);
     return Number.isNaN(parsed) ? null : parsed;
   }, [sessionId]);
+
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [numericSessionId]);
 
   const { replay, isLoading, isError } = useReplayQuery(numericSessionId);
 

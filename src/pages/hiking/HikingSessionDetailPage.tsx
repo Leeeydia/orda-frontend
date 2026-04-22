@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useLayoutEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import Header, { HEADER_HEIGHT } from "@/components/layout/Header";
 import BackButton from "@/components/layout/BackButton";
@@ -42,6 +42,12 @@ export default function HikingSessionDetailPage() {
     const parsed = Number(sessionId);
     return Number.isNaN(parsed) ? null : parsed;
   }, [sessionId]);
+
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [numericSessionId]);
 
   const { session, tracks, elevationProfile, isLoading, isError } =
     useHikingSessionDetail(numericSessionId);
