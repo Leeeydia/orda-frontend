@@ -50,10 +50,8 @@ export const postTrailDifficultyMapByEdgeIds = async (
 ): Promise<TrailGeoJson> => {
   const { data } = await api.post(
     `${TRAIL_DIFFICULTY_PATH}/map/edges`,
-    edgeIds,
-    {
-      signal
-    }
+    { edgeIds },
+    { signal }
   );
   return data.data;
 };
