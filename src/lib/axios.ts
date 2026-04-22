@@ -1,5 +1,6 @@
 import axios from "axios";
 import { setAuthFlash } from "@/utils/authFlash";
+import { forceLogout } from "@/utils/auth";
 import { getApiErrorMessage } from "@/utils/apiError";
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -39,15 +40,11 @@ api.interceptors.response.use(
         const currentPath = window.location.pathname;
 
         if (status === 401) {
-          localStorage.removeItem("accessToken");
-          if (currentPath !== "/login") {
-            setAuthFlash("로그인이 만료되었습니다. 다시 로그인해 주세요.");
-            window.location.assign("/login");
-          }
+          forceLogout("로그인이 만료되었습니다. 다시 로그인해 주세요.");
         } else if (status === 403) {
-          if (currentPath !== "/") {
+          if (currentPath !== "/hiking") {
             setAuthFlash("접근 권한이 없습니다.");
-            window.location.assign("/");
+            window.location.assign("/hiking");
           }
         }
       }
