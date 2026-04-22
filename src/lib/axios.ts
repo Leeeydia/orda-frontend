@@ -1,5 +1,6 @@
 import axios from "axios";
 import { setAuthFlash } from "@/utils/authFlash";
+import { getApiErrorMessage } from "@/utils/apiError";
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -49,6 +50,15 @@ api.interceptors.response.use(
             window.location.assign("/");
           }
         }
+      }
+
+      // axios 기본 영문 메시지("Request failed with status code 403" 등)가
+      // 사용자에게 노출되지 않도록 한글 메시지로 치환한다.
+      // 401은 위 인터셉터에서 리다이렉트로 처리되므로 메시지 치환 대상에서 제외한다.
+      if (error.response?.status !== 401) {
+        const koMessage = getApiErrorMessage(error);
+        (error as { userMessage?: string }).userMessage = koMessage;
+        error.message = koMessage;
       }
     }
     return Promise.reject(error);
