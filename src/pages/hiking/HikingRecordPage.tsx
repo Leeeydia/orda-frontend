@@ -1,26 +1,5 @@
 /**
  * 📄 src/pages/hiking/HikingRecordPage.tsx
- *
- * 변경 사항:
- *  - idle 상태에서 내 위치 표시, 현위치 버튼, 헤더 심플화, 난이도 범례 추가
- *  - 페이지 진입 시 watchPosition으로 위치 지속 갱신 (idle 상태에서도 위치 추적)
- *  - BottomNav 추가
- *  - 등산 중 TIME/거리/고도 카드, 정상 인증, 종료 기능 추가
- *  - 배낭맨 하단 대기 → 마커로 이동 애니메이션 추가
- *  - 100대 명산 모드 토글, 마커 표시, 바텀시트 연결
- *  - 명산 마커 탭 시 해당 산 위치로 지도 이동 및 등산로 표시
- *  - 100대 명산 모드 토글 버튼 나침반 아래 배치, 텍스트 전환
- *  - 명산 마커 탭 시 edgeIds 기반 등산로 조회, edgeIds 없으면 바텀시트에 준비 중 표시
- *  - 등산로 로딩 상태 관리 추가, 데이터 없을 시 바텀시트에 준비 중 문구 표시
- *  - AbortController로 연속 탭 경쟁 조건 방어
- *  - 명산 목록 로드 실패 시 Toast 에러 안내
- *  - handleMountainClick useCallback 적용
- *  - 등산로 근접 여부 사전 체크 + 토스트 안내 추가
- *  - idle 상태 위치 변경 시 proximity 재검사 (debounce 5초)
- *  - start() 실패 시 errorMessage를 토스트로 표시
- *  - ElevationChart: raw GPS fallback 제거, DEM 고도만 사용
- *                    DEM 값이 2개 미만이면 "수집 중..." 안내
- *                    DEM 누락 구간(null)은 차트에서 선 끊김으로 표시
  */
 import { useState, useRef, useEffect, useCallback } from "react";
 import maplibregl from "maplibre-gl";
@@ -37,6 +16,9 @@ import { getTrailDifficultyMapByEdgeIds } from "@/features/trail/api/trailApi";
 import type { Top100Mountain } from "@/features/mountain/types/mountainTypes";
 import type { TrailGeoJson } from "@/features/trail/types/trail.types";
 import Top100MountainBottomSheet from "@/features/mountain/components/Top100MountainBottomSheet";
+import SummitCameraVerify from "@/features/summit/components/SummitCameraVerify";
+import { verifySummitWithGps } from "@/features/summit/api/summitApi";
+import type { PhotoVerifyResponse } from "@/features/summit/types/summit.types";
 
 import hikerIcon from "@/assets/hiking-icon.png";
 
@@ -93,12 +75,6 @@ const formatTime = (totalSeconds: number): string => {
   return `${h}:${m}:${s}`;
 };
 
-/**
- * DEM 고도 그래프
- * - demElevations만 사용 (raw GPS fallback 없음)
- * - 유효한 값이 2개 미만이면 "수집 중..." 안내
- * - null 구간은 연속된 선을 끊어서 누락을 시각적으로 표시
- */
 const ElevationChart = ({
   demElevations
 }: {
@@ -122,7 +98,6 @@ const ElevationChart = ({
   const h = 80;
   const n = demElevations.length;
 
-  // null이면 null, 값이면 좌표 계산
   const points = demElevations.map((e, i) => {
     if (e == null) return null;
     return {
@@ -131,7 +106,6 @@ const ElevationChart = ({
     };
   });
 
-  // null을 만나면 M(move), 이어지면 L(line)
   let pathD = "";
   let prevWasNull = true;
   points.forEach((p) => {
@@ -147,7 +121,6 @@ const ElevationChart = ({
     }
   });
 
-  // 마지막 유효 포인트 위치 계산 (끝 점 dot용)
   const lastValidPoint = [...points].reverse().find((p) => p != null) ?? null;
   const dotLeft = lastValidPoint ? `${(lastValidPoint.x / w) * 100}%` : "0%";
   const dotTop = lastValidPoint ? `${(lastValidPoint.y / h) * 100}%` : "0%";
@@ -221,11 +194,11 @@ export default function HikingRecordPage() {
     distanceKm,
     elevGain,
     currentAltitude,
+    sessionId,
     nearbySummits,
     demElevations,
     start,
-    end,
-    verify
+    end
   } = useHiking();
 
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -239,15 +212,16 @@ export default function HikingRecordPage() {
     verified: boolean;
     summitName?: string;
     distanceM?: number;
+    aiReason?: string;
+    verificationMethod?: string;
   } | null>(null);
-  const [isVerifying, setIsVerifying] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
   } | null>(null);
 
-  // 전역 401/403 리다이렉트 후 flash 메시지 수신
   useEffect(() => {
     const msg = consumeAuthFlash();
     if (msg) setToast({ message: msg, type: "error" });
@@ -261,7 +235,6 @@ export default function HikingRecordPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<"success" | "error">("error");
 
-  // idle 상태에서 watchPosition으로 위치 지속 갱신
   useEffect(() => {
     if (!navigator.geolocation) return;
     if (pageState !== "idle") return;
@@ -276,7 +249,6 @@ export default function HikingRecordPage() {
     return () => navigator.geolocation.clearWatch(watchId);
   }, [pageState]);
 
-  // 위치 확보/변경 시 등산로 근접 여부 재체크 (debounce 5초)
   useEffect(() => {
     if (!idlePos || pageState !== "idle") return;
 
@@ -297,7 +269,6 @@ export default function HikingRecordPage() {
     return () => clearTimeout(timerId);
   }, [idlePos, pageState]);
 
-  // 100대 명산 모드 상태
   const [isMountainMode, setIsMountainMode] = useState(false);
   const [mountains, setMountains] = useState<Top100Mountain[]>([]);
   const [selectedMountain, setSelectedMountain] =
@@ -308,7 +279,6 @@ export default function HikingRecordPage() {
   const [isMountainTrailLoading, setIsMountainTrailLoading] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // 100대 명산 모드 토글
   const handleMountainModeToggle = async () => {
     if (isMountainMode) {
       setIsMountainMode(false);
@@ -329,7 +299,6 @@ export default function HikingRecordPage() {
     }
   };
 
-  // 명산 마커 탭 → 지도 이동 + edgeIds 기반 등산로 조회 (AbortController로 경쟁 조건 방어)
   const handleMountainClick = useCallback(async (mountain: Top100Mountain) => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -417,20 +386,37 @@ export default function HikingRecordPage() {
     }
   };
 
+  const [isVerifyLoading, setIsVerifyLoading] = useState(false);
+
   const handleVerify = async () => {
-    setIsVerifying(true);
+    if (!sessionId || !currentPos) return;
+    setIsVerifyLoading(true);
     try {
-      const result = await verify();
-      if (result) {
-        setSummitResult({
-          verified: result.verified,
-          summitName: result.summitName,
-          distanceM: result.distanceM
-        });
-      }
+      const result = await verifySummitWithGps({
+        sessionId,
+        latitude: currentPos.lat,
+        longitude: currentPos.lng
+      });
+      setSummitResult({
+        verified: result.verified,
+        summitName: result.summitName,
+        distanceM: result.distanceM,
+        verificationMethod: "gps"
+      });
+    } catch {
+      setToast({ message: "정상 인증에 실패했습니다.", type: "error" });
     } finally {
-      setIsVerifying(false);
+      setIsVerifyLoading(false);
     }
+  };
+  const handleVerified = (result: PhotoVerifyResponse) => {
+    setSummitResult({
+      verified: result.verified,
+      summitName: result.summitName,
+      distanceM: result.distanceM,
+      aiReason: result.aiReason,
+      verificationMethod: "photo"
+    });
   };
 
   const handleEnd = async () => {
@@ -487,7 +473,6 @@ export default function HikingRecordPage() {
           isMountainMode={isMountainMode}
         />
 
-        {/* 현위치 버튼 + 100대 명산 토글 버튼 */}
         {pageState === "idle" && !selectedMountain && (
           <div
             style={{
@@ -500,7 +485,6 @@ export default function HikingRecordPage() {
               gap: 8,
               zIndex: 50
             }}>
-            {/* 현위치 버튼 */}
             <button
               onClick={handleMoveToCurrentPos}
               style={{
@@ -538,7 +522,6 @@ export default function HikingRecordPage() {
               </span>
             </button>
 
-            {/* 100대 명산 토글 버튼 */}
             <button
               onClick={handleMountainModeToggle}
               disabled={isMountainLoading}
@@ -571,7 +554,6 @@ export default function HikingRecordPage() {
           </div>
         )}
 
-        {/* 난이도 범례 */}
         {trailLoaded && pageState === "idle" && (
           <div
             style={{
@@ -611,7 +593,6 @@ export default function HikingRecordPage() {
           </div>
         )}
 
-        {/* 등산 중 통계 카드 */}
         {(pageState === "hiking" || pageState === "finished") && (
           <div
             style={{
@@ -707,8 +688,8 @@ export default function HikingRecordPage() {
                   color: summitResult.verified ? "#15803d" : "#a16207"
                 }}>
                 {summitResult.verified
-                  ? `🏔 ${summitResult.summitName ?? "정상"} 인증 완료`
-                  : `📍 정상까지 약 ${summitResult.distanceM ?? "—"}m 남음`}
+                  ? `🏔 ${summitResult.summitName ?? "정상"} 인증 완료${summitResult.verificationMethod === "photo" ? " (사진)" : ""}`
+                  : `📍 ${summitResult.summitName ?? "정상"}까지 약 ${Math.round(summitResult.distanceM ?? 0)}m 떨어져 있습니다`}
               </div>
             )}
 
@@ -727,39 +708,66 @@ export default function HikingRecordPage() {
             )}
 
             {pageState === "hiking" && (
-              <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
-                <button
-                  onClick={handleVerify}
-                  disabled={isVerifying || !currentPos}
-                  style={{
-                    flex: 1,
-                    padding: "16px 0",
-                    borderRadius: 16,
-                    background: "#f1f5f9",
-                    border: "none",
-                    cursor: "pointer",
-                    fontWeight: 700,
-                    fontSize: 14,
-                    color: "#0f172a",
-                    opacity: isVerifying || !currentPos ? 0.4 : 1
-                  }}>
-                  {isVerifying ? "인증 중..." : "정상 인증"}
-                </button>
-                <button
-                  onClick={() => setShowFinishConfirm(true)}
-                  style={{
-                    flex: 1.5,
-                    padding: "16px 0",
-                    borderRadius: 16,
-                    background: "#89943d",
-                    border: "none",
-                    cursor: "pointer",
-                    fontWeight: 700,
-                    fontSize: 14,
-                    color: "white"
-                  }}>
-                  stop FINISH
-                </button>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 12,
+                  marginTop: 16
+                }}>
+                <div style={{ display: "flex", gap: 12 }}>
+                  <button
+                    onClick={handleVerify}
+                    disabled={!sessionId || !currentPos || isVerifyLoading}
+                    style={{
+                      flex: 1,
+                      padding: "16px 0",
+                      borderRadius: 16,
+                      background: "#f1f5f9",
+                      border: "none",
+                      cursor: "pointer",
+                      fontWeight: 700,
+                      fontSize: 14,
+                      color: "#0f172a",
+                      opacity:
+                        !sessionId || !currentPos || isVerifyLoading ? 0.4 : 1
+                    }}>
+                    {isVerifyLoading ? "인증 중..." : "📍 정상 인증"}
+                  </button>
+                  <button
+                    onClick={() => setShowFinishConfirm(true)}
+                    style={{
+                      flex: 1.5,
+                      padding: "16px 0",
+                      borderRadius: 16,
+                      background: "#89943d",
+                      border: "none",
+                      cursor: "pointer",
+                      fontWeight: 700,
+                      fontSize: 14,
+                      color: "white"
+                    }}>
+                    stop FINISH
+                  </button>
+                </div>
+                {summitResult?.verified &&
+                  summitResult.verificationMethod === "gps" && (
+                    <button
+                      onClick={() => setShowCamera(true)}
+                      style={{
+                        width: "100%",
+                        padding: "14px 0",
+                        borderRadius: 16,
+                        background: "transparent",
+                        border: "2px solid #89943d",
+                        cursor: "pointer",
+                        fontWeight: 700,
+                        fontSize: 14,
+                        color: "#89943d"
+                      }}>
+                      📷 사진 추가 인증
+                    </button>
+                  )}
               </div>
             )}
 
@@ -776,7 +784,6 @@ export default function HikingRecordPage() {
           </div>
         )}
 
-        {/* 100대 명산 바텀시트 */}
         {selectedMountain && (
           <Top100MountainBottomSheet
             mountain={selectedMountain}
@@ -796,7 +803,6 @@ export default function HikingRecordPage() {
         )}
       </div>
 
-      {/* 배낭맨 + 등산 시작 버튼 */}
       {pageState === "idle" && (
         <div
           style={{
@@ -853,7 +859,6 @@ export default function HikingRecordPage() {
 
       {pageState === "idle" && <BottomNav />}
 
-      {/* Toast */}
       {toast && (
         <Toast
           message={toast.message}
@@ -862,7 +867,17 @@ export default function HikingRecordPage() {
         />
       )}
 
-      {/* 종료 확인 바텀시트 */}
+      {/* 사진 인증 카메라 */}
+      {showCamera && sessionId && currentPos && (
+        <SummitCameraVerify
+          sessionId={sessionId}
+          latitude={currentPos.lat}
+          longitude={currentPos.lng}
+          onClose={() => setShowCamera(false)}
+          onVerified={handleVerified}
+        />
+      )}
+
       {showFinishConfirm && (
         <div
           className="absolute inset-0 z-20 flex items-end bg-black/50"
@@ -905,7 +920,6 @@ export default function HikingRecordPage() {
         </div>
       )}
 
-      {/* 토스트 */}
       {toastMessage && (
         <Toast
           message={toastMessage}
