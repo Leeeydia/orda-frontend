@@ -34,7 +34,7 @@ const Header = ({ leftSlot, rightSlot, title }: HeaderProps) => {
               to="/"
               aria-label="홈으로 이동"
               className="inline-flex items-center justify-center">
-              <OrdaLogo className="h-6 w-auto" />
+              <OrdaLogo className="text-primary h-6 w-auto" />
             </Link>
           )}
         </div>

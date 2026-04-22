@@ -371,7 +371,7 @@ export default function HikingRecordPage() {
         margin: "0 auto",
         background: "#f7f7f6"
       }}>
-      <Header title="등산 지도" />
+      <Header />
 
       <div className="relative flex-1 overflow-hidden">
         <GpsTrackingMap
