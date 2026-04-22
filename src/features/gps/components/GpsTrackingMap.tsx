@@ -22,11 +22,19 @@
  *  - 정상 마커 팝업을 ORDA 디자인 시스템 카드 스타일로 변경
  *  - 정상 마커 렌더링 로직을 summitMarker 공통 유틸로 분리
  *    (팝업 스타일은 유틸 내부에서 자동 주입됨)
+ *  - 명산 모드 ON + 산 미선택: 전체 명산 edgeIds POST 방식으로 조회 (URL 길이 제한 우회)
+ *  - 명산 모드 ON + 산 선택: 해당 산 edgeIds GET 방식으로 조회
+ *  - 바텀시트 닫기(mountainTrailGeoJson null) 시 전체 명산 등산로로 복귀
+ *  - 명산 모드에서 moveend 시 재조회 없음 (전체 명산 등산로는 최초 1회만 로드)
+ *  - mountains 변경 시 명산 모드 ON 상태면 등산로 재조회 (느린 네트워크 대응)
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import maplibregl from "maplibre-gl";
-import { getTrailDifficultyMapByBbox } from "@/features/trail/api/trailApi";
+import {
+  getTrailDifficultyMapByBbox,
+  postTrailDifficultyMapByEdgeIds
+} from "@/features/trail/api/trailApi";
 import type { TrailGeoJson } from "@/features/trail/types/trail.types";
 import {
   renderSummitMarkers,
@@ -50,11 +58,6 @@ const TRAIL_SOURCE_ID = "trail-difficulty-source";
 const TRAIL_LAYER_ID = "trail-difficulty-layer";
 const MIN_ZOOM_FOR_TRAIL = 8;
 const MIN_ZOOM_FOR_MOUNTAINS = 6;
-
-const EMPTY_FEATURE_COLLECTION: TrailGeoJson = {
-  type: "FeatureCollection",
-  features: []
-};
 
 function createCurrentPosMarkerElement() {
   const wrapper = document.createElement("div");
@@ -210,6 +213,10 @@ const GpsTrackingMap = ({
   const hikerIconUrlRef = useRef(hikerIconUrl);
   const mountainMarkersRef = useRef<maplibregl.Marker[]>([]);
   const isMountainModeRef = useRef(false);
+  // 산 선택 여부 추적 (선택 중이면 전체 명산 등산로 재조회 차단)
+  const mountainTrailGeoJsonRef = useRef<TrailGeoJson | null>(null);
+  // moveend 시 최신 mountains 참조용
+  const mountainsRef = useRef<Top100Mountain[]>([]);
   const bboxAbortControllerRef = useRef<AbortController | null>(null);
   const onTrailLoadedRef = useRef(onTrailLoaded);
 
@@ -225,7 +232,90 @@ const GpsTrackingMap = ({
     onTrailLoadedRef.current = onTrailLoaded;
   }, [onTrailLoaded]);
 
-  // loadTrailByBbox — 컴포넌트 스코프로 분리
+  useEffect(() => {
+    mountainsRef.current = mountains ?? [];
+  }, [mountains]);
+
+  // 레이어 추가/업데이트 공통 함수
+  const ensureLayer = useCallback((map: maplibregl.Map, data: TrailGeoJson) => {
+    const source = map.getSource(TRAIL_SOURCE_ID) as
+      | maplibregl.GeoJSONSource
+      | undefined;
+    if (source) {
+      source.setData(data);
+    } else {
+      map.addSource(TRAIL_SOURCE_ID, { type: "geojson", data });
+      map.addLayer({
+        id: TRAIL_LAYER_ID,
+        type: "line",
+        source: TRAIL_SOURCE_ID,
+        layout: { "line-join": "round", "line-cap": "round" },
+        paint: {
+          "line-color": [
+            "match",
+            ["get", "difficulty"],
+            "easy",
+            DIFFICULTY_COLOR_MAP.easy,
+            "moderate",
+            DIFFICULTY_COLOR_MAP.moderate,
+            "hard",
+            DIFFICULTY_COLOR_MAP.hard,
+            "very_hard",
+            DIFFICULTY_COLOR_MAP.very_hard,
+            "extreme",
+            DIFFICULTY_COLOR_MAP.extreme,
+            "#cccccc"
+          ],
+          "line-width": 3,
+          "line-opacity": 0.85
+        }
+      });
+      onTrailLoadedRef.current?.();
+    }
+  }, []);
+
+  // 명산 모드: 전체 명산 edgeIds POST로 한번에 조회 (최초 1회, moveend 재조회 없음)
+  const loadMountainTrails = useCallback(async () => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    // 산 선택 중이면 차단
+    if (mountainTrailGeoJsonRef.current) return;
+
+    if (bboxAbortControllerRef.current) {
+      bboxAbortControllerRef.current.abort();
+    }
+    bboxAbortControllerRef.current = new AbortController();
+    const signal = bboxAbortControllerRef.current.signal;
+
+    if (map.getZoom() < MIN_ZOOM_FOR_TRAIL) {
+      if (map.getLayer(TRAIL_LAYER_ID)) {
+        map.setLayoutProperty(TRAIL_LAYER_ID, "visibility", "none");
+      }
+      setIsTooFar(true);
+      return;
+    }
+
+    setIsTooFar(false);
+    if (map.getLayer(TRAIL_LAYER_ID)) {
+      map.setLayoutProperty(TRAIL_LAYER_ID, "visibility", "visible");
+    }
+
+    // 전체 명산 edgeIds 수집
+    const allEdgeIds = mountainsRef.current.flatMap((m) => m.edgeIds ?? []);
+    if (allEdgeIds.length === 0) return;
+
+    try {
+      // POST로 body에 담아서 전송 (URL 길이 제한 우회)
+      const data = await postTrailDifficultyMapByEdgeIds(allEdgeIds, signal);
+      if (signal.aborted) return;
+      ensureLayer(map, data);
+    } catch (e) {
+      if (signal.aborted) return;
+      console.error("mountain trail load error", e);
+    }
+  }, [ensureLayer]);
+
+  // 일반 모드: bbox 기반 등산로 조회 (moveend마다 재조회)
   const loadTrailByBbox = useCallback(async () => {
     const map = mapInstanceRef.current;
     if (!map) return;
@@ -266,48 +356,20 @@ const GpsTrackingMap = ({
         maxLat,
         signal
       );
-
       if (signal.aborted) return;
-
-      const source = map.getSource(TRAIL_SOURCE_ID) as
-        | maplibregl.GeoJSONSource
-        | undefined;
-      if (source) {
-        source.setData(data);
-      } else {
-        map.addSource(TRAIL_SOURCE_ID, { type: "geojson", data });
-        map.addLayer({
-          id: TRAIL_LAYER_ID,
-          type: "line",
-          source: TRAIL_SOURCE_ID,
-          layout: { "line-join": "round", "line-cap": "round" },
-          paint: {
-            "line-color": [
-              "match",
-              ["get", "difficulty"],
-              "easy",
-              DIFFICULTY_COLOR_MAP.easy,
-              "moderate",
-              DIFFICULTY_COLOR_MAP.moderate,
-              "hard",
-              DIFFICULTY_COLOR_MAP.hard,
-              "very_hard",
-              DIFFICULTY_COLOR_MAP.very_hard,
-              "extreme",
-              DIFFICULTY_COLOR_MAP.extreme,
-              "#cccccc"
-            ],
-            "line-width": 3,
-            "line-opacity": 0.85
-          }
-        });
-        onTrailLoadedRef.current?.();
-      }
+      ensureLayer(map, data);
     } catch (e) {
       if (signal.aborted) return;
       console.error("trail bbox load error", e);
     }
-  }, []);
+  }, [ensureLayer]);
+
+  // moveend 핸들러: 일반 모드만 재조회, 명산 모드는 최초 1회만 로드
+  const handleMoveEnd = useCallback(() => {
+    if (!isMountainModeRef.current) {
+      loadTrailByBbox();
+    }
+  }, [loadTrailByBbox]);
 
   // currentPos 변경 시 마커 업데이트
   useEffect(() => {
@@ -354,22 +416,36 @@ const GpsTrackingMap = ({
     });
   }, [mountains, onMountainClick]);
 
-  // isMountainMode 변경 시 ref 동기화 + OFF 시 bbox 즉시 재조회
+  // mountains 변경 시 명산 모드 ON 상태면 등산로 재조회 (느린 네트워크 대응)
+  useEffect(() => {
+    if (
+      isMountainMode &&
+      !mountainTrailGeoJson &&
+      mountains &&
+      mountains.length > 0
+    ) {
+      setTimeout(() => loadMountainTrails(), 0);
+    }
+  }, [mountains, isMountainMode, mountainTrailGeoJson, loadMountainTrails]);
+
+  // isMountainMode 변경 시 ref 동기화 + 즉시 재조회
   useEffect(() => {
     isMountainModeRef.current = !!isMountainMode;
-
     if (isMountainMode) {
       const source = mapInstanceRef.current?.getSource(TRAIL_SOURCE_ID) as
         | maplibregl.GeoJSONSource
         | undefined;
-      source?.setData(EMPTY_FEATURE_COLLECTION);
+      source?.setData({ type: "FeatureCollection", features: [] });
+      setTimeout(() => loadMountainTrails(), 0);
     } else {
       setTimeout(() => loadTrailByBbox(), 0);
     }
-  }, [isMountainMode, loadTrailByBbox]);
+  }, [isMountainMode, loadMountainTrails, loadTrailByBbox]);
 
-  // mountainTrailGeoJson 변경 시 소스 데이터 교체
+  // mountainTrailGeoJson 변경 시 ref 동기화 + 소스 데이터 교체
   useEffect(() => {
+    mountainTrailGeoJsonRef.current = mountainTrailGeoJson ?? null;
+
     const map = mapInstanceRef.current;
     if (!map) return;
 
@@ -379,14 +455,16 @@ const GpsTrackingMap = ({
     if (!source) return;
 
     if (mountainTrailGeoJson) {
+      // 산 선택 → 해당 산 edgeIds 등산로 표시
       source.setData(mountainTrailGeoJson);
       if (map.getLayer(TRAIL_LAYER_ID)) {
         map.setLayoutProperty(TRAIL_LAYER_ID, "visibility", "visible");
       }
     } else {
-      source.setData(EMPTY_FEATURE_COLLECTION);
+      // 산 선택 해제 → 전체 명산 등산로로 복귀
+      setTimeout(() => loadMountainTrails(), 0);
     }
-  }, [mountainTrailGeoJson]);
+  }, [mountainTrailGeoJson, loadMountainTrails]);
 
   // nearbySummits 변경 시 정상 마커 렌더링 (공통 유틸 사용)
   useEffect(() => {
@@ -407,7 +485,7 @@ const GpsTrackingMap = ({
     mapInstanceRef.current = map;
 
     loadTrailByBbox();
-    map.on("moveend", loadTrailByBbox);
+    map.on("moveend", handleMoveEnd);
 
     const handleZoomForMountains = () => {
       const zoom = map.getZoom();

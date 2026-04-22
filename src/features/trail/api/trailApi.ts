@@ -18,7 +18,6 @@ export const getTrailDifficultyMapBySummit = async (
   return data.data;
 };
 
-// bbox 기반 난이도 지도 조회 함수 추가
 export const getTrailDifficultyMapByBbox = async (
   minLng: number,
   minLat: number,
@@ -33,7 +32,6 @@ export const getTrailDifficultyMapByBbox = async (
   return data.data;
 };
 
-// edgeIds 기반 난이도 지도 조회 함수 추가
 export const getTrailDifficultyMapByEdgeIds = async (
   edgeIds: string[],
   signal?: AbortSignal
@@ -45,7 +43,19 @@ export const getTrailDifficultyMapByEdgeIds = async (
   return data.data;
 };
 
-// 등산로 근접 여부 확인
+// edgeIds 기반 난이도 지도 조회 (POST - 명산 전체 모드용, URL 길이 제한 우회)
+export const postTrailDifficultyMapByEdgeIds = async (
+  edgeIds: string[],
+  signal?: AbortSignal
+): Promise<TrailGeoJson> => {
+  const { data } = await api.post(
+    `${TRAIL_DIFFICULTY_PATH}/map/edges`,
+    { edgeIds },
+    { signal }
+  );
+  return data.data;
+};
+
 export interface TrailNearbyResult {
   nearTrail: boolean;
   distanceM: number | null;
