@@ -26,7 +26,7 @@ import { formatDistanceKm, formatDuration, formatMeters } from "@/utils/format";
 const INTRO_OVERVIEW_MS = 2200;
 const START_FOCUS_MS = 1200;
 const OUTRO_OVERVIEW_MS = 1800;
-const SEQUENCE_TICK_MS = 50;
+const SEQUENCE_SLIDER_STEP_MS = 50;
 const SEEK_STEP_SECONDS = 5;
 
 type ReplayContentProps = {
@@ -206,9 +206,21 @@ function ReplayPageContent({
     if (totalSequenceMs <= 0) return;
     if (!hasReplayPath) return;
 
-    const timer = window.setInterval(() => {
+    let frameId = 0;
+    let previousTimestamp: number | null = null;
+
+    const tick = (timestamp: number) => {
+      if (previousTimestamp == null) {
+        previousTimestamp = timestamp;
+        frameId = window.requestAnimationFrame(tick);
+        return;
+      }
+
+      const deltaMs = timestamp - previousTimestamp;
+      previousTimestamp = timestamp;
+
       setSequenceElapsedMs((prev) => {
-        const next = prev + SEQUENCE_TICK_MS;
+        const next = prev + deltaMs;
 
         if (next >= totalSequenceMs) {
           setIsSequencePlaying(false);
@@ -217,10 +229,14 @@ function ReplayPageContent({
 
         return next;
       });
-    }, SEQUENCE_TICK_MS);
+
+      frameId = window.requestAnimationFrame(tick);
+    };
+
+    frameId = window.requestAnimationFrame(tick);
 
     return () => {
-      window.clearInterval(timer);
+      window.cancelAnimationFrame(frameId);
     };
   }, [isSequencePlaying, totalSequenceMs, hasReplayPath]);
 
@@ -332,7 +348,7 @@ function ReplayPageContent({
                 type="range"
                 min={0}
                 max={totalSequenceMs}
-                step={SEQUENCE_TICK_MS}
+                step={SEQUENCE_SLIDER_STEP_MS}
                 value={sequenceElapsedMs}
                 onChange={handleSliderChange}
                 className="accent-primary h-3 w-full"

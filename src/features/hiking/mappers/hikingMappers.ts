@@ -28,6 +28,105 @@ const sortTrackFeatures = (
   );
 };
 
+const DEFAULT_LINE_SMOOTHING_ITERATIONS = 3;
+
+type ChartPoint = {
+  x: number;
+  y: number;
+};
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+export const smoothLineCoordinates = (
+  coordinates: [number, number][],
+  iterations = DEFAULT_LINE_SMOOTHING_ITERATIONS
+): [number, number][] => {
+  if (coordinates.length < 3) {
+    return coordinates;
+  }
+
+  const safeIterations = Math.max(Math.round(iterations), 0);
+  let smoothedCoordinates = coordinates;
+
+  for (let iteration = 0; iteration < safeIterations; iteration += 1) {
+    const nextCoordinates: [number, number][] = [smoothedCoordinates[0]];
+
+    for (let i = 0; i < smoothedCoordinates.length - 1; i += 1) {
+      const current = smoothedCoordinates[i];
+      const next = smoothedCoordinates[i + 1];
+
+      nextCoordinates.push([
+        current[0] * 0.75 + next[0] * 0.25,
+        current[1] * 0.75 + next[1] * 0.25
+      ]);
+      nextCoordinates.push([
+        current[0] * 0.25 + next[0] * 0.75,
+        current[1] * 0.25 + next[1] * 0.75
+      ]);
+    }
+
+    nextCoordinates.push(smoothedCoordinates[smoothedCoordinates.length - 1]);
+    smoothedCoordinates = nextCoordinates;
+  }
+
+  return smoothedCoordinates;
+};
+
+function createSmoothSvgPath(points: ChartPoint[]): string {
+  if (points.length === 0) return "";
+  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+  if (points.length === 2) {
+    return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
+  }
+
+  const pathCommands = [`M ${points[0].x} ${points[0].y}`];
+
+  for (let i = 0; i < points.length - 1; i += 1) {
+    const p0 = points[Math.max(i - 1, 0)];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[Math.min(i + 2, points.length - 1)];
+    const minY = Math.min(p1.y, p2.y);
+    const maxY = Math.max(p1.y, p2.y);
+    const cp1 = {
+      x: p1.x + (p2.x - p0.x) / 6,
+      y: clamp(p1.y + (p2.y - p0.y) / 6, minY, maxY)
+    };
+    const cp2 = {
+      x: p2.x - (p3.x - p1.x) / 6,
+      y: clamp(p2.y - (p3.y - p1.y) / 6, minY, maxY)
+    };
+
+    pathCommands.push(
+      `C ${cp1.x} ${cp1.y}, ${cp2.x} ${cp2.y}, ${p2.x} ${p2.y}`
+    );
+  }
+
+  return pathCommands.join(" ");
+}
+
+function smoothElevationValues(points: ChartPoint[]): ChartPoint[] {
+  if (points.length < 5) {
+    return points;
+  }
+
+  return points.map((point, index) => {
+    if (index === 0 || index === points.length - 1) {
+      return point;
+    }
+
+    const prev = points[index - 1];
+    const next = points[index + 1];
+
+    return {
+      x: point.x,
+      y: prev.y * 0.24 + point.y * 0.52 + next.y * 0.24
+    };
+  });
+}
+
 export const mapTrackFeaturesToDisplayGeoJson = (
   trackFeatureCollection: HikingTrackFeatureCollection | null | undefined
 ): FeatureCollection => {
@@ -40,15 +139,16 @@ export const mapTrackFeaturesToDisplayGeoJson = (
   const coordinates = sortedFeatures.map(
     (feature) => feature.geometry.coordinates
   );
+  const displayCoordinates = smoothLineCoordinates(coordinates);
 
   const features: FeatureCollection["features"] = [];
 
-  if (coordinates.length >= 2) {
+  if (displayCoordinates.length >= 2) {
     features.push({
       type: "Feature",
       geometry: {
         type: "LineString",
-        coordinates
+        coordinates: displayCoordinates
       } satisfies LineString,
       properties: {
         type: "track-line"
@@ -153,11 +253,18 @@ export const mapElevationPointsToSvgPath = (
   const elevationRange = maxElevation - minElevation || 1;
 
   const pathCommands: string[] = [];
-  let isDrawing = false;
+  let segment: ChartPoint[] = [];
+
+  const flushSegment = () => {
+    if (segment.length === 0) return;
+
+    pathCommands.push(createSmoothSvgPath(smoothElevationValues(segment)));
+    segment = [];
+  };
 
   for (const point of points) {
     if (!isRenderableElevationPoint(point)) {
-      isDrawing = false;
+      flushSegment();
       continue;
     }
 
@@ -168,9 +275,10 @@ export const mapElevationPointsToSvgPath = (
       (((point.elevationMeters as number) - minElevation) / elevationRange) *
         height;
 
-    pathCommands.push(`${isDrawing ? "L" : "M"} ${x} ${y}`);
-    isDrawing = true;
+    segment.push({ x, y });
   }
+
+  flushSegment();
 
   return pathCommands.join(" ");
 };

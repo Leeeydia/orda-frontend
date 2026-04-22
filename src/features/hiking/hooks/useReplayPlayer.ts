@@ -22,6 +22,77 @@ type UseReplayPlayerResult = {
 
 const EMPTY_TRACK_POINTS: ReplayTrackPoint[] = [];
 
+function interpolateNumber(from: number, to: number, ratio: number) {
+  return from + (to - from) * ratio;
+}
+
+function interpolateNullableNumber(
+  from: number | null,
+  to: number | null,
+  ratio: number
+) {
+  if (from == null && to == null) return null;
+  if (from == null) return to;
+  if (to == null) return from;
+
+  return interpolateNumber(from, to, ratio);
+}
+
+function interpolateTrackPoint(
+  from: ReplayTrackPoint,
+  to: ReplayTrackPoint,
+  ratio: number
+): ReplayTrackPoint {
+  return {
+    lat: interpolateNumber(from.lat, to.lat, ratio),
+    lng: interpolateNumber(from.lng, to.lng, ratio),
+    elevationM: interpolateNullableNumber(from.elevationM, to.elevationM, ratio),
+    distanceFromStartM: interpolateNumber(
+      from.distanceFromStartM,
+      to.distanceFromStartM,
+      ratio
+    ),
+    actualElapsedSeconds: interpolateNullableNumber(
+      from.actualElapsedSeconds,
+      to.actualElapsedSeconds,
+      ratio
+    ),
+    replayElapsedSeconds: interpolateNumber(
+      from.replayElapsedSeconds,
+      to.replayElapsedSeconds,
+      ratio
+    )
+  };
+}
+
+function smoothReplayTrackPoints(
+  points: ReplayTrackPoint[],
+  iterations = 3
+): ReplayTrackPoint[] {
+  if (points.length < 3) {
+    return points;
+  }
+
+  let smoothedPoints = points;
+
+  for (let iteration = 0; iteration < iterations; iteration += 1) {
+    const nextPoints: ReplayTrackPoint[] = [smoothedPoints[0]];
+
+    for (let i = 0; i < smoothedPoints.length - 1; i += 1) {
+      const current = smoothedPoints[i];
+      const next = smoothedPoints[i + 1];
+
+      nextPoints.push(interpolateTrackPoint(current, next, 0.25));
+      nextPoints.push(interpolateTrackPoint(current, next, 0.75));
+    }
+
+    nextPoints.push(smoothedPoints[smoothedPoints.length - 1]);
+    smoothedPoints = nextPoints;
+  }
+
+  return smoothedPoints;
+}
+
 function findCurrentIndex(
   points: ReplayTrackPoint[],
   currentReplaySeconds: number
@@ -70,8 +141,8 @@ function interpolatePosition(
   const ratio = Math.min(Math.max(rawRatio, 0), 1);
 
   return {
-    lat: currentPoint.lat + (nextPoint.lat - currentPoint.lat) * ratio,
-    lng: currentPoint.lng + (nextPoint.lng - currentPoint.lng) * ratio
+    lat: interpolateNumber(currentPoint.lat, nextPoint.lat, ratio),
+    lng: interpolateNumber(currentPoint.lng, nextPoint.lng, ratio)
   };
 }
 
@@ -80,6 +151,9 @@ export const useReplayPlayer = ({
   replaySeconds
 }: UseReplayPlayerParams): UseReplayPlayerResult => {
   const trackPoints = replay?.trackPoints ?? EMPTY_TRACK_POINTS;
+  const displayTrackPoints = useMemo(() => {
+    return smoothReplayTrackPoints(trackPoints);
+  }, [trackPoints]);
 
   const currentIndex = useMemo(() => {
     return findCurrentIndex(trackPoints, replaySeconds);
@@ -92,17 +166,28 @@ export const useReplayPlayer = ({
     return trackPoints[currentIndex];
   }, [trackPoints, currentIndex]);
 
-  const nextPoint = useMemo(() => {
-    const nextIndex = currentIndex + 1;
-    if (nextIndex >= trackPoints.length) {
+  const displayIndex = useMemo(() => {
+    return findCurrentIndex(displayTrackPoints, replaySeconds);
+  }, [displayTrackPoints, replaySeconds]);
+
+  const displayPoint = useMemo(() => {
+    if (displayIndex < 0 || displayIndex >= displayTrackPoints.length) {
       return null;
     }
-    return trackPoints[nextIndex];
-  }, [trackPoints, currentIndex]);
+    return displayTrackPoints[displayIndex];
+  }, [displayTrackPoints, displayIndex]);
+
+  const nextDisplayPoint = useMemo(() => {
+    const nextIndex = displayIndex + 1;
+    if (nextIndex >= displayTrackPoints.length) {
+      return null;
+    }
+    return displayTrackPoints[nextIndex];
+  }, [displayTrackPoints, displayIndex]);
 
   const currentPosition = useMemo(() => {
-    return interpolatePosition(currentPoint, nextPoint, replaySeconds);
-  }, [currentPoint, nextPoint, replaySeconds]);
+    return interpolatePosition(displayPoint, nextDisplayPoint, replaySeconds);
+  }, [displayPoint, nextDisplayPoint, replaySeconds]);
 
   return {
     currentPoint,
