@@ -1,7 +1,5 @@
 /**
  * 📄 src/pages/hiking/HikingRecordPage.tsx
- * ⚠️ 테스트용: GPS 인증 좌표와 카메라 좌표를 금수봉(36.328917, 127.280978)으로 하드코딩
- * 배포 전 currentPos.lat, currentPos.lng로 원복할 것
  */
 import { useState, useRef, useEffect, useCallback } from "react";
 import maplibregl from "maplibre-gl";
@@ -308,15 +306,14 @@ export default function HikingRecordPage() {
 
   const [isVerifyLoading, setIsVerifyLoading] = useState(false);
 
-  // ⚠️ 테스트용: 금수봉 좌표 하드코딩 (배포 전 currentPos.lat, currentPos.lng로 원복)
   const handleVerify = async () => {
     if (!sessionId || !currentPos) return;
     setIsVerifyLoading(true);
     try {
       const result = await verifySummitWithGps({
         sessionId,
-        latitude: 36.328917,
-        longitude: 127.280978
+        latitude: currentPos.lat,
+        longitude: currentPos.lng
       });
       setSummitResult({
         verified: result.verified,
@@ -544,7 +541,8 @@ export default function HikingRecordPage() {
                 justifyContent: "center",
                 width: "100%",
                 padding: "4px 0 8px",
-                marginBottom: pageState === "hiking" && isPanelCollapsed ? 4 : 8,
+                marginBottom:
+                  pageState === "hiking" && isPanelCollapsed ? 4 : 8,
                 background: "transparent",
                 border: "none",
                 cursor: pageState === "hiking" ? "pointer" : "default"
@@ -570,8 +568,8 @@ export default function HikingRecordPage() {
                   color: "#475569",
                   fontVariantNumeric: "tabular-nums"
                 }}>
-                기록 중 · {formatTime(elapsedSeconds)} ·{" "}
-                {distanceKm.toFixed(2)}km
+                기록 중 · {formatTime(elapsedSeconds)} · {distanceKm.toFixed(2)}
+                km
               </div>
             ) : (
               <div className="transition-all duration-200">
@@ -830,12 +828,11 @@ export default function HikingRecordPage() {
         />
       )}
 
-      {/* ⚠️ 테스트용: 카메라 좌표 금수봉 하드코딩 (배포 전 currentPos.lat, currentPos.lng로 원복) */}
       {showCamera && sessionId && currentPos && (
         <SummitCameraVerify
           sessionId={sessionId}
-          latitude={36.328917}
-          longitude={127.280978}
+          latitude={currentPos.lat}
+          longitude={currentPos.lng}
           onClose={() => setShowCamera(false)}
           onVerified={handleVerified}
         />
