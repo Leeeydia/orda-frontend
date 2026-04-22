@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "@/lib/axios";
 import type { ApiResponse } from "@/types/common.types";
 import type {
   MyPageProfile,
@@ -6,40 +6,18 @@ import type {
   HikingRecord
 } from "../types/mypage.types";
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? "";
-
-const mypageAxios = axios.create({
-  baseURL: BASE_URL,
-  headers: {
-    "Content-Type": "application/json"
-  }
-});
-
-mypageAxios.interceptors.request.use((config) => {
-  const token = localStorage.getItem("accessToken");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
 export const fetchProfile = async (): Promise<ApiResponse<MyPageProfile>> => {
-  const res = await mypageAxios.get<ApiResponse<MyPageProfile>>(
-    "/api/mypage/profile"
-  );
+  const res = await api.get<ApiResponse<MyPageProfile>>("/mypage/profile");
   return res.data;
 };
 
 export const fetchStats = async (): Promise<ApiResponse<MyPageStats>> => {
-  const res =
-    await mypageAxios.get<ApiResponse<MyPageStats>>("/api/mypage/stats");
+  const res = await api.get<ApiResponse<MyPageStats>>("/mypage/stats");
   return res.data;
 };
 
 export const fetchRecords = async (): Promise<ApiResponse<HikingRecord[]>> => {
-  const res = await mypageAxios.get<ApiResponse<HikingRecord[]>>(
-    "/api/mypage/records"
-  );
+  const res = await api.get<ApiResponse<HikingRecord[]>>("/mypage/records");
   return res.data;
 };
 
@@ -49,8 +27,8 @@ export const uploadProfileImage = async (
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await mypageAxios.post<ApiResponse<string>>(
-    "/api/mypage/profile-image",
+  const res = await api.post<ApiResponse<string>>(
+    "/mypage/profile-image",
     formData,
     {
       headers: {
@@ -63,8 +41,6 @@ export const uploadProfileImage = async (
 };
 
 export const deleteProfileImage = async (): Promise<ApiResponse<null>> => {
-  const res = await mypageAxios.delete<ApiResponse<null>>(
-    "/api/mypage/profile-image"
-  );
+  const res = await api.delete<ApiResponse<null>>("/mypage/profile-image");
   return res.data;
 };

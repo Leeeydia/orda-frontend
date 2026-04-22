@@ -1,5 +1,53 @@
 @import "tailwindcss";
-@import "pretendard/dist/web/static/pretendard.css";
+
+@font-face {
+  font-family: "Pretendard";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("pretendard/dist/web/static/woff2/Pretendard-Regular.woff2")
+    format("woff2");
+}
+@font-face {
+  font-family: "Pretendard";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("pretendard/dist/web/static/woff2/Pretendard-Medium.woff2")
+    format("woff2");
+}
+@font-face {
+  font-family: "Pretendard";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("pretendard/dist/web/static/woff2/Pretendard-SemiBold.woff2")
+    format("woff2");
+}
+@font-face {
+  font-family: "Pretendard";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("pretendard/dist/web/static/woff2/Pretendard-Bold.woff2")
+    format("woff2");
+}
+@font-face {
+  font-family: "Pretendard";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("pretendard/dist/web/static/woff2/Pretendard-ExtraBold.woff2")
+    format("woff2");
+}
+@font-face {
+  font-family: "Pretendard";
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url("pretendard/dist/web/static/woff2/Pretendard-Black.woff2")
+    format("woff2");
+}
 
 @theme {
   --font-family-base:

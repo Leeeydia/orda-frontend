@@ -24,6 +24,10 @@ type CommonMapProps = {
   endPointRadius?: number;
 };
 
+const DEFAULT_STYLE_URL =
+  import.meta.env.VITE_MAP_STYLE_URL ??
+  "https://tiles.openfreemap.org/styles/bright";
+
 const GEOJSON_SOURCE_ID = "geojson-source";
 const GEOJSON_LINE_LAYER_ID = "geojson-line-layer";
 const GEOJSON_POINT_LAYER_ID = "geojson-point-layer";
@@ -40,7 +44,7 @@ function createEmptyFeatureCollection(): FeatureCollection {
 export default function CommonMap({
   center = [127.3845, 36.3504],
   zoom = 12,
-  styleUrl = "https://tiles.openfreemap.org/styles/bright",
+  styleUrl = DEFAULT_STYLE_URL,
   className,
   geoJsonData = null,
   onMapReady,
