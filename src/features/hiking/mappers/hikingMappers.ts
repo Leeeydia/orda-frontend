@@ -1,9 +1,5 @@
 import type { FeatureCollection, LineString, Point } from "geojson";
-import {
-  formatDistanceKm,
-  formatDuration,
-  formatMeters
-} from "@/utils/format";
+import { formatDistanceKm, formatDuration, formatMeters } from "@/utils/format";
 import type {
   ElevationProfilePointResponse,
   ElevationSummaryStatus,
@@ -27,6 +23,68 @@ const sortTrackFeatures = (
     (a, b) => a.properties.sequenceNum - b.properties.sequenceNum
   );
 };
+
+type ChartPoint = {
+  x: number;
+  y: number;
+};
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function createSmoothSvgPath(points: ChartPoint[]): string {
+  if (points.length === 0) return "";
+  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+  if (points.length === 2) {
+    return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
+  }
+
+  const pathCommands = [`M ${points[0].x} ${points[0].y}`];
+
+  for (let i = 0; i < points.length - 1; i += 1) {
+    const p0 = points[Math.max(i - 1, 0)];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[Math.min(i + 2, points.length - 1)];
+    const minY = Math.min(p1.y, p2.y);
+    const maxY = Math.max(p1.y, p2.y);
+    const cp1 = {
+      x: p1.x + (p2.x - p0.x) / 6,
+      y: clamp(p1.y + (p2.y - p0.y) / 6, minY, maxY)
+    };
+    const cp2 = {
+      x: p2.x - (p3.x - p1.x) / 6,
+      y: clamp(p2.y - (p3.y - p1.y) / 6, minY, maxY)
+    };
+
+    pathCommands.push(
+      `C ${cp1.x} ${cp1.y}, ${cp2.x} ${cp2.y}, ${p2.x} ${p2.y}`
+    );
+  }
+
+  return pathCommands.join(" ");
+}
+
+function smoothElevationValues(points: ChartPoint[]): ChartPoint[] {
+  if (points.length < 5) {
+    return points;
+  }
+
+  return points.map((point, index) => {
+    if (index === 0 || index === points.length - 1) {
+      return point;
+    }
+
+    const prev = points[index - 1];
+    const next = points[index + 1];
+
+    return {
+      x: point.x,
+      y: prev.y * 0.24 + point.y * 0.52 + next.y * 0.24
+    };
+  });
+}
 
 export const mapTrackFeaturesToDisplayGeoJson = (
   trackFeatureCollection: HikingTrackFeatureCollection | null | undefined
@@ -153,11 +211,18 @@ export const mapElevationPointsToSvgPath = (
   const elevationRange = maxElevation - minElevation || 1;
 
   const pathCommands: string[] = [];
-  let isDrawing = false;
+  let segment: ChartPoint[] = [];
+
+  const flushSegment = () => {
+    if (segment.length === 0) return;
+
+    pathCommands.push(createSmoothSvgPath(smoothElevationValues(segment)));
+    segment = [];
+  };
 
   for (const point of points) {
     if (!isRenderableElevationPoint(point)) {
-      isDrawing = false;
+      flushSegment();
       continue;
     }
 
@@ -168,9 +233,10 @@ export const mapElevationPointsToSvgPath = (
       (((point.elevationMeters as number) - minElevation) / elevationRange) *
         height;
 
-    pathCommands.push(`${isDrawing ? "L" : "M"} ${x} ${y}`);
-    isDrawing = true;
+    segment.push({ x, y });
   }
+
+  flushSegment();
 
   return pathCommands.join(" ");
 };
@@ -292,6 +358,52 @@ const EMPTY_REPLAY_SUMMARY: ReplaySummaryResponse = {
   elevationSummaryStatus: "UNAVAILABLE"
 };
 
+function hasNonIncreasingReplayTime(points: ReplayTrackPoint[]) {
+  for (let i = 1; i < points.length; i += 1) {
+    if (points[i].replayElapsedSeconds <= points[i - 1].replayElapsedSeconds) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function canNormalizeReplayTimeByActualElapsed(points: ReplayTrackPoint[]) {
+  if (points.length < 2) return false;
+
+  const firstActual = points[0].actualElapsedSeconds;
+  const lastActual = points[points.length - 1].actualElapsedSeconds;
+  const lastReplay = points[points.length - 1].replayElapsedSeconds;
+
+  if (firstActual == null || lastActual == null) return false;
+  if (lastActual <= firstActual || lastReplay <= 0) return false;
+
+  return points.every((point) => point.actualElapsedSeconds != null);
+}
+
+function normalizeReplayElapsedSeconds(
+  points: ReplayTrackPoint[]
+): ReplayTrackPoint[] {
+  if (!hasNonIncreasingReplayTime(points)) return points;
+  if (!canNormalizeReplayTimeByActualElapsed(points)) return points;
+
+  const firstActual = points[0].actualElapsedSeconds as number;
+  const lastActual = points[points.length - 1].actualElapsedSeconds as number;
+  const replayDurationSeconds = points[points.length - 1].replayElapsedSeconds;
+  const actualDurationSeconds = lastActual - firstActual;
+
+  return points.map((point) => {
+    const actualElapsedSeconds = point.actualElapsedSeconds as number;
+    const progress =
+      (actualElapsedSeconds - firstActual) / actualDurationSeconds;
+
+    return {
+      ...point,
+      replayElapsedSeconds: progress * replayDurationSeconds
+    };
+  });
+}
+
 export const mapReplayResponseToReplaySessionModel = (
   replayResponse: ReplayResponse | null | undefined
 ): ReplaySessionModel => {
@@ -306,15 +418,15 @@ export const mapReplayResponseToReplaySessionModel = (
     };
   }
 
-  const trackPoints: ReplayTrackPoint[] = (replayResponse.points ?? []).map(
-    (point) => ({
+  const trackPoints: ReplayTrackPoint[] = normalizeReplayElapsedSeconds(
+    (replayResponse.points ?? []).map((point) => ({
       lat: point.latitude,
       lng: point.longitude,
       elevationM: point.elevationM,
       distanceFromStartM: point.distanceFromStartM,
       actualElapsedSeconds: point.actualElapsedSeconds,
       replayElapsedSeconds: point.replayElapsedSeconds
-    })
+    }))
   );
 
   const lineCoordinates = trackPoints.map(

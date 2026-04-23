@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import Header, { HEADER_HEIGHT } from "@/components/layout/Header";
@@ -26,7 +26,7 @@ import { formatDistanceKm, formatDuration, formatMeters } from "@/utils/format";
 const INTRO_OVERVIEW_MS = 2200;
 const START_FOCUS_MS = 1200;
 const OUTRO_OVERVIEW_MS = 1800;
-const SEQUENCE_TICK_MS = 50;
+const SEQUENCE_SLIDER_STEP_MS = 50;
 const SEEK_STEP_SECONDS = 5;
 
 type ReplayContentProps = {
@@ -179,7 +179,7 @@ function ReplayPageContent({
     );
   }, [replay.trackPoints, currentReplaySeconds]);
 
-  const visibleSummits: SummitMarkerItem[] = useMemo(() => {
+  const visibleSummitIdsKey = useMemo(() => {
     return verifiedSummits
       .filter((summit) => {
         const verifiedElapsedSec = Number(summit.verifiedElapsedSec);
@@ -188,6 +188,17 @@ function ReplayPageContent({
           verifiedElapsedSec <= currentActualElapsedSeconds
         );
       })
+      .map((summit) => summit.summitId)
+      .join("|");
+  }, [verifiedSummits, currentActualElapsedSeconds]);
+
+  const visibleSummits: SummitMarkerItem[] = useMemo(() => {
+    const visibleSummitIds = new Set(
+      visibleSummitIdsKey ? visibleSummitIdsKey.split("|") : []
+    );
+
+    return verifiedSummits
+      .filter((summit) => visibleSummitIds.has(summit.summitId))
       .map((summit) => ({
         summitId: summit.summitId,
         summitName: summit.summitName,
@@ -199,16 +210,28 @@ function ReplayPageContent({
         (summit) =>
           !Number.isNaN(summit.latitude) && !Number.isNaN(summit.longitude)
       );
-  }, [verifiedSummits, currentActualElapsedSeconds]);
+  }, [verifiedSummits, visibleSummitIdsKey]);
 
   useEffect(() => {
     if (!isSequencePlaying) return;
     if (totalSequenceMs <= 0) return;
     if (!hasReplayPath) return;
 
-    const timer = window.setInterval(() => {
+    let frameId = 0;
+    let previousTimestamp: number | null = null;
+
+    const tick = (timestamp: number) => {
+      if (previousTimestamp == null) {
+        previousTimestamp = timestamp;
+        frameId = window.requestAnimationFrame(tick);
+        return;
+      }
+
+      const deltaMs = timestamp - previousTimestamp;
+      previousTimestamp = timestamp;
+
       setSequenceElapsedMs((prev) => {
-        const next = prev + SEQUENCE_TICK_MS;
+        const next = prev + deltaMs;
 
         if (next >= totalSequenceMs) {
           setIsSequencePlaying(false);
@@ -217,10 +240,14 @@ function ReplayPageContent({
 
         return next;
       });
-    }, SEQUENCE_TICK_MS);
+
+      frameId = window.requestAnimationFrame(tick);
+    };
+
+    frameId = window.requestAnimationFrame(tick);
 
     return () => {
-      window.clearInterval(timer);
+      window.cancelAnimationFrame(frameId);
     };
   }, [isSequencePlaying, totalSequenceMs, hasReplayPath]);
 
@@ -282,6 +309,11 @@ function ReplayPageContent({
             currentIndex={currentIndex}
             cameraMode={cameraMode}
             visibleSummits={visibleSummits}
+            sequenceElapsedMs={sequenceElapsedMs}
+            introOverviewMs={INTRO_OVERVIEW_MS}
+            startFocusMs={START_FOCUS_MS}
+            replayEndMs={replayEndMs}
+            outroOverviewMs={OUTRO_OVERVIEW_MS}
           />
 
           <div className="absolute top-4 right-4 left-4 z-20">
@@ -327,7 +359,7 @@ function ReplayPageContent({
                 type="range"
                 min={0}
                 max={totalSequenceMs}
-                step={SEQUENCE_TICK_MS}
+                step={SEQUENCE_SLIDER_STEP_MS}
                 value={sequenceElapsedMs}
                 onChange={handleSliderChange}
                 className="accent-primary h-3 w-full"
@@ -393,6 +425,12 @@ export default function HikingSessionReplayPage() {
     const parsed = Number(sessionId);
     return Number.isNaN(parsed) ? null : parsed;
   }, [sessionId]);
+
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [numericSessionId]);
 
   const { replay, isLoading, isError } = useReplayQuery(numericSessionId);
 

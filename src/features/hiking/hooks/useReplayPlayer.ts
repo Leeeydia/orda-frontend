@@ -22,6 +22,10 @@ type UseReplayPlayerResult = {
 
 const EMPTY_TRACK_POINTS: ReplayTrackPoint[] = [];
 
+function interpolateNumber(from: number, to: number, ratio: number) {
+  return from + (to - from) * ratio;
+}
+
 function findCurrentIndex(
   points: ReplayTrackPoint[],
   currentReplaySeconds: number
@@ -70,8 +74,8 @@ function interpolatePosition(
   const ratio = Math.min(Math.max(rawRatio, 0), 1);
 
   return {
-    lat: currentPoint.lat + (nextPoint.lat - currentPoint.lat) * ratio,
-    lng: currentPoint.lng + (nextPoint.lng - currentPoint.lng) * ratio
+    lat: interpolateNumber(currentPoint.lat, nextPoint.lat, ratio),
+    lng: interpolateNumber(currentPoint.lng, nextPoint.lng, ratio)
   };
 }
 

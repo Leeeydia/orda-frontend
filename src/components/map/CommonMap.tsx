@@ -105,6 +105,10 @@ export default function CommonMap({
         type: "line",
         source: GEOJSON_SOURCE_ID,
         filter: ["==", ["geometry-type"], "LineString"],
+        layout: {
+          "line-cap": "round",
+          "line-join": "round"
+        },
         paint: {
           "line-color": lineColor,
           "line-width": lineWidth

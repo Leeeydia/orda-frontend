@@ -1,5 +1,5 @@
 /**
- * 📄 src/features/hiking/components/summitMarker.ts
+ * 📄 src/components/map/summitMarker.ts
  *
  * 정상 마커 공통 유틸
  * - GpsTrackingMap: 등산 시작 시 주변 정상 표시 (해발 고도)
@@ -12,7 +12,7 @@
  * 팝업 본문은 DOM node로 생성하여 summitName에 대한 XSS 위험을 방지한다.
  */
 
-import type { RefObject } from "react";
+import type { MutableRefObject } from "react";
 import maplibregl from "maplibre-gl";
 
 export interface SummitMarkerData {
@@ -20,13 +20,16 @@ export interface SummitMarkerData {
   summitName: string;
   latitude: number;
   longitude: number;
-  elevationM?: number | null; // 있으면 "해발 Nm" 표시
-  verifiedAt?: string; // 있으면 "인증 시각 XXXX" 표시
+  elevationM?: number | null;
+  verifiedAt?: string;
 }
 
 const POPUP_STYLE_ID = "orda-summit-popup-styles";
 
-// ORDA 카드 스타일 팝업 CSS (document.head에 한 번만 주입)
+type SummitMarkerArrayRefs = MutableRefObject<maplibregl.Marker[]>;
+type SummitMarkerMapRefs = MutableRefObject<Map<string, maplibregl.Marker>>;
+type SummitMarkerRefs = SummitMarkerArrayRefs | SummitMarkerMapRefs;
+
 const POPUP_STYLES = `
   .orda-summit-popup .maplibregl-popup-content {
     padding: 0;
@@ -60,7 +63,6 @@ const POPUP_STYLES = `
   }
 `;
 
-// 첫 호출 시 document.head에 스타일을 한 번만 주입
 function ensurePopupStylesInjected(): void {
   if (typeof document === "undefined") return;
   if (document.getElementById(POPUP_STYLE_ID)) return;
@@ -71,7 +73,6 @@ function ensurePopupStylesInjected(): void {
   document.head.appendChild(styleEl);
 }
 
-// 삼각형 산 모양 마커 엘리먼트
 function createSummitMarkerElement(): HTMLButtonElement {
   const el = document.createElement("button");
   el.type = "button";
@@ -85,35 +86,25 @@ function createSummitMarkerElement(): HTMLButtonElement {
   return el;
 }
 
-// 숫자를 2자리로 0-padding
 function pad2(n: number): string {
   return n.toString().padStart(2, "0");
 }
 
-/**
- * ISO 문자열을 "YYYY-MM-DD HH:MM" 형태로 포맷
- * - 밀리초, timezone suffix(Z, +09:00 등) 제거
- * - 파싱 실패 시 입력 문자열을 그대로 반환 (안전 fallback)
- *
- * 예시:
- *   "2026-04-15T16:30:45.123Z"   → "2026-04-15 16:30"
- *   "2026-04-15T16:30:00"        → "2026-04-15 16:30"
- *   "2026-04-15T16:30:00+09:00"  → "2026-04-15 16:30"
- */
 function formatVerifiedAt(verifiedAt: string): string {
   const date = new Date(verifiedAt);
-  if (isNaN(date.getTime())) {
+  if (Number.isNaN(date.getTime())) {
     return verifiedAt;
   }
+
   const y = date.getFullYear();
   const mo = pad2(date.getMonth() + 1);
   const d = pad2(date.getDate());
   const h = pad2(date.getHours());
   const mi = pad2(date.getMinutes());
+
   return `${y}-${mo}-${d} ${h}:${mi}`;
 }
 
-// 팝업 본문을 DOM node로 생성 (textContent 사용으로 XSS 방지)
 function createSummitPopupNode(summit: SummitMarkerData): HTMLElement {
   const container = document.createElement("div");
   container.style.cssText =
@@ -143,51 +134,98 @@ function createSummitPopupNode(summit: SummitMarkerData): HTMLElement {
   return container;
 }
 
-// 지도에 정상 마커들 렌더링 (기존 마커 자동 제거 후 새로 그림)
+function isMarkerMapRef(
+  markerRefs: SummitMarkerRefs
+): markerRefs is SummitMarkerMapRefs {
+  return markerRefs.current instanceof Map;
+}
+
+function createSummitMarker(
+  map: maplibregl.Map,
+  summit: SummitMarkerData
+): maplibregl.Marker {
+  const markerEl = createSummitMarkerElement();
+  const popupNode = createSummitPopupNode(summit);
+
+  const popup = new maplibregl.Popup({
+    offset: 14,
+    closeButton: true,
+    anchor: "bottom",
+    maxWidth: "none",
+    className: "orda-summit-popup"
+  }).setDOMContent(popupNode);
+
+  return new maplibregl.Marker({
+    element: markerEl,
+    anchor: "bottom",
+    offset: [0, 2]
+  })
+    .setLngLat([summit.longitude, summit.latitude])
+    .setPopup(popup)
+    .addTo(map);
+}
+
 export function renderSummitMarkers(
   map: maplibregl.Map,
   summits: SummitMarkerData[],
-  markerRefs: RefObject<maplibregl.Marker[]>
+  markerRefs: SummitMarkerRefs
 ): void {
   ensurePopupStylesInjected();
-  clearSummitMarkers(markerRefs);
+
+  if (!isMarkerMapRef(markerRefs)) {
+    clearSummitMarkers(markerRefs);
+
+    summits.forEach((summit) => {
+      if (typeof summit.longitude !== "number") return;
+      if (typeof summit.latitude !== "number") return;
+      if (Number.isNaN(summit.longitude) || Number.isNaN(summit.latitude)) {
+        return;
+      }
+
+      markerRefs.current.push(createSummitMarker(map, summit));
+    });
+
+    return;
+  }
+
+  const nextSummitsById = new Map<string, SummitMarkerData>();
 
   summits.forEach((summit) => {
-    if (
-      typeof summit.longitude !== "number" ||
-      typeof summit.latitude !== "number"
-    ) {
+    if (!summit.summitId) return;
+    if (typeof summit.longitude !== "number") return;
+    if (typeof summit.latitude !== "number") return;
+    if (Number.isNaN(summit.longitude) || Number.isNaN(summit.latitude)) return;
+
+    nextSummitsById.set(summit.summitId, summit);
+  });
+
+  markerRefs.current.forEach((marker, summitId) => {
+    if (nextSummitsById.has(summitId)) return;
+
+    marker.remove();
+    markerRefs.current.delete(summitId);
+  });
+
+  nextSummitsById.forEach((summit, summitId) => {
+    const lngLat: [number, number] = [summit.longitude, summit.latitude];
+    const existingMarker = markerRefs.current.get(summitId);
+
+    if (existingMarker) {
+      existingMarker.setLngLat(lngLat);
       return;
     }
 
-    const markerEl = createSummitMarkerElement();
-    const popupNode = createSummitPopupNode(summit);
-
-    const popup = new maplibregl.Popup({
-      offset: 14,
-      closeButton: true,
-      anchor: "bottom",
-      maxWidth: "none",
-      className: "orda-summit-popup"
-    }).setDOMContent(popupNode);
-
-    const marker = new maplibregl.Marker({
-      element: markerEl,
-      anchor: "bottom",
-      offset: [0, 2]
-    })
-      .setLngLat([summit.longitude, summit.latitude])
-      .setPopup(popup)
-      .addTo(map);
-
-    markerRefs.current.push(marker);
+    markerRefs.current.set(summitId, createSummitMarker(map, summit));
   });
 }
 
-// 지도에서 정상 마커 모두 제거
-export function clearSummitMarkers(
-  markerRefs: RefObject<maplibregl.Marker[]>
-): void {
+export function clearSummitMarkers(markerRefs: SummitMarkerRefs): void {
+  if (isMarkerMapRef(markerRefs)) {
+    markerRefs.current.forEach((marker) => marker.remove());
+    markerRefs.current.clear();
+    return;
+  }
+
   markerRefs.current.forEach((marker) => marker.remove());
   markerRefs.current = [];
 }
