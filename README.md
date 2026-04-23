@@ -1,229 +1,375 @@
-## 화면 구성
+<p align="center">
+  <img src="로고이미지경로" alt="ORDA 로고" width="400"/>
+</p>
 
-| 화면 | 설명 |
-|---|---|
-| 스플래시 | 앱 진입점. 토큰 유무에 따라 등산 화면 또는 로그인으로 분기 |
-| 로그인 | 이메일/비번 로그인, 카카오 OAuth 로그인 |
-| 회원가입 | 이메일·비번·닉네임·이름·전화번호·생년월일 입력 |
-| 가이드 | 준비물·안전수칙·예절 정적 안내, 오늘의 명언 표시 |
-| 등산 기록 (메인 지도) | GPS 실시간 추적, 등산로 난이도 레이어, 100대 명산 모드, 정상 GPS·사진 인증, 경과시간·거리·고도 패널, 고도 차트 |
-| 세션 상세 | 트랙 지도 + 인증 정상 마커, 요약 카드(거리·시간·상승·하강), 고도 프로파일 차트 |
-| 경로 리플레이 | 2D 경로 재생/일시정지/seek, 카메라 연출(개요→시작→추적→마무리), 인증 정상 점진 표시 |
-| 마이페이지 | 프로필·통계 조회, 프로필 이미지 업로드/삭제, 등산 기록 목록, 로그아웃 |
-| 프로필 편집 | 닉네임·전화번호 수정, 비밀번호 변경 |
+# 🏔 ORDA : 오르다
 
-> 시연 영상 및 스크린샷 추후 추가 예정
+**O**vercome, **R**ecord, **D**iscover, **A**scend — 극복하고, 기록하고, 발견하고, 오르다
 
-<br>
+> GPS 기반 등산 경로 기록 및 지도 시각화 플랫폼
 
-## ERD
+사용자의 등산 경로를 실시간으로 기록하고, 정상 도달 여부를 인증하며, 난이도 지도와 3D 리플레이를 통해 등산 경험을 직관적으로 확인할 수 있는 서비스입니다.
 
-> ERD 이미지 추후 추가 예정
+🔗 **배포 링크**: [https://orda-frontend.vercel.app/](https://orda-frontend.vercel.app/)
 
-```text
-users (user_id PK, email, password_hash, nickname, phone, birth_date,
-        profile_image_url, provider, kakao_id, created_at, updated_at)
+---
 
-hiking_sessions (session_id PK, user_id FK → users, status,
-                  started_at, ended_at,
-                  total_distance_m, total_elevation_gain_m,
-                  total_elevation_loss_m, total_duration_sec, created_at)
+## 📌 프로젝트 소개
 
-gps_tracks (track_id PK, session_id FK → hiking_sessions, sequence_num,
-             raw_latitude, raw_longitude, raw_elevation_m,
-             snapped_latitude, snapped_longitude, canonical_elevation_m,
-             elevation_source, accuracy_m, recorded_at, geom)
+- **프로젝트 기간**: YYYY.MM.DD ~ YYYY.MM.DD
+- **팀명**: (팀명 입력)
 
-summit_verifications (verification_id PK, session_id, summit_id,
-                       verification_method, photo_path, verified_at)
-  └─ unique: (session_id, summit_id) ※ 서비스 중복 체크는 method까지 포함
+### 프로젝트 목적
 
-user_stats (stat_id PK, user_id FK → users,
-             total_hikes, total_summits, total_distance_m,
-             total_elevation_gain_m, total_duration_sec,
-             last_hiked_at, updated_at)
+1. GPS 기반으로 등산 경로를 실시간 기록하고, 등산 후에도 경로를 다시 돌아볼 수 있게 한다.
+2. 정상 좌표와 사용자 위치를 비교하여 정상 도달 여부를 신뢰성 있게 인증한다.
+3. 난이도 지도와 3D 리플레이로 등산 데이터를 직관적으로 시각화한다.
 
-trail_edges  (edge_id PK, difficulty, difficulty_score,
-               nearest_summit_id, geom ST_LineString)
+### 핵심 기술
 
-trail_nodes  (node_id PK, geom)
+- **GPS 기반 위치 추적 및 등산 경로 기록**
+- **정상 좌표와 사용자 위치 비교 기반 정상 인증** (GPS + AI 사진 인증)
+- **MapLibre 기반 난이도 지도 및 3D 경로 리플레이**
+- **PostGIS 기반 공간 데이터 저장 및 처리**
 
-summit_points (summit_id PK, name, elevation_m, source, radius_m, geom)
+---
+
+## 👥 팀원 소개
+
+<table>
+  <tbody>
+    <tr>
+      <td align="center">
+        <img src="사진URL" width="100px;" alt=""/><br/>
+        <sub>리더</sub><br/>
+        <sub><b>이름</b></sub>
+      </td>
+      <td align="center">
+        <img src="사진URL" width="100px;" alt=""/><br/>
+        <sub>팀원</sub><br/>
+        <sub><b>이름</b></sub>
+      </td>
+      <td align="center">
+        <img src="사진URL" width="100px;" alt=""/><br/>
+        <sub>팀원</sub><br/>
+        <sub><b>이름</b></sub>
+      </td>
+      <td align="center">
+        <img src="사진URL" width="100px;" alt=""/><br/>
+        <sub>팀원</sub><br/>
+        <sub><b>이름</b></sub>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+| 이름 | 역할 | GitHub | Velog |
+| --- | --- | --- | --- |
+| 이름1 | 리더 / 담당 파트 | [GitHub](https://github.com/xxx) | [Velog](https://velog.io/@xxx) |
+| 이름2 | 담당 파트 | [GitHub](https://github.com/xxx) | [Velog](https://velog.io/@xxx) |
+| 이름3 | 담당 파트 | [GitHub](https://github.com/xxx) | [Velog](https://velog.io/@xxx) |
+| 이름4 | 담당 파트 | [GitHub](https://github.com/xxx) | [Velog](https://velog.io/@xxx) |
+
+---
+
+## 🎥 실행 화면
+
+| 등산 시작 / GPS 추적 | 세션 상세 | 3D 리플레이 |
+| :---: | :---: | :---: |
+| ![스크린샷](이미지URL) | ![스크린샷](이미지URL) | ![스크린샷](이미지URL) |
+
+| 정상 인증 (GPS / AI 사진) | 난이도 지도 | 마이페이지 |
+| :---: | :---: | :---: |
+| ![스크린샷](이미지URL) | ![스크린샷](이미지URL) | ![스크린샷](이미지URL) |
+
+---
+
+## 🏗 기술 스택
+
+### Frontend
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![React Router](https://img.shields.io/badge/React_Router-7-CA4245?logo=reactrouter&logoColor=white)](https://reactrouter.com/)
+[![TanStack Query](https://img.shields.io/badge/TanStack_Query-5-FF4154?logo=reactquery&logoColor=white)](https://tanstack.com/query)
+[![MapLibre GL](https://img.shields.io/badge/MapLibre_GL-4-396CB2?logo=maplibre&logoColor=white)](https://maplibre.org/)
+[![Axios](https://img.shields.io/badge/Axios-1.13-5A29E4?logo=axios&logoColor=white)](https://axios-http.com/)
+
+### Backend
+[![Java](https://img.shields.io/badge/Java-17-007396?logo=openjdk&logoColor=white)](https://www.oracle.com/java/)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![Spring Security](https://img.shields.io/badge/Spring_Security-6DB33F?logo=springsecurity&logoColor=white)](https://spring.io/projects/spring-security)
+[![JPA](https://img.shields.io/badge/JPA_/_Hibernate-59666C?logo=hibernate&logoColor=white)](https://hibernate.org/)
+[![JWT](https://img.shields.io/badge/JWT-000000?logo=jsonwebtokens&logoColor=white)](https://jwt.io/)
+[![OpenAI](https://img.shields.io/badge/OpenAI_Vision-412991?logo=openai&logoColor=white)](https://platform.openai.com/)
+
+### Database / Infra
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![PostGIS](https://img.shields.io/badge/PostGIS-008BB9?logo=postgresql&logoColor=white)](https://postgis.net/)
+[![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com/)
+[![Cloud Run](https://img.shields.io/badge/Google_Cloud_Run-4285F4?logo=googlecloud&logoColor=white)](https://cloud.google.com/run)
+[![Vercel](https://img.shields.io/badge/Vercel-000000?logo=vercel&logoColor=white)](https://vercel.com/)
+
+### Tools / Collaboration
+[![GitHub](https://img.shields.io/badge/GitHub-181717?logo=github&logoColor=white)](https://github.com/)
+[![Figma](https://img.shields.io/badge/Figma-F24E1E?logo=figma&logoColor=white)](https://www.figma.com/)
+[![Notion](https://img.shields.io/badge/Notion-000000?logo=notion&logoColor=white)](https://www.notion.so/)
+[![Slack](https://img.shields.io/badge/Slack-4A154B?logo=slack&logoColor=white)](https://slack.com/)
+
+---
+
+## 🍀 주요 기능
+
+<details>
+<summary><strong>1. 회원가입 / 로그인</strong></summary>
+
+<img src="스크린샷URL" alt="로그인 화면">
+
+- **이메일/비밀번호 로그인**: JWT 기반 인증, Bearer 토큰 자동 부착
+- **카카오 OAuth 로그인**: 인가 코드 검증 후 자동 회원가입 / 로그인
+- **회원가입**: 이메일·닉네임·전화번호 중복 검증, 생년월일/전화번호 자동 포매팅
+- **보안**: BCrypt 비밀번호 해시, 비밀번호=이메일 금지 검증
+
+</details>
+
+<details>
+<summary><strong>2. 등산 시작 / GPS 실시간 추적</strong></summary>
+
+<img src="스크린샷URL" alt="등산 추적 화면">
+
+- **등산로 근접 검증**: 반경 100m 내 등산로 검증 후 세션 시작
+- **실시간 GPS 추적**: `navigator.geolocation.watchPosition` 기반, 5초 간격 서버 저장
+- **주변 정상 표시**: 반경 3km 내 정상 목록을 지도에 마커로 표시
+- **난이도 지도 레이어**: 뷰포트(bbox) 기반으로 등산로 난이도 색상 표시
+- **100대 명산 모드**: 정적 데이터 기반으로 명산 위치 및 정보 제공
+- **고도/거리/경과시간 패널**: Haversine 기반 거리 누적, 고도 차트 실시간 갱신
+- **안정성**: `beforeunload` 시 `navigator.sendBeacon`으로 세션 종료 보장
+
+</details>
+
+<details>
+<summary><strong>3. 정상 인증 (GPS + AI 사진)</strong></summary>
+
+<img src="스크린샷URL" alt="정상 인증 화면">
+
+- **GPS 인증**: 최근접 정상 반경 내 진입 시 자동 인증, 중복 인증 회피
+- **AI 사진 인증**: OpenAI Vision (gpt-4o-mini) 기반
+  - 이미지 512px 리사이즈 → Base64 인코딩
+  - GPS 반경 + AI 정상석 인식 + 정상명 매칭 **3조건 AND** 판정
+  - 성공 시에만 사진 저장 + DB 기록
+- **후면 카메라 + 정상석 가이드 오버레이**로 사용자 촬영 보조
+
+</details>
+
+<details>
+<summary><strong>4. 세션 상세 / 고도 프로파일</strong></summary>
+
+<img src="스크린샷URL" alt="세션 상세 화면">
+
+- **트랙 시각화**: GeoJSON FeatureCollection으로 지도에 경로 표시
+- **인증 정상 마커**: 해당 세션에서 인증된 정상을 마커로 강조
+- **요약 카드**: 총 거리 / 소요 시간 / 상승 고도 / 하강 고도
+- **고도 프로파일 차트**: SVG path로 평활화된 고도 그래프
+
+</details>
+
+<details>
+<summary><strong>5. 3D 리플레이</strong></summary>
+
+<img src="스크린샷URL" alt="리플레이 화면">
+
+- **카메라 모드 4단계**: `intro-overview → focus-start → follow → outro-overview`
+- **재생 컨트롤**: 재생/일시정지 / 5초 뒤로 / 처음으로 / 슬라이더 seek
+- **점진적 정상 노출**: 재생 시점이 지난 인증 정상만 순차 표시
+- **선형 보간**: 포인트 사이를 부드럽게 연결하여 자연스러운 재생
+- **샘플링 옵션**: `maxPoints`, `targetDurationSeconds` 쿼리 파라미터 제어
+
+</details>
+
+<details>
+<summary><strong>6. 난이도 지도</strong></summary>
+
+<img src="스크린샷URL" alt="난이도 지도 화면">
+
+- **난이도 계산**: 거리 / 경사도 / 고도차 기반 난이도 스코어
+- **조회 방식 다양화**: 전체 / 정상별 / 뷰포트(bbox) / 특정 edge 목록
+- **GeoJSON LineString**으로 응답 → 지도에 바로 렌더링
+
+</details>
+
+<details>
+<summary><strong>7. 마이페이지 / 프로필 관리</strong></summary>
+
+<img src="스크린샷URL" alt="마이페이지 화면">
+
+- **누적 통계**: 총 등산 횟수 / 정상 인증 수 / 누적 거리 / 누적 상승 고도
+- **등산 기록 리스트**: 날짜 내림차순, 클릭 시 세션 상세로 이동
+- **프로필 이미지**: 업로드(jpg/png, ≤5MB) / 삭제
+- **프로필 수정**: 닉네임·전화번호 수정, 비밀번호 변경(현재 비번 검증)
+
+</details>
+
+<details>
+<summary><strong>8. 가이드 페이지</strong></summary>
+
+<img src="스크린샷URL" alt="가이드 화면">
+
+- 등산 준비물 / 안전 수칙 / 산행 예절 등 정적 정보 제공
+- 오늘의 명언 (`dayOfYear` 기반으로 매일 다른 문구 노출)
+
+</details>
+
+---
+
+## 🗣 기술적 의사결정
+
+<details>
+<summary><strong>Frontend: React 19 + Vite + TypeScript</strong></summary>
+
+- 최신 React 19의 개선된 렌더링 성능과 Suspense 활용
+- Vite의 빠른 HMR로 개발 생산성 확보
+- TypeScript로 API 응답 타입과 GeoJSON 타입을 강하게 지정하여 지도 관련 좌표 순서 실수([경도, 위도]) 방지
+
+</details>
+
+<details>
+<summary><strong>Map: MapLibre GL + OpenFreeMap</strong></summary>
+
+- **Mapbox 대신 MapLibre 선택**: 오픈소스이고 토큰·과금 제약이 없음
+- **OpenFreeMap** 타일로 운영 비용 0원
+- GeoJSON 소스 기반으로 Point / LineString을 공통 컴포넌트(`CommonMap`)에서 렌더링, 소스 교체만으로 실시간 업데이트 (지도 재생성 없음)
+
+</details>
+
+<details>
+<summary><strong>Backend: Spring Boot + PostGIS + Hibernate Spatial</strong></summary>
+
+- **PostGIS**로 공간 인덱스 기반 쿼리 (최근접 정상, 반경 내 등산로, bbox 조회) 수행
+- **Hibernate Spatial + JTS**로 JPA 레벨에서 공간 데이터를 자연스럽게 다룸
+- **GeoTIFF DEM 샘플링**(`mil.nga:tiff`)으로 고도 보정
+
+</details>
+
+<details>
+<summary><strong>인증: JWT + Spring Security (Stateless)</strong></summary>
+
+- 세션을 사용하지 않아 Cloud Run의 무상태 배포 환경에 적합
+- 카카오 OAuth는 인가 코드를 서버에서 검증 후 자체 JWT로 교환
+
+</details>
+
+<details>
+<summary><strong>AI 정상 인증: OpenAI Vision (gpt-4o-mini)</strong></summary>
+
+- GPS만으로는 오차 / 조작 가능성이 있어 **GPS + AI + 정상명 매칭 3조건 AND**로 신뢰성 강화
+- 이미지 512px 리사이즈 + Base64로 토큰 비용 최소화
+- 성공한 인증 사진만 저장하여 스토리지 비용 절감
+
+</details>
+
+<details>
+<summary><strong>서버 상태: TanStack Query</strong></summary>
+
+- 세션/트랙/고도/리플레이 4개 쿼리를 병렬 조회하며 캐싱으로 재방문 시 즉시 표시
+- 로딩/에러 상태를 선언적으로 관리
+
+</details>
+
+<details>
+<summary><strong>공통 응답: ApiResponse&lt;T&gt; + GeoJSON 분리</strong></summary>
+
+- 모든 API를 `{ success, message, data }` 구조로 통일
+- 지도용 응답은 `ApiResponse<GeoJsonFeatureCollectionResponse>`로 감싸 바로 MapLibre에 주입 가능하도록 설계
+
+</details>
+
+---
+
+## ☁️ 배포 환경
+
+| 구분 | 서비스 | 비고 |
+| --- | --- | --- |
+| **Frontend** | [Vercel](https://vercel.com/) | Vite 빌드 자동 배포, PR 프리뷰 제공 |
+| **Backend** | [Google Cloud Run](https://cloud.google.com/run) | 무상태 컨테이너 기반, 요청량 기반 오토스케일 |
+| **Database** | [Supabase](https://supabase.com/) (PostgreSQL + PostGIS) | PostGIS 확장으로 공간 쿼리 지원 |
+| **AI** | [OpenAI API](https://platform.openai.com/) (gpt-4o-mini Vision) | 정상 사진 인증 |
+| **외부 연동** | 카카오 OAuth | 소셜 로그인 |
+
+### 배포 아키텍처
+
+```
+[사용자]
+   │
+   ▼
+[Vercel] ──── Frontend (React + MapLibre)
+   │
+   ▼  HTTPS / JWT
+[Cloud Run] ── Backend (Spring Boot)
+   │
+   ├──▶ [Supabase PostgreSQL + PostGIS]  ← 등산 세션 / 트랙 / 정상 / 등산로
+   ├──▶ [OpenAI Vision API]               ← 정상 사진 AI 인증
+   └──▶ [카카오 OAuth API]                ← 소셜 로그인
 ```
 
-<br>
+---
 
-## API 명세
+## 🛠 트러블슈팅
 
-### 인증 (`/api/auth`)
+<details>
+<summary><strong>1. (트러블슈팅 제목)</strong></summary>
 
-| 기능 | Method | Endpoint | 설명 |
-|---|---|---|---|
-| 회원가입 | POST | `/api/auth/signup` | 이메일/비번 회원가입 |
-| 로그인 | POST | `/api/auth/login` | JWT 발급 |
-| 카카오 로그인 | POST | `/api/auth/kakao` | 인가 코드로 로그인/자동 회원가입 |
+### 🚨 문제
+(상황 설명)
 
-### 마이페이지 (`/api/mypage`)
+### 🚨 원인
+(원인 분석)
 
-| 기능 | Method | Endpoint | 설명 |
-|---|---|---|---|
-| 프로필 조회 | GET | `/api/mypage/profile` | 닉네임·이메일·이미지 URL |
-| 통계 조회 | GET | `/api/mypage/stats` | 누적 등산 횟수·거리·상승 고도 |
-| 기록 목록 | GET | `/api/mypage/records` | 등산 기록 리스트 (시작일 desc) |
-| 이미지 업로드 | POST | `/api/mypage/profile-image` | multipart, jpg/png ≤5MB |
-| 이미지 삭제 | DELETE | `/api/mypage/profile-image` | 파일·DB 동시 삭제 |
+### 💡 해결
+(해결 방법 + 코드)
 
-### 설정 (`/api/settings`)
+</details>
 
-| 기능 | Method | Endpoint | 설명 |
-|---|---|---|---|
-| 프로필 조회 | GET | `/api/settings/profile` | 이름·전화·생년월일 포함 |
-| 프로필 수정 | PATCH | `/api/settings/profile` | 닉네임·전화번호 |
-| 비밀번호 변경 | PATCH | `/api/settings/password` | 현재 비번 검증 후 변경 |
+<details>
+<summary><strong>2. (트러블슈팅 제목)</strong></summary>
 
-### 등산 세션 (`/api/hiking`)
+### 🚨 문제
+### 🚨 원인
+### 💡 해결
 
-| 기능 | Method | Endpoint | 설명 |
-|---|---|---|---|
-| 세션 시작 | POST | `/api/hiking/start` | 세션 생성, 반경 3km 정상 목록 반환 |
-| 세션 종료 | POST | `/api/hiking/{sessionId}/end` | 통계 집계 + UserStats 누적 |
-| 세션 상세 | GET | `/api/hiking/{sessionId}` | 세션 정보 + 인증된 정상 목록 |
-| GPS 저장 | POST | `/api/hiking/{sessionId}/tracks` | 포인트 저장, canonical 고도 반환 |
-| GPS 조회 | GET | `/api/hiking/{sessionId}/tracks` | GeoJSON FeatureCollection |
-| 고도 프로파일 | GET | `/api/hiking/{sessionId}/elevation-profile` | summary + points |
-| 리플레이 데이터 | GET | `/api/hiking/{sessionId}/replay` | 보간된 좌표·시간 시퀀스 |
+</details>
 
-### 정상 인증 (`/api/summit`)
+---
 
-| 기능 | Method | Endpoint | 설명 |
-|---|---|---|---|
-| GPS 인증 | POST | `/api/summit/verify` | 반경 내 정상 GPS 인증 |
-| 사진 인증 | POST | `/api/summit/verify/photo` | GPS + OpenAI Vision 3조건 판정 |
+## 📁 프로젝트 구조
 
-### 등산로 (`/api/trails`)
+### Backend (`com.orda.backend`)
 
-| 기능 | Method | Endpoint | 설명 |
-|---|---|---|---|
-| 전체 난이도 GeoJSON | GET | `/api/trails/difficulty/map` | LineString + 난이도 속성 |
-| 정상별 GeoJSON | GET | `/api/trails/difficulty/map/summit?summitId=` | 특정 정상 등산로 |
-| 뷰포트 GeoJSON | GET | `/api/trails/difficulty/map/bbox?minLng&minLat&maxLng&maxLat` | 화면 범위 기반 조회 |
-| edgeIds GeoJSON | GET | `/api/trails/difficulty/map/edges?edgeIds=` | 산 단건 클릭용 |
-| edgeIds GeoJSON (POST) | POST | `/api/trails/difficulty/map/edges` | URL 길이 초과 시 body 방식 |
-| 등산로 근접 여부 | GET | `/api/trails/check-nearby?lat&lng` | 반경 100m 내 등산로 존재 여부 |
-
-### 100대 명산 (`/api/mountains`)
-
-| 기능 | Method | Endpoint | 설명 |
-|---|---|---|---|
-| 명산 목록 | GET | `/api/mountains/top100` | 이름·위치·난이도·edgeIds 포함 |
-
-<br>
-
-## 폴더 구조
-
-```bash
-project-root
-├── frontend/
-│   └── src/
-│       ├── pages/          # 라우트 단위 페이지 (splash/auth/guide/hiking/mypage)
-│       ├── features/       # 도메인별 api·hooks·types·components
-│       │   ├── auth/
-│       │   ├── hiking/
-│       │   ├── gps/
-│       │   ├── trail/
-│       │   ├── mountain/
-│       │   ├── summit/
-│       │   ├── mypage/
-│       │   └── edit-profile/
-│       ├── components/     # 공통 컴포넌트 (layout/map/ui/auth)
-│       ├── lib/            # axios 인터셉터
-│       └── utils/          # 인증·에러·포맷·검증 유틸
-└── backend/
-    └── src/main/java/com/orda/backend/
-        ├── common/         # ApiResponse, GeoJSON 공통 응답, 예외 처리
-        ├── config/         # Security, CORS, WebMvc 설정
-        ├── security/       # JWT Provider·Filter, CustomUserDetails
-        └── domain/
-            ├── user/       # auth·mypage·settings (controller/service/repository/entity/dto)
-            ├── hiking/     # 세션·GPS·고도·리플레이 (controller + 8개 헬퍼 서비스)
-            ├── summit/     # GPS·사진 인증, OpenAI Vision 연동
-            ├── trail/      # 난이도 조회·GeoJSON 반환
-            ├── mountain/   # 100대 명산 JSON 캐시 제공
-            └── stats/      # UserStats 엔티티·레포지터리 (MyPage 서비스가 직접 사용)
+```
+common/         ApiResponse, GeoJSON DTO, GlobalExceptionHandler
+config/         Security / CORS / WebMvc
+security/       JWT, CustomUserDetails
+domain/
+  ├─ user/      회원가입, 로그인, 카카오, 마이페이지, 설정
+  ├─ hiking/    세션 시작/종료, GPS 트랙, 고도 프로파일, 리플레이
+  ├─ summit/    정상 GPS 인증, AI 사진 인증
+  ├─ trail/     난이도 조회, GeoJSON 지도
+  ├─ mountain/  100대 명산
+  └─ stats/     누적 통계 (UserStats Entity)
 ```
 
-<br>
+### Frontend (`src/`)
 
-## 트러블슈팅
+```
+pages/          splash / auth / guide / hiking / mypage
+features/       auth / hiking / gps / trail / mountain / summit / mypage / edit-profile
+components/     auth / layout / map(CommonMap) / ui
+lib/            axios 인터셉터
+utils/          auth / format / validate / apiError
+```
 
-### 1. 지도 데이터 품질 개선
+---
 
-- **문제:** 산책로·공원길·일반 도로가 등산로처럼 표시됨
-- **원인:** 공공데이터 + OSM 혼합 구조에서 OSM 필터링 불완전
-- **해결:** OSM을 일시적으로 배제하고 공공 등산로 데이터만 사용하도록 파이프라인 조정. 500m 초과 직선 구간(최대 19km 오류 데이터 존재, 정상 데이터 92.5m 이내) 선형 제거 필터 추가 적용
-- **결과:** 등산로 조각 수 112,000개 → 55,000개로 축소, 지도 품질 개선
-
-| 정리 전 | 정리 후 |
-|---|---|
-| ![정리 전 난이도 지도](docs/images/trail-before.png) | ![정리 후 난이도 지도](docs/images/trail-after.png) |
-
-<br>
-
-### 2. GPS canonical 보정 및 고도 처리
-
-- **문제:** raw GPS를 그대로 사용하면 트랙이 등산로 밖에 찍히고 고도 값이 불규칙하게 튐
-- **해결:**
-  - PostGIS `ST_ClosestPoint`로 GPS 포인트를 등산로에 스냅
-  - NASADEM GeoTIFF에서 고도 샘플링
-  - `raw / snapped / canonical / elevation_source` 컬럼 분리 저장
-- **결과:** 트랙 신뢰도 및 고도 그래프 품질 개선
-
-| raw GPS vs snapped | 고도 그래프 before/after |
-|---|---|
-| ![GPS raw vs snapped 비교](docs/images/gps-snap-compare.png) | ![고도 그래프 비교](docs/images/elevation-before-after.png) |
-
-<br>
-
-### 3. DEM 배포 환경 메모리 문제
-
-- **문제:** 앱 시작 시 DEM 전체를 eager load하여 OOM 발생
-- **원인:** 대용량 GeoTIFF 파일을 런타임에 통째로 읽는 구조
-- **해결:** DEM 파일을 Docker 이미지에 포함하고, 힙 메모리 상향 후 Cloud Run으로 배포 구조 전환
-- **결과:** 테스트 가능한 운영 상태 확보
-
-![DEM 포함 Docker → Cloud Run 배포 구조](docs/images/dem-deploy-architecture.png)
-
-<br>
-
-### 4. 카카오 로그인 연쇄 오류 해결
-
-- **문제:** 카카오 OAuth 로그인이 여러 단계에서 연속으로 실패
-- **원인 및 해결:** Redirect URI 불일치 → 환경변수 누락 → client secret 미설정 → DB 컬럼 부재 → NOT NULL 제약 조건 충돌 순서로 단계적으로 원인을 추적하여 해결
-- **결과:** 카카오 로그인 정상 동작
-
-<br>
-
-### 5. 좌표계 오류 및 시각화 검증
-
-- **문제:** 공공데이터 등산로가 동해 또는 대만 해상에 표시됨
-- **원인:** 입력 좌표계(EPSG) 해석 오류
-- **해결:** 좌표계를 올바르게 지정하여 재처리. 시각화 검증 과정에서 데이터 병합 로직 결함도 함께 발견·수정
-- **결과:** 등산로 위치 정상화
-
-<br>
-
-### 6. 100대 명산 모드 등산로 커버리지 한계 (진행 중)
-
-- **현황:** 명산 모드에서 같은 산 영역임에도 일반 모드보다 등산로가 적게 표시되는 구간 존재 (64개 산 매핑 완료, 36개 산 edgeIds 미확보)
-- **원인:** `trail_network_edges.geojson` 데이터 커버리지 한계 및 산 이름 기반 매핑 정확도 문제
-- **현재 상태:** 최소 동작 복구 완료. 근본적인 커버리지 개선은 이슈 #68에서 후속 작업 예정
-
-<br>
-
-## 팀원 및 역할
-
-| 이름 | 역할 | 담당 기능 |
-|---|---|---|
-| 김지현 | 백엔드, 팀장 | 고도 처리, 세션 상세, 리플레이, 공통 API 구조, 운영 기반, 배포, 데이터 가공, 지도 공통 기반 |
-| 이윤지 | 풀스택 | 인증/회원, GPS 수집, 등산 시작/종료, AI+GPS 정상 인증, 배포, 데이터 가공, 공통 컴포넌트, 디자인, 지도 공통 기반 |
-| 윤종민 | 풀스택 | 난이도 지도, 100대 명산 모드, 마이페이지, 개인정보 수정, 홈, 가이드, 지도 공통 기반 |
+<p align="center">
+  Made with ⛰ by Team ORDA
+</p>
