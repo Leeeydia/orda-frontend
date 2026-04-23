@@ -179,7 +179,7 @@ function ReplayPageContent({
     );
   }, [replay.trackPoints, currentReplaySeconds]);
 
-  const visibleSummits: SummitMarkerItem[] = useMemo(() => {
+  const visibleSummitIdsKey = useMemo(() => {
     return verifiedSummits
       .filter((summit) => {
         const verifiedElapsedSec = Number(summit.verifiedElapsedSec);
@@ -188,6 +188,17 @@ function ReplayPageContent({
           verifiedElapsedSec <= currentActualElapsedSeconds
         );
       })
+      .map((summit) => summit.summitId)
+      .join("|");
+  }, [verifiedSummits, currentActualElapsedSeconds]);
+
+  const visibleSummits: SummitMarkerItem[] = useMemo(() => {
+    const visibleSummitIds = new Set(
+      visibleSummitIdsKey ? visibleSummitIdsKey.split("|") : []
+    );
+
+    return verifiedSummits
+      .filter((summit) => visibleSummitIds.has(summit.summitId))
       .map((summit) => ({
         summitId: summit.summitId,
         summitName: summit.summitName,
@@ -199,7 +210,7 @@ function ReplayPageContent({
         (summit) =>
           !Number.isNaN(summit.latitude) && !Number.isNaN(summit.longitude)
       );
-  }, [verifiedSummits, currentActualElapsedSeconds]);
+  }, [verifiedSummits, visibleSummitIdsKey]);
 
   useEffect(() => {
     if (!isSequencePlaying) return;

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import type { FeatureCollection, LineString, Point } from "geojson";
 import CommonMap from "@/components/map/CommonMap";
@@ -60,9 +60,7 @@ function clamp(value: number, min: number, max: number) {
 }
 
 function easeInOutCubic(t: number) {
-  return t < 0.5
-    ? 4 * t * t * t
-    : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
 function interpolateNumber(from: number, to: number, t: number) {
@@ -248,9 +246,14 @@ export default function ReplayMapSection({
 }: ReplayMapSectionProps) {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const replayMarkerRef = useRef<maplibregl.Marker | null>(null);
-  const summitMarkerRefs = useRef<maplibregl.Marker[]>([]);
-  const latestVisibleSummitsRef = useRef<SummitMarkerItem[]>([]);
+  const summitMarkerRefs = useRef<Map<string, maplibregl.Marker>>(new Map());
+  const outroStartCenterRef = useRef<[number, number] | null>(null);
+  const overviewCameraCacheRef = useRef<{
+    key: string;
+    camera: CameraState | null;
+  } | null>(null);
   const [isMapReady, setIsMapReady] = useState(false);
+  const [cameraLayoutVersion, setCameraLayoutVersion] = useState(0);
 
   const displayGeoJson = useMemo(() => {
     return getReplayDisplayGeoJson(replay, currentIndex, currentPosition);
@@ -259,6 +262,12 @@ export default function ReplayMapSection({
   const bounds = useMemo(() => {
     return getReplayBounds(replay);
   }, [replay]);
+
+  const boundsKey = useMemo(() => {
+    if (!bounds) return "";
+
+    return `${bounds[0][0]},${bounds[0][1]},${bounds[1][0]},${bounds[1][1]}`;
+  }, [bounds]);
 
   const startCoordinate = useMemo(() => {
     if (!replay || replay.lineCoordinates.length === 0) {
@@ -276,103 +285,141 @@ export default function ReplayMapSection({
     return replay.lineCoordinates[replay.lineCoordinates.length - 1];
   }, [replay]);
 
-  const visibleSummitKey = useMemo(() => {
-    return visibleSummits
-      .map((summit) => `${summit.summitId}:${summit.verifiedAt ?? ""}`)
-      .join("|");
-  }, [visibleSummits]);
+  const getCachedOverviewCamera = useCallback(() => {
+    if (!mapRef.current || !bounds) return null;
 
-  useEffect(() => {
-    latestVisibleSummitsRef.current = visibleSummits;
-  }, [visibleSummits]);
+    const cacheKey = `${boundsKey}:${cameraLayoutVersion}`;
+    if (overviewCameraCacheRef.current?.key === cacheKey) {
+      return overviewCameraCacheRef.current.camera;
+    }
+
+    const camera = getOverviewCameraState(mapRef.current, bounds);
+    overviewCameraCacheRef.current = {
+      key: cacheKey,
+      camera
+    };
+
+    return camera;
+  }, [bounds, boundsKey, cameraLayoutVersion]);
 
   useEffect(() => {
     if (!isMapReady || !mapRef.current) return;
+    if (cameraMode !== "intro-overview") return;
+    const overviewCamera = getCachedOverviewCamera();
+    if (!overviewCamera) return;
 
     const map = mapRef.current;
-    const overviewCamera = bounds ? getOverviewCameraState(map, bounds) : null;
-
     map.stop();
 
-    if (cameraMode === "intro-overview") {
-      if (!overviewCamera) return;
+    map.jumpTo({
+      center: overviewCamera.center,
+      zoom: overviewCamera.zoom
+    });
+  }, [isMapReady, cameraMode, getCachedOverviewCamera]);
 
-      map.jumpTo({
-        center: overviewCamera.center,
-        zoom: overviewCamera.zoom
-      });
-      return;
-    }
+  useEffect(() => {
+    if (!isMapReady || !mapRef.current) return;
+    if (cameraMode !== "focus-start") return;
+    const overviewCamera = getCachedOverviewCamera();
+    if (!overviewCamera || !startCoordinate) return;
 
-    if (cameraMode === "focus-start") {
-      if (!overviewCamera || !startCoordinate) return;
+    const rawProgress =
+      startFocusMs <= 0
+        ? 1
+        : (sequenceElapsedMs - introOverviewMs) / startFocusMs;
 
-      const rawProgress =
-        startFocusMs <= 0
-          ? 1
-          : (sequenceElapsedMs - introOverviewMs) / startFocusMs;
+    const progress = easeInOutCubic(clamp(rawProgress, 0, 1));
 
-      const progress = easeInOutCubic(clamp(rawProgress, 0, 1));
+    const map = mapRef.current;
+    map.stop();
 
-      map.jumpTo({
-        center: interpolateLngLat(
-          overviewCamera.center,
-          startCoordinate,
-          progress
-        ),
-        zoom: interpolateNumber(
-          overviewCamera.zoom,
-          FOCUS_START_ZOOM,
-          progress
-        )
-      });
-      return;
-    }
-
-    if (cameraMode === "follow") {
-      if (!currentPosition) return;
-
-      map.jumpTo({
-        center: [currentPosition.lng, currentPosition.lat],
-        zoom: FOLLOW_ZOOM
-      });
-      return;
-    }
-
-    if (cameraMode === "outro-overview") {
-      if (!overviewCamera) return;
-
-      const rawProgress =
-        outroOverviewMs <= 0
-          ? 1
-          : (sequenceElapsedMs - replayEndMs) / outroOverviewMs;
-
-      const progress = easeInOutCubic(clamp(rawProgress, 0, 1));
-
-      const outroStartCenter: [number, number] =
-        currentPosition != null
-          ? [currentPosition.lng, currentPosition.lat]
-          : endCoordinate ?? overviewCamera.center;
-
-      map.jumpTo({
-        center: interpolateLngLat(
-          outroStartCenter,
-          overviewCamera.center,
-          progress
-        ),
-        zoom: interpolateNumber(FOLLOW_ZOOM, overviewCamera.zoom, progress)
-      });
-    }
+    map.jumpTo({
+      center: interpolateLngLat(
+        overviewCamera.center,
+        startCoordinate,
+        progress
+      ),
+      zoom: interpolateNumber(overviewCamera.zoom, FOCUS_START_ZOOM, progress)
+    });
   }, [
     isMapReady,
-    bounds,
     cameraMode,
+    getCachedOverviewCamera,
     startCoordinate,
-    endCoordinate,
-    currentPosition,
     sequenceElapsedMs,
     introOverviewMs,
-    startFocusMs,
+    startFocusMs
+  ]);
+
+  useEffect(() => {
+    if (!isMapReady || !mapRef.current) return;
+    if (cameraMode !== "follow") return;
+    if (!currentPosition) return;
+
+    const map = mapRef.current;
+    map.stop();
+
+    map.jumpTo({
+      center: [currentPosition.lng, currentPosition.lat],
+      zoom: FOLLOW_ZOOM
+    });
+  }, [isMapReady, cameraMode, currentPosition]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
+
+    if (cameraMode !== "outro-overview") {
+      outroStartCenterRef.current = null;
+      return;
+    }
+
+    const overviewCamera = getCachedOverviewCamera();
+    if (outroStartCenterRef.current || !overviewCamera) return;
+
+    outroStartCenterRef.current =
+      currentPosition != null
+        ? [currentPosition.lng, currentPosition.lat]
+        : (endCoordinate ?? overviewCamera.center);
+  }, [
+    isMapReady,
+    cameraMode,
+    currentPosition,
+    endCoordinate,
+    getCachedOverviewCamera
+  ]);
+
+  useEffect(() => {
+    if (!isMapReady || !mapRef.current) return;
+    if (cameraMode !== "outro-overview") return;
+    const overviewCamera = getCachedOverviewCamera();
+    if (!overviewCamera) return;
+
+    const rawProgress =
+      outroOverviewMs <= 0
+        ? 1
+        : (sequenceElapsedMs - replayEndMs) / outroOverviewMs;
+
+    const progress = easeInOutCubic(clamp(rawProgress, 0, 1));
+    const outroStartCenter =
+      outroStartCenterRef.current ?? endCoordinate ?? overviewCamera.center;
+
+    const map = mapRef.current;
+    map.stop();
+
+    map.jumpTo({
+      center: interpolateLngLat(
+        outroStartCenter,
+        overviewCamera.center,
+        progress
+      ),
+      zoom: interpolateNumber(FOLLOW_ZOOM, overviewCamera.zoom, progress)
+    });
+  }, [
+    isMapReady,
+    cameraMode,
+    getCachedOverviewCamera,
+    endCoordinate,
+    sequenceElapsedMs,
     replayEndMs,
     outroOverviewMs
   ]);
@@ -407,16 +454,8 @@ export default function ReplayMapSection({
   useEffect(() => {
     if (!isMapReady || !mapRef.current) return;
 
-    renderSummitMarkers(
-      mapRef.current,
-      latestVisibleSummitsRef.current,
-      summitMarkerRefs
-    );
-
-    return () => {
-      clearSummitMarkers(summitMarkerRefs);
-    };
-  }, [isMapReady, visibleSummitKey]);
+    renderSummitMarkers(mapRef.current, visibleSummits, summitMarkerRefs);
+  }, [isMapReady, visibleSummits]);
 
   useEffect(() => {
     return () => {
@@ -465,6 +504,7 @@ export default function ReplayMapSection({
 
           setTimeout(() => {
             map.resize();
+            setCameraLayoutVersion((prev) => prev + 1);
           }, 0);
         }}
       />
