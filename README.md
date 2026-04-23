@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./src/assets/icons/ORDA_logo.svg" alt="ORDA 로고" width="420"/>
+  <img src="./docs/ORDA_logo_horizontal.png" alt="ORDA 로고" width="420"/>
 </p>
 
 # 🏔 ORDA : 오르다
