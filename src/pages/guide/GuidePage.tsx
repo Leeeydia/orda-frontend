@@ -140,7 +140,7 @@ const GuidePage = () => {
           <div className="mb-4 flex items-center gap-2">
             <div className="bg-primary h-1.5 w-1.5 rounded-full" />
             <span className="text-primary text-xs font-semibold tracking-[0.18em] uppercase">
-              Trail Guide
+              등산 가이드
             </span>
           </div>
           <h2 className="text-primary-dark text-2xl leading-tight font-black tracking-[-0.04em]">

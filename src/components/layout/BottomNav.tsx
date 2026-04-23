@@ -4,7 +4,7 @@ export const BOTTOM_NAV_HEIGHT = 64;
 
 const NAV_ITEMS = [
   {
-    label: "Guide",
+    label: "가이드",
     path: "/guide",
     icon: (active: boolean) => (
       <svg
@@ -22,8 +22,8 @@ const NAV_ITEMS = [
     )
   },
   {
-    label: "Map",
-    path: "/",
+    label: "지도",
+    path: "/hiking",
     icon: (active: boolean) => (
       <svg
         viewBox="0 0 24 24"
@@ -41,7 +41,7 @@ const NAV_ITEMS = [
     )
   },
   {
-    label: "Profile",
+    label: "프로필",
     path: "/mypage",
     icon: (active: boolean) => (
       <svg
@@ -70,10 +70,7 @@ const BottomNav = () => {
       className="fixed bottom-0 left-1/2 z-50 w-full max-w-[390px] -translate-x-1/2 border-t border-default bg-white">
       <div className="flex h-16 items-center justify-around px-4">
         {NAV_ITEMS.map((item) => {
-          const active =
-            item.path === "/"
-              ? location.pathname === "/"
-              : location.pathname.startsWith(item.path);
+          const active = location.pathname.startsWith(item.path);
 
           return (
             <button

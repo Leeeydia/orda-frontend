@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useMyPage from "../../features/mypage/hooks/useMyPage";
 import { API_ORIGIN } from "@/lib/axios";
+import { logout } from "@/utils/auth";
 
 const toNum = (v: number | null | undefined): number => v ?? 0;
 
@@ -24,8 +25,7 @@ const MyPage = () => {
   // 비로그인 상태에서 마이페이지 접근 시 로그인 페이지로 리다이렉트
 
   const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    navigate("/login");
+    logout(navigate);
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -203,7 +203,7 @@ const MyPage = () => {
             {profile?.nickname ?? "—"}
           </p>
           <p className="text-primary text-xs font-bold tracking-wider uppercase">
-            ORDA Member
+            ORDA 회원
           </p>
           <p className="text-muted mt-1 text-sm">{profile?.email}</p>
         </div>

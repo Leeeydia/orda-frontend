@@ -8,7 +8,7 @@ export default function KakaoCallbackPage() {
   const called = useRef(false);
 
   const { kakaoLogin } = useKakaoLogin(
-    () => navigate("/"),
+    () => navigate("/hiking"),
     (msg: string) => navigate("/login", { state: { errorMessage: msg } })
   );
 

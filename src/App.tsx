@@ -1,9 +1,11 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import SplashPage from "./pages/splash/SplashPage";
 import HikingRecordPage from "./pages/hiking/HikingRecordPage";
 import LoginPage from "./pages/auth/LoginPage";
 import PageLoader from "./components/ui/PageLoader";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import PublicOnlyRoute from "./components/auth/PublicOnlyRoute";
 
 const HikingSessionDetailPage = lazy(
   () => import("./pages/hiking/HikingSessionDetailPage")
@@ -24,15 +26,23 @@ export default function App() {
     <BrowserRouter>
       <Suspense fallback={<PageLoader />}>
         <Routes>
+          <Route path="/" element={<SplashPage />} />
           <Route
-            path="/"
+            path="/hiking"
             element={
               <ProtectedRoute>
                 <HikingRecordPage />
               </ProtectedRoute>
             }
           />
-          <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="/login"
+            element={
+              <PublicOnlyRoute>
+                <LoginPage />
+              </PublicOnlyRoute>
+            }
+          />
           <Route path="/guide" element={<GuidePage />} />
           <Route
             path="/hiking/sessions/:sessionId"
@@ -50,7 +60,14 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/signup" element={<SignupPage />} />
+          <Route
+            path="/signup"
+            element={
+              <PublicOnlyRoute>
+                <SignupPage />
+              </PublicOnlyRoute>
+            }
+          />
           <Route
             path="/mypage"
             element={

@@ -44,7 +44,7 @@ const LoginPage = () => {
   };
 
   const { login, loading } = useLogin(
-    () => navigate("/"),
+    () => navigate("/hiking"),
     (msg: string) => showToast(msg, "error")
   );
 

@@ -19,6 +19,8 @@ import Top100MountainBottomSheet from "@/features/mountain/components/Top100Moun
 import SummitCameraVerify from "@/features/summit/components/SummitCameraVerify";
 import { verifySummitWithGps } from "@/features/summit/api/summitApi";
 import type { PhotoVerifyResponse } from "@/features/summit/types/summit.types";
+import ElevationChartCard from "@/features/hiking/components/ElevationChartCard";
+import { mapElevationSeriesToSvgPath } from "@/features/hiking/mappers/hikingMappers";
 
 import hikerIcon from "@/assets/hiking-icon.png";
 
@@ -73,91 +75,6 @@ const formatTime = (totalSeconds: number): string => {
     .padStart(2, "0");
   const s = (totalSeconds % 60).toString().padStart(2, "0");
   return `${h}:${m}:${s}`;
-};
-
-const ElevationChart = ({
-  demElevations
-}: {
-  demElevations: (number | null)[];
-}) => {
-  const validCount = demElevations.filter((e): e is number => e != null).length;
-
-  if (validCount < 2) {
-    return (
-      <div className="relative flex h-20 w-full items-center justify-center rounded-xl bg-slate-50">
-        <span className="text-xs text-slate-400">고도 데이터 수집 중...</span>
-      </div>
-    );
-  }
-
-  const validValues = demElevations.filter((e): e is number => e != null);
-  const min = Math.min(...validValues);
-  const max = Math.max(...validValues);
-  const range = Math.max(max - min, 20) || 1;
-  const w = 100;
-  const h = 80;
-  const n = demElevations.length;
-
-  const points = demElevations.map((e, i) => {
-    if (e == null) return null;
-    return {
-      x: n === 1 ? w / 2 : (i / (n - 1)) * w,
-      y: h - ((e - min) / range) * (h - 10) - 5
-    };
-  });
-
-  let pathD = "";
-  let prevWasNull = true;
-  points.forEach((p) => {
-    if (p == null) {
-      prevWasNull = true;
-      return;
-    }
-    if (prevWasNull) {
-      pathD += `M ${p.x} ${p.y} `;
-      prevWasNull = false;
-    } else {
-      pathD += `L ${p.x} ${p.y} `;
-    }
-  });
-
-  const lastValidPoint = [...points].reverse().find((p) => p != null) ?? null;
-  const dotLeft = lastValidPoint ? `${(lastValidPoint.x / w) * 100}%` : "0%";
-  const dotTop = lastValidPoint ? `${(lastValidPoint.y / h) * 100}%` : "0%";
-
-  return (
-    <div className="relative h-20 w-full rounded-xl bg-slate-50">
-      <svg
-        viewBox={`0 0 ${w} ${h}`}
-        preserveAspectRatio="none"
-        className="absolute inset-0 h-full w-full">
-        <path
-          d={pathD}
-          fill="none"
-          stroke="#89943d"
-          strokeWidth="1.5"
-          vectorEffect="non-scaling-stroke"
-        />
-      </svg>
-      {lastValidPoint && (
-        <div
-          style={{
-            position: "absolute",
-            left: dotLeft,
-            top: dotTop,
-            width: 12,
-            height: 12,
-            borderRadius: "50%",
-            background: "#89943d",
-            border: "2.5px solid white",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
-            transform: "translate(-50%, -50%)",
-            zIndex: 10
-          }}
-        />
-      )}
-    </div>
-  );
 };
 
 const StatItem = ({
@@ -217,6 +134,7 @@ export default function HikingRecordPage() {
   } | null>(null);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
@@ -409,6 +327,7 @@ export default function HikingRecordPage() {
       setIsVerifyLoading(false);
     }
   };
+
   const handleVerified = (result: PhotoVerifyResponse) => {
     setSummitResult({
       verified: result.verified,
@@ -449,7 +368,7 @@ export default function HikingRecordPage() {
         margin: "0 auto",
         background: "#f7f7f6"
       }}>
-      <Header title="등산 지도" />
+      <Header />
 
       <div className="relative flex-1 overflow-hidden">
         <GpsTrackingMap
@@ -595,6 +514,7 @@ export default function HikingRecordPage() {
 
         {(pageState === "hiking" || pageState === "finished") && (
           <div
+            className="transition-all duration-200"
             style={{
               position: "absolute",
               bottom: 0,
@@ -606,11 +526,26 @@ export default function HikingRecordPage() {
               zIndex: 20,
               boxShadow: "0 -4px 20px rgba(0,0,0,0.1)"
             }}>
-            <div
+            <button
+              type="button"
+              onClick={() =>
+                pageState === "hiking" && setIsPanelCollapsed((v) => !v)
+              }
+              aria-label={
+                isPanelCollapsed ? "기록 패널 펼치기" : "기록 패널 접기"
+              }
+              aria-expanded={!isPanelCollapsed}
+              className="transition-all duration-200"
               style={{
                 display: "flex",
                 justifyContent: "center",
-                marginBottom: 16
+                width: "100%",
+                padding: "4px 0 8px",
+                marginBottom:
+                  pageState === "hiking" && isPanelCollapsed ? 4 : 8,
+                background: "transparent",
+                border: "none",
+                cursor: pageState === "hiking" ? "pointer" : "default"
               }}>
               <div
                 style={{
@@ -620,90 +555,118 @@ export default function HikingRecordPage() {
                   background: "#e2e8f0"
                 }}
               />
-            </div>
+            </button>
 
-            <div style={{ textAlign: "center", marginBottom: 16 }}>
+            {pageState === "hiking" && isPanelCollapsed ? (
               <div
+                className="transition-all duration-200"
                 style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: "#94a3b8",
-                  letterSpacing: "0.2em",
-                  marginBottom: 4
-                }}>
-                TIME
-              </div>
-              <div
-                style={{
-                  fontSize: 40,
-                  fontWeight: 700,
-                  color: "#0f172a",
+                  textAlign: "center",
+                  padding: "4px 0 12px",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: "#475569",
                   fontVariantNumeric: "tabular-nums"
                 }}>
-                {formatTime(elapsedSeconds)}
+                기록 중 · {formatTime(elapsedSeconds)} · {distanceKm.toFixed(2)}
+                km
               </div>
-            </div>
+            ) : (
+              <div className="transition-all duration-200">
+                <div style={{ textAlign: "center", marginBottom: 16 }}>
+                  <div
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      color: "#94a3b8",
+                      letterSpacing: "0.2em",
+                      marginBottom: 4
+                    }}>
+                    경과 시간
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 40,
+                      fontWeight: 700,
+                      color: "#0f172a",
+                      fontVariantNumeric: "tabular-nums"
+                    }}>
+                    {formatTime(elapsedSeconds)}
+                  </div>
+                </div>
 
-            <div
-              className="grid grid-cols-3 gap-4"
-              style={{
-                borderTop: "1px solid #f1f5f9",
-                borderBottom: "1px solid #f1f5f9",
-                padding: "16px 0",
-                marginBottom: 16
-              }}>
-              <StatItem
-                label="이동 거리"
-                value={distanceKm.toFixed(2)}
-                unit="km"
-              />
-              <StatItem
-                label="누적 상승"
-                value={elevGain}
-                unit="m"
-                bordered="both"
-              />
-              <StatItem
-                label="현재 고도"
-                value={
-                  currentAltitude != null
-                    ? currentAltitude.toLocaleString()
-                    : "—"
-                }
-                unit={currentAltitude != null ? "m" : ""}
-              />
-            </div>
+                <div
+                  className="grid grid-cols-3 gap-4"
+                  style={{
+                    borderTop: "1px solid #f1f5f9",
+                    borderBottom: "1px solid #f1f5f9",
+                    padding: "16px 0",
+                    marginBottom: 16
+                  }}>
+                  <StatItem
+                    label="이동 거리"
+                    value={distanceKm.toFixed(2)}
+                    unit="km"
+                  />
+                  <StatItem
+                    label="누적 상승"
+                    value={elevGain}
+                    unit="m"
+                    bordered="both"
+                  />
+                  <StatItem
+                    label="현재 고도"
+                    value={
+                      currentAltitude != null
+                        ? currentAltitude.toLocaleString()
+                        : "—"
+                    }
+                    unit={currentAltitude != null ? "m" : ""}
+                  />
+                </div>
 
-            <ElevationChart demElevations={demElevations} />
+                <ElevationChartCard
+                  variant="embedded"
+                  svgPath={mapElevationSeriesToSvgPath(demElevations)}
+                  xAxisLabels={[]}
+                  isEmpty={
+                    demElevations.filter((e): e is number => e != null).length <
+                    2
+                  }
+                  showFilledArea={!demElevations.some((v) => v == null)}
+                  emptyMessage="고도 데이터 수집 중..."
+                />
 
-            {summitResult && (
-              <div
-                style={{
-                  marginTop: 12,
-                  padding: "10px 16px",
-                  borderRadius: 12,
-                  fontSize: 14,
-                  fontWeight: 500,
-                  background: summitResult.verified ? "#f0fdf4" : "#fefce8",
-                  color: summitResult.verified ? "#15803d" : "#a16207"
-                }}>
-                {summitResult.verified
-                  ? `🏔 ${summitResult.summitName ?? "정상"} 인증 완료${summitResult.verificationMethod === "photo" ? " (사진)" : ""}`
-                  : `📍 ${summitResult.summitName ?? "정상"}까지 약 ${Math.round(summitResult.distanceM ?? 0)}m 떨어져 있습니다`}
-              </div>
-            )}
+                {summitResult && (
+                  <div
+                    style={{
+                      marginTop: 12,
+                      padding: "10px 16px",
+                      borderRadius: 12,
+                      fontSize: 14,
+                      fontWeight: 500,
+                      background: summitResult.verified ? "#f0fdf4" : "#fefce8",
+                      color: summitResult.verified ? "#15803d" : "#a16207"
+                    }}>
+                    {summitResult.verified
+                      ? `🏔 ${summitResult.summitName ?? "정상"} 인증 완료${summitResult.verificationMethod === "photo" ? " (사진)" : ""}`
+                      : `📍 ${summitResult.aiReason ?? `${summitResult.summitName ?? "정상"}까지 약 ${Math.round(summitResult.distanceM ?? 0)}m 떨어져 있습니다`}`}
+                  </div>
+                )}
 
-            {error && (
-              <div
-                style={{
-                  marginTop: 12,
-                  padding: "10px 16px",
-                  borderRadius: 12,
-                  fontSize: 14,
-                  background: "#fef2f2",
-                  color: "#dc2626"
-                }}>
-                {error}
+                {error && (
+                  <div
+                    style={{
+                      marginTop: 12,
+                      padding: "10px 16px",
+                      borderRadius: 12,
+                      fontSize: 14,
+                      background: "#fef2f2",
+                      color: "#dc2626"
+                    }}>
+                    {error}
+                  </div>
+                )}
               </div>
             )}
 
@@ -747,7 +710,7 @@ export default function HikingRecordPage() {
                       fontSize: 14,
                       color: "white"
                     }}>
-                    stop FINISH
+                    종료
                   </button>
                 </div>
                 {summitResult?.verified &&
@@ -765,7 +728,7 @@ export default function HikingRecordPage() {
                         fontSize: 14,
                         color: "#89943d"
                       }}>
-                      📷 사진 추가 인증
+                      📷 사진 추가 인증 (보너스)
                     </button>
                   )}
               </div>
@@ -819,7 +782,7 @@ export default function HikingRecordPage() {
           <img
             ref={hikerRef}
             src={hikerIcon}
-            alt="hiker"
+            alt="등산 캐릭터"
             style={{
               width: 42,
               height: 42,
@@ -847,7 +810,6 @@ export default function HikingRecordPage() {
                   : "0 4px 12px rgba(137,148,61,0.3)",
               opacity: hikerAnimating || isLoading ? 0.6 : 1
             }}>
-            <span style={{ fontStyle: "italic", marginRight: 6 }}>hiking</span>
             {isLoading
               ? "연결 중..."
               : isNearTrail === false
@@ -867,7 +829,6 @@ export default function HikingRecordPage() {
         />
       )}
 
-      {/* 사진 인증 카메라 */}
       {showCamera && sessionId && currentPos && (
         <SummitCameraVerify
           sessionId={sessionId}
