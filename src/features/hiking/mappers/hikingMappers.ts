@@ -1,9 +1,5 @@
 import type { FeatureCollection, LineString, Point } from "geojson";
-import {
-  formatDistanceKm,
-  formatDuration,
-  formatMeters
-} from "@/utils/format";
+import { formatDistanceKm, formatDuration, formatMeters } from "@/utils/format";
 import type {
   ElevationProfilePointResponse,
   ElevationSummaryStatus,
@@ -326,6 +322,52 @@ const EMPTY_REPLAY_SUMMARY: ReplaySummaryResponse = {
   elevationSummaryStatus: "UNAVAILABLE"
 };
 
+function hasNonIncreasingReplayTime(points: ReplayTrackPoint[]) {
+  for (let i = 1; i < points.length; i += 1) {
+    if (points[i].replayElapsedSeconds <= points[i - 1].replayElapsedSeconds) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function canNormalizeReplayTimeByActualElapsed(points: ReplayTrackPoint[]) {
+  if (points.length < 2) return false;
+
+  const firstActual = points[0].actualElapsedSeconds;
+  const lastActual = points[points.length - 1].actualElapsedSeconds;
+  const lastReplay = points[points.length - 1].replayElapsedSeconds;
+
+  if (firstActual == null || lastActual == null) return false;
+  if (lastActual <= firstActual || lastReplay <= 0) return false;
+
+  return points.every((point) => point.actualElapsedSeconds != null);
+}
+
+function normalizeReplayElapsedSeconds(
+  points: ReplayTrackPoint[]
+): ReplayTrackPoint[] {
+  if (!hasNonIncreasingReplayTime(points)) return points;
+  if (!canNormalizeReplayTimeByActualElapsed(points)) return points;
+
+  const firstActual = points[0].actualElapsedSeconds as number;
+  const lastActual = points[points.length - 1].actualElapsedSeconds as number;
+  const replayDurationSeconds = points[points.length - 1].replayElapsedSeconds;
+  const actualDurationSeconds = lastActual - firstActual;
+
+  return points.map((point) => {
+    const actualElapsedSeconds = point.actualElapsedSeconds as number;
+    const progress =
+      (actualElapsedSeconds - firstActual) / actualDurationSeconds;
+
+    return {
+      ...point,
+      replayElapsedSeconds: progress * replayDurationSeconds
+    };
+  });
+}
+
 export const mapReplayResponseToReplaySessionModel = (
   replayResponse: ReplayResponse | null | undefined
 ): ReplaySessionModel => {
@@ -340,15 +382,15 @@ export const mapReplayResponseToReplaySessionModel = (
     };
   }
 
-  const trackPoints: ReplayTrackPoint[] = (replayResponse.points ?? []).map(
-    (point) => ({
+  const trackPoints: ReplayTrackPoint[] = normalizeReplayElapsedSeconds(
+    (replayResponse.points ?? []).map((point) => ({
       lat: point.latitude,
       lng: point.longitude,
       elevationM: point.elevationM,
       distanceFromStartM: point.distanceFromStartM,
       actualElapsedSeconds: point.actualElapsedSeconds,
       replayElapsedSeconds: point.replayElapsedSeconds
-    })
+    }))
   );
 
   const lineCoordinates = trackPoints.map(
