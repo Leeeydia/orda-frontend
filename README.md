@@ -87,31 +87,35 @@
 ## 🏗 기술 스택
 
 ### Frontend
-[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-[![React Router](https://img.shields.io/badge/React_Router-7-CA4245?logo=reactrouter&logoColor=white)](https://reactrouter.com/)
-[![TanStack Query](https://img.shields.io/badge/TanStack_Query-5-FF4154?logo=reactquery&logoColor=white)](https://tanstack.com/query)
-[![MapLibre GL](https://img.shields.io/badge/MapLibre_GL-4-396CB2?logo=maplibre&logoColor=white)](https://maplibre.org/)
-[![Axios](https://img.shields.io/badge/Axios-1.13-5A29E4?logo=axios&logoColor=white)](https://axios-http.com/)
+
+[![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![React Router](https://img.shields.io/badge/React_Router-CA4245?logo=reactrouter&logoColor=white)](https://reactrouter.com/)
+[![Tanstack Query](https://img.shields.io/badge/Tanstack_Query-FF4154?logo=react-query&logoColor=white)](https://tanstack.com/query)
+[![MapLibre](https://img.shields.io/badge/MapLibre_GL-396CB2?logo=maplibre&logoColor=white)](https://maplibre.org/)
+[![Axios](https://img.shields.io/badge/Axios-5A29E4?logo=axios&logoColor=white)](https://axios-http.com/)
 
 ### Backend
-[![Java](https://img.shields.io/badge/Java-17-007396?logo=openjdk&logoColor=white)](https://www.oracle.com/java/)
-[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+
+[![Java](https://img.shields.io/badge/Java-007396?logo=openjdk&logoColor=white)](https://www.oracle.com/java/)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
 [![Spring Security](https://img.shields.io/badge/Spring_Security-6DB33F?logo=springsecurity&logoColor=white)](https://spring.io/projects/spring-security)
-[![JPA](https://img.shields.io/badge/JPA_/_Hibernate-59666C?logo=hibernate&logoColor=white)](https://hibernate.org/)
+[![Hibernate](https://img.shields.io/badge/Hibernate-59666C?logo=hibernate&logoColor=white)](https://hibernate.org/)
 [![JWT](https://img.shields.io/badge/JWT-000000?logo=jsonwebtokens&logoColor=white)](https://jwt.io/)
 [![OpenAI](https://img.shields.io/badge/OpenAI_Vision-412991?logo=openai&logoColor=white)](https://platform.openai.com/)
 
 ### Database / Infra
+
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![PostGIS](https://img.shields.io/badge/PostGIS-008BB9?logo=postgresql&logoColor=white)](https://postgis.net/)
 [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com/)
-[![Cloud Run](https://img.shields.io/badge/Google_Cloud_Run-4285F4?logo=googlecloud&logoColor=white)](https://cloud.google.com/run)
+[![Cloud Run](https://img.shields.io/badge/Cloud_Run-4285F4?logo=googlecloud&logoColor=white)](https://cloud.google.com/run)
 [![Vercel](https://img.shields.io/badge/Vercel-000000?logo=vercel&logoColor=white)](https://vercel.com/)
 
 ### Tools / Collaboration
+
 [![GitHub](https://img.shields.io/badge/GitHub-181717?logo=github&logoColor=white)](https://github.com/)
 [![Figma](https://img.shields.io/badge/Figma-F24E1E?logo=figma&logoColor=white)](https://www.figma.com/)
 [![Notion](https://img.shields.io/badge/Notion-000000?logo=notion&logoColor=white)](https://www.notion.so/)
@@ -129,7 +133,7 @@
 - **이메일/비밀번호 로그인**: JWT 기반 인증, Bearer 토큰 자동 부착
 - **카카오 OAuth 로그인**: 인가 코드 검증 후 자동 회원가입 / 로그인
 - **회원가입**: 이메일·닉네임·전화번호 중복 검증, 생년월일/전화번호 자동 포매팅
-- **보안**: BCrypt 비밀번호 해시, 비밀번호=이메일 금지 검증
+- **보안 강화**: BCrypt 비밀번호 해시, 비밀번호=이메일 금지 검증
 
 </details>
 
@@ -222,67 +226,129 @@
 
 ---
 
-## 🗣 기술적 의사결정
+## 🗣️ 기술적 의사결정
 
-<details>
-<summary><strong>Frontend: React 19 + Vite + TypeScript</strong></summary>
+### **Frontend 프레임워크 - React 19 + Vite**
 
-- 최신 React 19의 개선된 렌더링 성능과 Suspense 활용
-- Vite의 빠른 HMR로 개발 생산성 확보
-- TypeScript로 API 응답 타입과 GeoJSON 타입을 강하게 지정하여 지도 관련 좌표 순서 실수([경도, 위도]) 방지
+[![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 
-</details>
+최신 React 19의 Suspense와 개선된 렌더링 성능을 활용할 수 있으며, Vite의 빠른 HMR로 개발 생산성을 확보했습니다.  
+SPA 특성상 지도 인터랙션이 중심인 ORDA에 React의 컴포넌트 기반 렌더링이 가장 적합했습니다.
 
-<details>
-<summary><strong>Map: MapLibre GL + OpenFreeMap</strong></summary>
+---
 
-- **Mapbox 대신 MapLibre 선택**: 오픈소스이고 토큰·과금 제약이 없음
-- **OpenFreeMap** 타일로 운영 비용 0원
-- GeoJSON 소스 기반으로 Point / LineString을 공통 컴포넌트(`CommonMap`)에서 렌더링, 소스 교체만으로 실시간 업데이트 (지도 재생성 없음)
+### **개발 편의성 - TypeScript**
 
-</details>
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-<details>
-<summary><strong>Backend: Spring Boot + PostGIS + Hibernate Spatial</strong></summary>
+GeoJSON과 API 응답의 복잡한 타입 구조를 명시적으로 정의하여 코드 안정성을 높였습니다.  
+특히 좌표 순서 `[경도, 위도]`와 같은 실수를 컴파일 타임에 잡아낼 수 있어 지도 관련 버그를 크게 줄였습니다.
 
-- **PostGIS**로 공간 인덱스 기반 쿼리 (최근접 정상, 반경 내 등산로, bbox 조회) 수행
-- **Hibernate Spatial + JTS**로 JPA 레벨에서 공간 데이터를 자연스럽게 다룸
-- **GeoTIFF DEM 샘플링**(`mil.nga:tiff`)으로 고도 보정
+---
 
-</details>
+### **지도 라이브러리 - MapLibre GL + OpenFreeMap**
 
-<details>
-<summary><strong>인증: JWT + Spring Security (Stateless)</strong></summary>
+[![MapLibre](https://img.shields.io/badge/MapLibre_GL-396CB2?logo=maplibre&logoColor=white)](https://maplibre.org/)
 
-- 세션을 사용하지 않아 Cloud Run의 무상태 배포 환경에 적합
-- 카카오 OAuth는 인가 코드를 서버에서 검증 후 자체 JWT로 교환
+Mapbox의 오픈소스 포크로 토큰/과금 제약 없이 사용 가능합니다.  
+OpenFreeMap 타일과 결합하여 운영 비용 없이 벡터 지도를 제공하며, GeoJSON 소스 기반으로 실시간 트랙 업데이트 시 지도 재생성 없이 데이터만 교체하는 구조로 성능을 확보했습니다.
 
-</details>
+---
 
-<details>
-<summary><strong>AI 정상 인증: OpenAI Vision (gpt-4o-mini)</strong></summary>
+### **서버상태관리 - TanStack Query**
 
-- GPS만으로는 오차 / 조작 가능성이 있어 **GPS + AI + 정상명 매칭 3조건 AND**로 신뢰성 강화
-- 이미지 512px 리사이즈 + Base64로 토큰 비용 최소화
-- 성공한 인증 사진만 저장하여 스토리지 비용 절감
+[![Tanstack Query](https://img.shields.io/badge/Tanstack_Query-FF4154?logo=react-query&logoColor=white)](https://tanstack.com/query)
 
-</details>
+세션/트랙/고도/리플레이 등 여러 쿼리를 병렬 조회하며 자동 캐싱으로 재방문 시 즉시 표시됩니다.  
+로딩/에러/성공 상태를 선언적으로 관리할 수 있어 비동기 처리가 간소화됩니다.
 
-<details>
-<summary><strong>서버 상태: TanStack Query</strong></summary>
+---
 
-- 세션/트랙/고도/리플레이 4개 쿼리를 병렬 조회하며 캐싱으로 재방문 시 즉시 표시
-- 로딩/에러 상태를 선언적으로 관리
+### **CSS - Tailwind CSS v4**
 
-</details>
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 
-<details>
-<summary><strong>공통 응답: ApiResponse&lt;T&gt; + GeoJSON 분리</strong></summary>
+`@theme` 기반 디자인 토큰으로 디자인 시스템을 일관되게 유지했습니다.  
+모바일 웹(390px 기준)에 최적화된 유틸리티 클래스로 빠른 스타일링이 가능하며, 팀원 간 디자인 편차를 줄일 수 있었습니다.
 
-- 모든 API를 `{ success, message, data }` 구조로 통일
-- 지도용 응답은 `ApiResponse<GeoJsonFeatureCollectionResponse>`로 감싸 바로 MapLibre에 주입 가능하도록 설계
+---
 
-</details>
+### **Backend 프레임워크 - Spring Boot 3.5**
+
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+
+JPA, Security, WebFlux 등 필요한 모듈을 빠르게 통합할 수 있으며,  
+Hibernate Spatial과 같은 공간 데이터 확장과의 호환성도 우수합니다.
+
+---
+
+### **공간 데이터 - PostgreSQL + PostGIS + Hibernate Spatial**
+
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![PostGIS](https://img.shields.io/badge/PostGIS-008BB9?logo=postgresql&logoColor=white)](https://postgis.net/)
+
+ORDA의 핵심인 GPS 경로, 정상 좌표, 등산로 edge는 모두 공간 데이터입니다.  
+PostGIS의 공간 인덱스로 "반경 내 정상 조회", "뷰포트(bbox) 기반 등산로 조회" 같은 쿼리를 빠르게 수행할 수 있었습니다.  
+Hibernate Spatial + JTS를 조합하여 JPA 레벨에서 자연스럽게 공간 타입을 다뤘습니다.
+
+---
+
+### **인증 - JWT + Spring Security (Stateless)**
+
+[![JWT](https://img.shields.io/badge/JWT-000000?logo=jsonwebtokens&logoColor=white)](https://jwt.io/)
+
+세션을 사용하지 않는 Stateless 구조로 Cloud Run의 오토스케일 환경에 적합합니다.  
+카카오 OAuth는 인가 코드를 서버에서 검증한 뒤 자체 JWT로 교환하여 통일된 인증 플로우를 유지했습니다.
+
+---
+
+### **AI 정상 인증 - OpenAI Vision**
+
+[![OpenAI](https://img.shields.io/badge/OpenAI_Vision-412991?logo=openai&logoColor=white)](https://platform.openai.com/)
+
+GPS만으로는 오차나 조작 가능성이 있어 신뢰성이 부족합니다.  
+**GPS 반경 + AI 정상석 인식 + 정상명 매칭**을 AND 조건으로 결합하여 인증 신뢰도를 확보했으며,  
+이미지를 512px로 리사이즈 후 Base64 전송하여 토큰 비용을 최소화했습니다.
+
+---
+
+### **DB - Supabase**
+
+[![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com/)
+
+관리형 PostgreSQL을 빠르게 프로비저닝할 수 있고 PostGIS 확장을 지원합니다.  
+별도의 DB 운영 없이 공간 쿼리 기반 서비스를 구축할 수 있었습니다.
+
+---
+
+### **Backend 배포 - Google Cloud Run**
+
+[![Cloud Run](https://img.shields.io/badge/Cloud_Run-4285F4?logo=googlecloud&logoColor=white)](https://cloud.google.com/run)
+
+컨테이너 기반 무상태 배포 플랫폼으로, 요청량에 따라 자동으로 스케일링됩니다.  
+트래픽이 없을 때는 0으로 수렴하여 비용 효율적이며, Stateless JWT 인증 구조와도 잘 맞습니다.
+
+---
+
+### **Frontend 배포 - Vercel**
+
+[![Vercel](https://img.shields.io/badge/Vercel-000000?logo=vercel&logoColor=white)](https://vercel.com/)
+
+Vite 빌드를 자동 감지하여 코드 변경 시 빠르고 간단하게 배포됩니다.  
+PR 프리뷰 URL로 디자이너 및 팀원과의 리뷰가 원활했습니다.
+
+---
+
+### **협업 도구 - GitHub / Figma / Notion / Slack**
+
+[![GitHub](https://img.shields.io/badge/GitHub-181717?logo=github&logoColor=white)](https://github.com/)
+[![Figma](https://img.shields.io/badge/Figma-F24E1E?logo=figma&logoColor=white)](https://www.figma.com/)
+[![Notion](https://img.shields.io/badge/Notion-000000?logo=notion&logoColor=white)](https://www.notion.so/)
+[![Slack](https://img.shields.io/badge/Slack-4A154B?logo=slack&logoColor=white)](https://slack.com/)
+
+GitHub Flow 기반 PR/리뷰, Figma 디자인 시스템 공유, Notion으로 API 명세 및 회의록 관리,  
+Slack으로 실시간 커뮤니케이션을 통해 협업 효율을 극대화했습니다.
 
 ---
 
@@ -290,10 +356,10 @@
 
 | 구분 | 서비스 | 비고 |
 | --- | --- | --- |
-| **Frontend** | [Vercel](https://vercel.com/) | Vite 빌드 자동 배포, PR 프리뷰 제공 |
-| **Backend** | [Google Cloud Run](https://cloud.google.com/run) | 무상태 컨테이너 기반, 요청량 기반 오토스케일 |
-| **Database** | [Supabase](https://supabase.com/) (PostgreSQL + PostGIS) | PostGIS 확장으로 공간 쿼리 지원 |
-| **AI** | [OpenAI API](https://platform.openai.com/) (gpt-4o-mini Vision) | 정상 사진 인증 |
+| **Frontend** | Vercel | Vite 빌드 자동 배포, PR 프리뷰 |
+| **Backend** | Google Cloud Run | 무상태 컨테이너, 요청량 기반 오토스케일 |
+| **Database** | Supabase (PostgreSQL + PostGIS) | PostGIS 확장으로 공간 쿼리 |
+| **AI** | OpenAI API (gpt-4o-mini Vision) | 정상 사진 인증 |
 | **외부 연동** | 카카오 OAuth | 소셜 로그인 |
 
 ### 배포 아키텍처
@@ -320,13 +386,8 @@
 <summary><strong>1. (트러블슈팅 제목)</strong></summary>
 
 ### 🚨 문제
-(상황 설명)
-
 ### 🚨 원인
-(원인 분석)
-
 ### 💡 해결
-(해결 방법 + 코드)
 
 </details>
 
