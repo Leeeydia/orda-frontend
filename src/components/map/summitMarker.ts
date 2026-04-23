@@ -26,6 +26,10 @@ export interface SummitMarkerData {
 
 const POPUP_STYLE_ID = "orda-summit-popup-styles";
 
+type SummitMarkerArrayRefs = MutableRefObject<maplibregl.Marker[]>;
+type SummitMarkerMapRefs = MutableRefObject<Map<string, maplibregl.Marker>>;
+type SummitMarkerRefs = SummitMarkerArrayRefs | SummitMarkerMapRefs;
+
 const POPUP_STYLES = `
   .orda-summit-popup .maplibregl-popup-content {
     padding: 0;
@@ -130,49 +134,98 @@ function createSummitPopupNode(summit: SummitMarkerData): HTMLElement {
   return container;
 }
 
+function isMarkerMapRef(
+  markerRefs: SummitMarkerRefs
+): markerRefs is SummitMarkerMapRefs {
+  return markerRefs.current instanceof Map;
+}
+
+function createSummitMarker(
+  map: maplibregl.Map,
+  summit: SummitMarkerData
+): maplibregl.Marker {
+  const markerEl = createSummitMarkerElement();
+  const popupNode = createSummitPopupNode(summit);
+
+  const popup = new maplibregl.Popup({
+    offset: 14,
+    closeButton: true,
+    anchor: "bottom",
+    maxWidth: "none",
+    className: "orda-summit-popup"
+  }).setDOMContent(popupNode);
+
+  return new maplibregl.Marker({
+    element: markerEl,
+    anchor: "bottom",
+    offset: [0, 2]
+  })
+    .setLngLat([summit.longitude, summit.latitude])
+    .setPopup(popup)
+    .addTo(map);
+}
+
 export function renderSummitMarkers(
   map: maplibregl.Map,
   summits: SummitMarkerData[],
-  markerRefs: MutableRefObject<maplibregl.Marker[]>
+  markerRefs: SummitMarkerRefs
 ): void {
   ensurePopupStylesInjected();
-  clearSummitMarkers(markerRefs);
+
+  if (!isMarkerMapRef(markerRefs)) {
+    clearSummitMarkers(markerRefs);
+
+    summits.forEach((summit) => {
+      if (typeof summit.longitude !== "number") return;
+      if (typeof summit.latitude !== "number") return;
+      if (Number.isNaN(summit.longitude) || Number.isNaN(summit.latitude)) {
+        return;
+      }
+
+      markerRefs.current.push(createSummitMarker(map, summit));
+    });
+
+    return;
+  }
+
+  const nextSummitsById = new Map<string, SummitMarkerData>();
 
   summits.forEach((summit) => {
-    if (
-      typeof summit.longitude !== "number" ||
-      typeof summit.latitude !== "number"
-    ) {
+    if (!summit.summitId) return;
+    if (typeof summit.longitude !== "number") return;
+    if (typeof summit.latitude !== "number") return;
+    if (Number.isNaN(summit.longitude) || Number.isNaN(summit.latitude)) return;
+
+    nextSummitsById.set(summit.summitId, summit);
+  });
+
+  markerRefs.current.forEach((marker, summitId) => {
+    if (nextSummitsById.has(summitId)) return;
+
+    marker.remove();
+    markerRefs.current.delete(summitId);
+  });
+
+  nextSummitsById.forEach((summit, summitId) => {
+    const lngLat: [number, number] = [summit.longitude, summit.latitude];
+    const existingMarker = markerRefs.current.get(summitId);
+
+    if (existingMarker) {
+      existingMarker.setLngLat(lngLat);
       return;
     }
 
-    const markerEl = createSummitMarkerElement();
-    const popupNode = createSummitPopupNode(summit);
-
-    const popup = new maplibregl.Popup({
-      offset: 14,
-      closeButton: true,
-      anchor: "bottom",
-      maxWidth: "none",
-      className: "orda-summit-popup"
-    }).setDOMContent(popupNode);
-
-    const marker = new maplibregl.Marker({
-      element: markerEl,
-      anchor: "bottom",
-      offset: [0, 2]
-    })
-      .setLngLat([summit.longitude, summit.latitude])
-      .setPopup(popup)
-      .addTo(map);
-
-    markerRefs.current.push(marker);
+    markerRefs.current.set(summitId, createSummitMarker(map, summit));
   });
 }
 
-export function clearSummitMarkers(
-  markerRefs: MutableRefObject<maplibregl.Marker[]>
-): void {
+export function clearSummitMarkers(markerRefs: SummitMarkerRefs): void {
+  if (isMarkerMapRef(markerRefs)) {
+    markerRefs.current.forEach((marker) => marker.remove());
+    markerRefs.current.clear();
+    return;
+  }
+
   markerRefs.current.forEach((marker) => marker.remove());
   markerRefs.current = [];
 }

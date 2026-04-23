@@ -24,7 +24,7 @@ export default function HikingTrackSection({
   verifiedSummits = []
 }: HikingTrackSectionProps) {
   const mapRef = useRef<maplibregl.Map | null>(null);
-  const summitMarkerRefs = useRef<maplibregl.Marker[]>([]);
+  const summitMarkerRefs = useRef<Map<string, maplibregl.Marker>>(new Map());
   const [isMapReady, setIsMapReady] = useState(false);
 
   const displayGeoJson = useMemo(() => {
@@ -54,10 +54,6 @@ export default function HikingTrackSection({
     if (!isMapReady || !mapRef.current) return;
 
     renderSummitMarkers(mapRef.current, verifiedSummits, summitMarkerRefs);
-
-    return () => {
-      clearSummitMarkers(summitMarkerRefs);
-    };
   }, [isMapReady, verifiedSummits]);
 
   useEffect(() => {
