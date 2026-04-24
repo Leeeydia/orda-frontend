@@ -64,6 +64,12 @@
 | **이윤지** | 인증/회원, GPS 수집, 등산 시작/종료, AI + GPS 정상 인증, 디자인, 공통 컴포넌트  | [GitHub](https://github.com/Leeeydia)      | [Velog](https://velog.io/@leeeydia/posts)  |
 | **윤종민** | 난이도 지도, 100대 명산 모드, 마이페이지, 개인정보 수정, 홈, 가이드             | [GitHub](https://github.com/yxh750501-sys) | [Velog](https://velog.io/@yxh750507/posts) |
 
+<p align="center">
+  <img src="./docs/team_photo.jpg" alt="ORDA 팀 단체사진" width="600"/>
+</p>
+
+> 프로젝트 마무리 기념 단체 산행 🏔
+
 ---
 
 ## 🎥 실행 화면
