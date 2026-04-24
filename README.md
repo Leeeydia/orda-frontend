@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./docs/ORDA_logo_horizontal.png" alt="ORDA 로고" width="420"/>
+  <img src="./orda-logo-horizontal.png" alt="ORDA 로고" width="420"/>
 </p>
 
 # 🏔 ORDA : 오르다
@@ -58,10 +58,10 @@
   </tbody>
 </table>
 
-| 이름       | 역할                                                                                | GitHub                                     | Velog                                      |
-| ---------- | ----------------------------------------------------------------------------------- | ------------------------------------------ | ------------------------------------------ |
-| **김지현** | 팀장 / 고도 처리, 세션 상세, 리플레이, 공통 API 구조, 운영 기반                     | [GitHub](https://github.com/maycode28)     | [Velog](https://velog.io/@maycode28/posts) |
-| **이윤지** | 인증/회원, GPS 수집, 등산 시작/종료, AI + GPS 정상 인증, 디자인, 공통 컴포넌트      | [GitHub](https://github.com/Leeeydia)      | [Velog](https://velog.io/@leeeydia/posts)  |
+| 이름 | 역할 | GitHub | Velog |
+| --- | --- | --- | --- |
+| **김지현** | 팀장 / 고도 처리, 세션 상세, 리플레이, 공통 API 구조, 운영 기반 | [GitHub](https://github.com/maycode28) | [Velog](https://velog.io/@maycode28/posts) |
+| **이윤지** | 인증/회원, GPS 수집, 등산 시작/종료, AI + GPS 정상 인증, 디자인, 공통 컴포넌트 | [GitHub](https://github.com/Leeeydia) | [Velog](https://velog.io/@leeeydia/posts) |
 | **윤종민** | 난이도 지도, 100대 명산 모드, 마이페이지, 개인정보 수정, 홈, 가이드, 지도 공통 기반 | [GitHub](https://github.com/yxh750501-sys) | [Velog](https://velog.io/@yxh750507/posts) |
 
 ---
@@ -120,7 +120,10 @@
 <details>
 <summary><strong>1. 회원가입 / 로그인</strong></summary>
 
-<img src="스크린샷URL" alt="로그인 화면">
+<p align="center">
+  <img src="./docs/1_로그인_페이지.png" alt="로그인 화면" height="500"/>
+  <img src="./docs/1_회원가입_페이지.png" alt="회원가입 화면" height="500"/>
+</p>
 
 - **이메일/비밀번호 로그인**: JWT 기반 인증, Bearer 토큰 자동 부착
 - **카카오 OAuth 로그인**: 인가 코드 검증 후 자동 회원가입 / 로그인
@@ -132,7 +135,9 @@
 <details>
 <summary><strong>2. 등산 시작 / GPS 실시간 추적</strong></summary>
 
-<img src="스크린샷URL" alt="등산 추적 화면">
+<p align="center">
+  <img src="./docs/2_실시간_GPS.png" alt="등산 추적 화면" width="320"/>
+</p>
 
 - **등산로 근접 검증**: 반경 100m 내 등산로 검증 후 세션 시작
 - **실시간 GPS 추적**: `navigator.geolocation.watchPosition` 기반, 5초 간격 서버 저장
@@ -147,7 +152,9 @@
 <details>
 <summary><strong>3. 정상 인증 (GPS + AI 사진)</strong></summary>
 
-<img src="스크린샷URL" alt="정상 인증 화면">
+<p align="center">
+  <img src="./docs/3_정상_인증_화면.gif" alt="정상 인증 화면" width="320"/>
+</p>
 
 - **GPS 인증**: 최근접 정상 반경 내 진입 시 자동 인증, 중복 인증 회피
 - **AI 사진 인증**: OpenAI Vision (gpt-4o-mini) 기반
@@ -161,7 +168,9 @@
 <details>
 <summary><strong>4. 세션 상세 / 고도 프로파일</strong></summary>
 
-<img src="스크린샷URL" alt="세션 상세 화면">
+<p align="center">
+  <img src="./docs/4_세션_상세.gif" alt="세션 상세 화면" width="320"/>
+</p>
 
 - **트랙 시각화**: GeoJSON FeatureCollection으로 지도에 경로 표시
 - **인증 정상 마커**: 해당 세션에서 인증된 정상을 마커로 강조
@@ -173,7 +182,9 @@
 <details>
 <summary><strong>5. 2D 리플레이</strong></summary>
 
-<img src="스크린샷URL" alt="리플레이 화면">
+<p align="center">
+  <img src="./docs/5_2D_리플레이.gif" alt="리플레이 화면" width="320"/>
+</p>
 
 - **카메라 모드 4단계**: `intro-overview → focus-start → follow → outro-overview`
 - **재생 컨트롤**: 재생/일시정지 / 5초 뒤로 / 처음으로 / 슬라이더 seek
@@ -186,7 +197,9 @@
 <details>
 <summary><strong>6. 난이도 지도</strong></summary>
 
-<img src="스크린샷URL" alt="난이도 지도 화면">
+<p align="center">
+  <img src="./docs/6_난이도_지도.png" alt="난이도 지도 화면" width="320"/>
+</p>
 
 - **난이도 계산**: 거리 / 경사도 / 고도차 기반 난이도 스코어
 - **조회 방식 다양화**: 전체 / 정상별 / 뷰포트(bbox) / 특정 edge 목록
@@ -197,7 +210,10 @@
 <details>
 <summary><strong>7. 마이페이지 / 프로필 관리</strong></summary>
 
-<img src="스크린샷URL" alt="마이페이지 화면">
+<p align="center">
+  <img src="./docs/7_마이페이지.png" alt="마이페이지 화면" height="500"/>
+  <img src="./docs/7_개인정보수정.png" alt="개인정보 수정 화면" height="500"/>
+</p>
 
 - **누적 통계**: 총 등산 횟수 / 정상 인증 수 / 누적 거리 / 누적 상승 고도
 - **등산 기록 리스트**: 날짜 내림차순, 클릭 시 세션 상세로 이동
@@ -209,7 +225,9 @@
 <details>
 <summary><strong>8. 가이드 페이지</strong></summary>
 
-<img src="스크린샷URL" alt="가이드 화면">
+<p align="center">
+  <img src="./docs/8_가이드페이지.png" alt="가이드 화면" width="320"/>
+</p>
 
 - 등산 준비물 / 안전 수칙 / 산행 예절 등 정적 정보 제공
 - 오늘의 명언 (`dayOfYear` 기반으로 매일 다른 문구 노출)
@@ -346,13 +364,13 @@ Slack으로 실시간 커뮤니케이션을 통해 협업 효율을 극대화했
 
 ## ☁️ 배포 환경
 
-| 구분          | 서비스                          | 비고                                    |
-| ------------- | ------------------------------- | --------------------------------------- |
-| **Frontend**  | Vercel                          | Vite 빌드 자동 배포, PR 프리뷰          |
-| **Backend**   | Google Cloud Run                | 무상태 컨테이너, 요청량 기반 오토스케일 |
-| **Database**  | Supabase (PostgreSQL + PostGIS) | PostGIS 확장으로 공간 쿼리              |
-| **AI**        | OpenAI API (gpt-4o-mini Vision) | 정상 사진 인증                          |
-| **외부 연동** | 카카오 OAuth                    | 소셜 로그인                             |
+| 구분 | 서비스 | 비고 |
+| --- | --- | --- |
+| **Frontend** | Vercel | Vite 빌드 자동 배포, PR 프리뷰 |
+| **Backend** | Google Cloud Run | 무상태 컨테이너, 요청량 기반 오토스케일 |
+| **Database** | Supabase (PostgreSQL + PostGIS) | PostGIS 확장으로 공간 쿼리 |
+| **AI** | OpenAI API (gpt-4o-mini Vision) | 정상 사진 인증 |
+| **외부 연동** | 카카오 OAuth | 소셜 로그인 |
 
 ### 배포 아키텍처
 
@@ -378,21 +396,18 @@ Slack으로 실시간 커뮤니케이션을 통해 협업 효율을 극대화했
 <summary><strong>1. 지도 데이터 품질 정리 — OSM + 공공데이터 혼합 구조 재정비</strong></summary>
 
 ### 🚨 문제
-
 난이도 지도에 **산책로, 공원길, 일반 도로**가 등산로처럼 표시되어 사용자가 실제 등산로를 식별하기 어려웠습니다.
 
 ### 🚨 원인
-
 공공데이터(국립공원공단, 산림청)와 OSM을 혼합한 구조에서 OSM 측의 태그 기반 필터링이 불완전했습니다. OSM에는 등산로뿐만 아니라 산책로·도보길·일반도로가 유사 태그로 섞여 들어와 있었습니다.
 
 ### 💡 해결
-
 - OSM 데이터를 일시적으로 배제하고 **공공 등산로 데이터만 사용**하도록 파이프라인을 조정했습니다.
 - 등산로 조각(edge) 수: **약 112,000개 → 55,000개** 로 감소.
 - 지도 품질이 크게 개선되어, 실제 등산로만 난이도 레이어에 표시됩니다.
 
-> 🖼 _[이미지 플레이스홀더: 정리 전 난이도 지도]_  
-> 🖼 _[이미지 플레이스홀더: 정리 후 난이도 지도]_
+> 🖼 *[이미지 플레이스홀더: 정리 전 난이도 지도]*  
+> 🖼 *[이미지 플레이스홀더: 정리 후 난이도 지도]*
 
 </details>
 
@@ -400,19 +415,17 @@ Slack으로 실시간 커뮤니케이션을 통해 협업 효율을 극대화했
 <summary><strong>2. GPS canonical 보정 — 원시 GPS → 스냅 + DEM 고도</strong></summary>
 
 ### 🚨 문제
-
 Raw GPS를 그대로 사용하면 트랙이 **등산로 밖에 찍히고**, **고도 값이 튀는** 문제가 발생했습니다. 이로 인해 경로 시각화, 상승/하강 고도 집계, 고도 프로파일 그래프의 신뢰도가 낮았습니다.
 
 ### 💡 해결
-
 - **등산로 스냅**: PostGIS `ST_ClosestPoint` 로 raw 좌표를 가장 가까운 등산로 edge 위로 스냅.
 - **고도 샘플링**: NASADEM GeoTIFF에서 해당 좌표의 DEM 고도를 샘플링.
 - **4단계 분리 저장**: `raw` / `snapped` / `canonical` / `elevation_source` 컬럼으로 단계별 값을 모두 보존하여 후처리·디버깅을 가능하게 설계.
 
 **결과**: 트랙 신뢰도와 고도 그래프 품질이 모두 개선되었고, 필요 시 원본 raw 값으로 언제든 롤백 가능한 구조가 되었습니다.
 
-> 🖼 _[이미지 플레이스홀더: GPS raw vs snapped 비교 지도]_  
-> 🖼 _[이미지 플레이스홀더: 고도 그래프 before / after]_
+> 🖼 *[이미지 플레이스홀더: GPS raw vs snapped 비교 지도]*  
+> 🖼 *[이미지 플레이스홀더: 고도 그래프 before / after]*
 
 </details>
 
@@ -420,23 +433,20 @@ Raw GPS를 그대로 사용하면 트랙이 **등산로 밖에 찍히고**, **�
 <summary><strong>3. DEM 배포 / 메모리 문제 — OOM → Docker 포함 + Cloud Run</strong></summary>
 
 ### 🚨 문제
-
 앱 시작 시 DEM(수치표고모델) 전체를 eager load 하는 구조로 인해 **OOM(OutOfMemoryError)** 이 발생하여 서버가 기동되지 않았습니다.
 
 ### 🚨 원인
-
 대용량 GeoTIFF 파일을 런타임에서 통째로 읽어 힙 메모리에 적재하는 구조. DEM 파일 자체의 크기 + mil.nga:tiff 파서의 메모리 사용량이 배포 환경의 기본 힙을 초과했습니다.
 
 ### 💡 해결
-
 - **Docker 이미지에 DEM을 포함**하여 런타임 네트워크·디스크 접근 경로를 단순화.
 - **힙 메모리 상향** (JVM -Xmx 조정).
 - **Cloud Run으로 우회**: 메모리 할당 여유가 있는 Cloud Run 인스턴스로 배포하여 로컬 환경 제약을 우회.
 
 **결과**: 테스트 가능한 운영 상태를 확보. 이후 구조는 lazy load / 타일 단위 청크 로딩으로 개선할 여지가 남아있습니다.
 
-> 🖼 _[도식 플레이스홀더: DEM 포함 Docker → Cloud Run 배포 구조]_  
-> 📄 _[로그 플레이스홀더: OOM 로그 또는 DEM 로드 성공 로그]_
+> 🖼 *[도식 플레이스홀더: DEM 포함 Docker → Cloud Run 배포 구조]*  
+> 📄 *[로그 플레이스홀더: OOM 로그 또는 DEM 로드 성공 로그]*
 
 </details>
 
