@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./docs/ORDA_logo_horizontal.png" alt="ORDA 로고" width="420"/>
+  <img src="./docs/ORDA_logo_horizontal.svg" alt="ORDA 로고" width="420"/>
 </p>
 
 # 🏔 ORDA : 오르다
@@ -62,7 +62,7 @@
 | ---------- | ------------------------------------------------------------------------------- | ------------------------------------------ | ------------------------------------------ |
 | **김지현** | 팀장 / 고도 처리, 세션 상세, 리플레이, 공통 API 구조, 운영 기반, 지도 공통 기반 | [GitHub](https://github.com/maycode28)     | [Velog](https://velog.io/@maycode28/posts) |
 | **이윤지** | 인증/회원, GPS 수집, 등산 시작/종료, AI + GPS 정상 인증, 디자인, 공통 컴포넌트  | [GitHub](https://github.com/Leeeydia)      | [Velog](https://velog.io/@leeeydia/posts)  |
-| **윤종민** | 난이도 지도, 100대 명산 모드, 마이페이지, 개인정보 수정, 홈, 가이드             | [GitHub](https://github.com/yxh750501-sys) | [Velog](https://velog.io/@yxh750507/posts) |
+| **윤종민** | 난이도 지도, 100대 명산 모드, 마이페이지, 개인정보 수정, 홈, 가이드, 공통 컴포넌트 | [GitHub](https://github.com/yxh750501-sys) | [Velog](https://velog.io/@yxh750507/posts) |
 
 <p align="center">
   <img src="./docs/team_photo.jpg" alt="ORDA 팀 단체사진" width="600"/>
@@ -530,11 +530,28 @@ domain/
 ### Frontend (`src/`)
 
 ```
-pages/          splash / auth / guide / hiking / mypage
-features/       auth / hiking / gps / trail / mountain / summit / mypage / edit-profile
-components/     auth / layout / map(CommonMap) / ui
-lib/            axios 인터셉터
-utils/          auth / format / validate / apiError
+components/     공통 UI, 레이아웃, 지도, 라우트 보호 컴포넌트
+lib/            Axios 공통 인스턴스 및 API 통신 설정
+utils/          인증, 에러 처리, 포맷팅, 입력값 검증 유틸
+types/          공통 타입 정의
+assets/         로고, 아이콘 등 정적 자원
+mock/           지도/GeoJSON 테스트용 목데이터
+docs/           프론트 구조, 컴포넌트, GeoJSON 사용 가이드
+pages/
+  ├─ splash/    스플래시 화면
+  ├─ auth/      로그인, 회원가입, 카카오 콜백
+  ├─ hiking/    등산 기록, 세션 상세, 리플레이 화면
+  ├─ mypage/    마이페이지, 프로필 수정 화면
+  └─ guide/     서비스 가이드 화면
+features/
+  ├─ auth/      로그인, 회원가입, 카카오 인증
+  ├─ gps/       실시간 위치 수집
+  ├─ hiking/    세션 시작/종료, GPS 트랙, 고도 프로파일, 리플레이
+  ├─ summit/    정상 GPS 인증, AI 사진 인증
+  ├─ trail/     등산로 난이도 및 GeoJSON 지도 데이터
+  ├─ mountain/  100대 명산
+  ├─ mypage/    누적 통계, 내 등산 기록, 사용자 정보
+  └─ edit-profile/ 회원 정보 수정
 ```
 
 ---
