@@ -286,7 +286,7 @@ const MyPage = () => {
                   <path d="M8 3l4 8 5-5 5 15H2L8 3z" />
                 </svg>
               }
-              label="누적 고도"
+              label="총 누적 상승"
               value={`${stats?.totalElevationGainM ?? 0}m`}
             />
           </div>

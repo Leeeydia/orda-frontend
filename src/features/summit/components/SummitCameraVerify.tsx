@@ -2,6 +2,18 @@ import { useRef, useEffect, useState } from "react";
 import { useSummit } from "../hooks/useSummit";
 import type { PhotoVerifyResponse } from "../types/summit.types";
 
+const formatRoundedMeters = (meters: number): string => {
+  if (Number.isNaN(meters)) return "0m";
+  return `${Math.round(meters)}m`;
+};
+
+const formatSummitReason = (reason: string): string =>
+  reason.replace(/(\d[\d,]*(?:\.\d+)?)\s*m/g, (match, value: string) => {
+    const parsedValue = Number(value.replace(/,/g, ""));
+    if (Number.isNaN(parsedValue)) return match;
+    return formatRoundedMeters(parsedValue);
+  });
+
 interface SummitCameraVerifyProps {
   sessionId: number;
   latitude: number;
@@ -280,7 +292,9 @@ export default function SummitCameraVerify({
                 <div style={{ fontWeight: 700, marginBottom: 4 }}>
                   📍 정상 인증에 실패했습니다
                 </div>
-                <div style={{ fontSize: 12 }}>{result.aiReason}</div>
+                <div style={{ fontSize: 12 }}>
+                  {formatSummitReason(result.aiReason)}
+                </div>
               </>
             )}
           </div>

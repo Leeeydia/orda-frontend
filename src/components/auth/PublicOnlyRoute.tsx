@@ -1,13 +1,9 @@
-import { Navigate } from "react-router-dom";
+import type { ReactNode } from "react";
 
 type PublicOnlyRouteProps = {
-  children: React.ReactNode;
+  children: ReactNode;
 };
 
 export default function PublicOnlyRoute({ children }: PublicOnlyRouteProps) {
-  const token = localStorage.getItem("accessToken");
-  if (token) {
-    return <Navigate to="/hiking" replace />;
-  }
   return <>{children}</>;
 }

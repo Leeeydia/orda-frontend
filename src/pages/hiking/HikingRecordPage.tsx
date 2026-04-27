@@ -42,6 +42,18 @@ const DIFFICULTY_COLORS: Record<string, string> = {
 
 const PROXIMITY_RECHECK_DEBOUNCE_MS = 5000;
 
+const formatRoundedMeters = (meters: number | null | undefined): string => {
+  if (meters == null || Number.isNaN(meters)) return "0m";
+  return `${Math.round(meters)}m`;
+};
+
+const formatSummitReason = (reason: string): string =>
+  reason.replace(/(\d[\d,]*(?:\.\d+)?)\s*m/g, (match, value: string) => {
+    const parsedValue = Number(value.replace(/,/g, ""));
+    if (Number.isNaN(parsedValue)) return match;
+    return formatRoundedMeters(parsedValue);
+  });
+
 const useElapsedTime = (isRunning: boolean) => {
   const [seconds, setSeconds] = useState(0);
   const [lastSeconds, setLastSeconds] = useState(0);
@@ -609,7 +621,7 @@ export default function HikingRecordPage() {
                     unit="km"
                   />
                   <StatItem
-                    label="누적 상승"
+                    label="누적 고도변동"
                     value={elevGain}
                     unit="m"
                     bordered="both"
@@ -650,7 +662,13 @@ export default function HikingRecordPage() {
                     }}>
                     {summitResult.verified
                       ? `🏔 ${summitResult.summitName ?? "정상"} 인증 완료${summitResult.verificationMethod === "photo" ? " (사진)" : ""}`
-                      : `📍 ${summitResult.aiReason ?? `${summitResult.summitName ?? "정상"}까지 약 ${Math.round(summitResult.distanceM ?? 0)}m 떨어져 있습니다`}`}
+                      : `📍 ${
+                          summitResult.aiReason
+                            ? formatSummitReason(summitResult.aiReason)
+                            : `${summitResult.summitName ?? "정상"}까지 약 ${formatRoundedMeters(
+                                summitResult.distanceM
+                              )} 떨어져 있습니다`
+                        }`}
                   </div>
                 )}
 
